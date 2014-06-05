@@ -1,3 +1,6 @@
+env:
+  global:
+    - secure: VbEIoGElnlAvRYuAAiYEmOPQrGCPCrJFBAz+mGSaGaIBu/B6lC/gkjt6C4xZunVyS/xtfpRxrjoL9A+mYiPUlUYCvRlnGHjOD4Evbvug4y/sU0sgHSo6VH3lmzZRVsHjjrP1gEI/dK9lVCtA0Z0jf+axxmpGPFs5+4bbkvprrR0=
 before_install:
   - yes | sudo add-apt-repository ppa:hansjorg/rust
   - sudo apt-get update
@@ -6,3 +9,5 @@ install:
 script:
   - rustc --test src/lib.rs
   - lua
+after_script:
+  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
