@@ -9,5 +9,6 @@ install:
 script:
   - rustc --test -o tests src/lib.rs
   - tests
+  - rustdoc src/lib.rs
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
