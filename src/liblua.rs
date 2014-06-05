@@ -109,7 +109,7 @@ pub struct lua_Debug {
     //i_ci: *CallInfo
 }
 
-#[link(name = "lua")]
+#[link(name = "lua5.2")]
 extern "C" {
     pub fn lua_newstate(f: lua_Alloc, ud: *mut libc::c_void) -> *mut lua_State;
     pub fn lua_close(L: *mut lua_State);
