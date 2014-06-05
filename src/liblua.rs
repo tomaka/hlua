@@ -32,7 +32,7 @@ pub type lua_Writer = extern "C" fn(L: *mut lua_State, p: *libc::c_void, sz: lib
 
 pub type lua_Alloc = extern "C" fn(ud: *mut libc::c_void, ptr: *mut libc::c_void, osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void;
 
-pub type lua_Hook = unsafe extern "C" fn(L: *mut lua_State, ar: *mut lua_Debug);
+pub type lua_Hook = extern "C" fn(L: *mut lua_State, ar: *mut lua_Debug);
 
 
 pub static LUA_TNONE: c_int = -1;
