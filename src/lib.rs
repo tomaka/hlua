@@ -117,6 +117,14 @@ impl Lua {
 			location: VariableLocation { index: index, prev: Globals }
 		}
 	}
+
+	pub fn get<V: Readable>(&mut self, index: &String) -> Option<V> {
+		self.access(index).get()
+	}
+
+	pub fn set<V: Pushable>(&mut self, index: &String, value: V) -> Result<(), &'static str> {
+		self.access(index).set(value)
+	}
 }
 
 impl<'a, 'b, TIndex: Index, TValue: Pushable, TDropbox: Dropbox<TIndex, TValue>> VariableAccessor<'a, VariableLocation<'b, TIndex, TDropbox>> {

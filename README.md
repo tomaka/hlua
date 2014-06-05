@@ -17,7 +17,7 @@ Build docs:
     let mut lua = Lua::new();     // mutable is mandatory
     lua.set("x", 2);
     lua.execute("x = x + 1");
-    let x = lua.get("x").unwrap();  // return 3
+    let x = lua.get("x").unwrap();  // x is equal to 3
 
 ### Documentation
 
