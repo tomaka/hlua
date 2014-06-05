@@ -7,7 +7,7 @@ use super::Lua;
 use super::Pushable;
 use super::Readable;
 
-unsafe extern fn wrapper(lua: *mut liblua::lua_State) -> libc::c_int {
+extern fn wrapper(lua: *mut liblua::lua_State) -> libc::c_int {
     /*const auto toCall = static_cast<TFunctionObject*>(lua_touserdata(state, lua_upvalueindex(1)));
     return callback(state, toCall, lua_gettop(state)).release();*/
     0
