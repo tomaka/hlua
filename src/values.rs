@@ -11,7 +11,7 @@ macro_rules! integer_impl(
     ($t:ident) => (
         impl Pushable for $t {
             fn push_to_lua(self, lua: &Lua) {
-                unsafe { liblua::lua_pushinteger(lua.lua, self as i32) }
+                unsafe { liblua::lua_pushinteger(lua.lua, self as liblua::lua_Integer) }
             }
         }
         impl Readable for $t {
@@ -41,7 +41,7 @@ macro_rules! unsigned_impl(
     ($t:ident) => (
         impl Pushable for $t {
             fn push_to_lua(self, lua: &Lua) {
-                unsafe { liblua::lua_pushunsigned(lua.lua, self as u32) }
+                unsafe { liblua::lua_pushunsigned(lua.lua, self as liblua::lua_Unsigned) }
             }
         }
         impl Readable for $t {
