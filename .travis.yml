@@ -7,7 +7,7 @@ before_install:
 install:
   - sudo apt-get install rust-nightly liblua5.2-dev
 script:
-  - rustc --test src/lib.rs
-  - lua
+  - rustc --test src/lib.rs -o tests
+  - tests
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
