@@ -4,7 +4,13 @@ This library is a high-level binding for Lua. You don't have access to the Lua s
 
 ### How to compile?
 
+Compile:
+
     rustc src/lib.rs
+
+Build docs:
+    
+    rustdoc src/lib.rs
 
 ### How to use it?
 

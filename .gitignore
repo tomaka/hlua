@@ -215,3 +215,4 @@ pip-log.txt
 .mr.developer.cfg
 project.sublime-*
 *.rlib
+doc/
