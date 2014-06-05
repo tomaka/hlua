@@ -10,8 +10,8 @@ use super::Readable;
 macro_rules! integer_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(self, lua: &Lua) {
-                unsafe { liblua::lua_pushinteger(lua.lua, self as liblua::lua_Integer) }
+            fn push_to_lua(&self, lua: &Lua) {
+                unsafe { liblua::lua_pushinteger(lua.lua, *self as liblua::lua_Integer) }
             }
         }
         impl Readable for $t {
@@ -40,8 +40,8 @@ integer_impl!(i32)
 macro_rules! unsigned_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(self, lua: &Lua) {
-                unsafe { liblua::lua_pushunsigned(lua.lua, self as liblua::lua_Unsigned) }
+            fn push_to_lua(&self, lua: &Lua) {
+                unsafe { liblua::lua_pushunsigned(lua.lua, *self as liblua::lua_Unsigned) }
             }
         }
         impl Readable for $t {
@@ -70,8 +70,8 @@ unsigned_impl!(u32)
 macro_rules! numeric_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(self, lua: &Lua) {
-                unsafe { liblua::lua_pushnumber(lua.lua, self as f64) }
+            fn push_to_lua(&self, lua: &Lua) {
+                unsafe { liblua::lua_pushnumber(lua.lua, *self as f64) }
             }
         }
         impl Readable for $t {
@@ -95,10 +95,8 @@ numeric_impl!(f32)
 numeric_impl!(f64)
 
 impl Pushable for std::string::String {
-    fn push_to_lua(self, lua: &Lua) {
-        unsafe {
-            liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap())
-        }
+    fn push_to_lua(&self, lua: &Lua) {
+        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
     }
 }
 
@@ -122,24 +120,54 @@ impl Readable for String {
 impl Index for String {
 }
 
-/*impl<'a> Pushable for &'a str {
-    fn push_to_lua(self, lua: &Lua) {
-        String::from_str(self).push_to_lua(lua)
+impl Pushable for ~str {
+    fn push_to_lua(&self, lua: &Lua) {
+        String::from_str(*self).push_to_lua(lua)
+    }
+}
+
+impl Pushable for &'static str {
+    fn push_to_lua(&self, lua: &Lua) {
+        String::from_str(*self).push_to_lua(lua)
     }
 }
 
 impl Readable for ~str {
     fn read_from_lua(lua: &Lua, index: i32) -> Option<~str> {
-        let raw: Option<std::string::String> = Readable::read_from_lua(lua, index);
-        // TODO: doesn't compile
-        match raw {
-            None => None,
-            Some(s) => Some(box s.as_slice() as ~str)
-        }
+        unimplemented!()
+    }
+}
+
+impl Readable for &'static str {
+    fn read_from_lua(lua: &Lua, index: i32) -> Option<&'static str> {
+        unimplemented!()
     }
 }
 
 impl Index for ~str {
+}
+
+impl Index for &'static str {
+}
+
+/*impl GlobalsIndex for &'static str {
+    fn lua_set_global(&self, lua: &Lua) {
+        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()) }
+    }
+
+    fn lua_get_global(&self, lua: &Lua) {
+        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()) }
+    }
+}
+
+impl GlobalsIndex for ~str {
+    fn lua_set_global(&self, lua: &Lua) {
+        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()) }
+    }
+
+    fn lua_get_global(&self, lua: &Lua) {
+        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()) }
+    }
 }*/
 
 #[cfg(test)]
@@ -148,8 +176,8 @@ mod tests {
     fn readwrite_ints() {
         let mut lua = super::super::Lua::new();
 
-        lua.set(&from_str("a").unwrap(), 2);
-        let x: int = lua.get(&from_str("a").unwrap()).unwrap();
+        lua.set("a", 2);
+        let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2)
     }
 }

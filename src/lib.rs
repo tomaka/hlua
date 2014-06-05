@@ -32,7 +32,13 @@ pub struct VariableAccessor<'a, TVariableLocation> {
  * Should be implemented by whatever type is pushable on the Lua stack
  */
 pub trait Pushable {
-	fn push_to_lua(self, &Lua);
+	fn push_to_lua(&self, &Lua);
+}
+
+impl<'a, T:Pushable> Pushable for &'a T {
+	fn push_to_lua(&self, lua: &Lua) {
+		(*self).push_to_lua(lua)
+	}
 }
 
 /**
@@ -51,31 +57,53 @@ pub trait Readable {
  * Types that can be indices in Lua tables
  */
 pub trait Index: Pushable + Readable {
+	fn lua_set_global<T: Pushable>(&self, lua: &Lua, value: T) {
+		unsafe { liblua::lua_pushglobaltable(lua.lua); }
+		value.push_to_lua(lua);
+		self.push_to_lua(lua);
+		unsafe { liblua::lua_settable(lua.lua, -3); }
+		unsafe { liblua::lua_pop(lua.lua, 1); }
+	}
+
+	fn lua_get_global<T: Readable>(&self, lua: &Lua) -> Option<T> {
+		unsafe { liblua::lua_pushglobaltable(lua.lua); }
+		self.push_to_lua(lua);
+		unsafe { liblua::lua_gettable(lua.lua, -2); }
+		Readable::read_from_lua(lua, -1)
+	}
 }
 
 /**
  * Object which can store variables
  */
-trait Dropbox<TIndex: Index, TPushable: Pushable> {
-	fn store(&self, &Lua, &TIndex, TPushable) -> Result<(), &'static str>;
+trait Dropbox<I: Index, V: Pushable> {
+	fn store(&self, &Lua, &I, V) -> Result<(), &'static str>;
 }
 
 /**
  * Object which you can read variables from
  */
-trait Readbox<TIndex: Index, TReadable: Readable> {
-	fn read(&self, &Lua, &TIndex) -> Option<TReadable>;
+trait Readbox<I: Index, V: Readable> {
+	fn read(&self, &Lua, &I) -> Option<V>;
 }
 
-struct VariableLocation<'a, TIndex, TPrev> {
-	index: &'a TIndex,
-	prev: TPrev
+struct VariableLocation<I, Prev> {
+	index: I,
+	prev: Prev
 }
 
 /**
  * Represents the global variables
  */
 pub struct Globals;
+
+/**
+ * Error that can happen when executing Lua code
+ */
+pub enum ExecutionError {
+	SyntaxError(String),
+	ExecError(String)
+}
 
 
 extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void {
@@ -107,56 +135,50 @@ impl Lua {
 	/**
 	 * Executes some Lua code on the context
 	 */
-	pub fn execute<T: Readable>(&mut self, code: &String) -> T {
+	pub fn execute<T: Readable>(&mut self, code: &String) -> Result<T, ExecutionError> {
 		unimplemented!()
 	}
 
-	pub fn access<'a, 'b, TIndex: Index>(&'a mut self, index: &'b TIndex) -> VariableAccessor<'a, VariableLocation<'b, TIndex, Globals>> {
+	pub fn access<'a, I: Index>(&'a mut self, index: I) -> VariableAccessor<'a, VariableLocation<I, Globals>> {
 		VariableAccessor {
 			lua: self,
 			location: VariableLocation { index: index, prev: Globals }
 		}
 	}
 
-	pub fn get<V: Readable>(&mut self, index: &String) -> Option<V> {
+	pub fn get<I: Index, V: Readable>(&mut self, index: I) -> Option<V> {
 		self.access(index).get()
 	}
 
-	pub fn set<V: Pushable>(&mut self, index: &String, value: V) -> Result<(), &'static str> {
+	pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
 		self.access(index).set(value)
 	}
 }
 
-impl<'a, 'b, TIndex: Index, TValue: Pushable, TDropbox: Dropbox<TIndex, TValue>> VariableAccessor<'a, VariableLocation<'b, TIndex, TDropbox>> {
-	pub fn set(&mut self, value: TValue) -> Result<(), &'static str> {
+impl<'a, I: Index, V: Pushable, DB: Dropbox<I, V>> VariableAccessor<'a, VariableLocation<I, DB>> {
+	pub fn set(&mut self, value: V) -> Result<(), &'static str> {
 		let loc = &self.location;
-		loc.prev.store(self.lua, loc.index, value)
+		loc.prev.store(self.lua, &loc.index, value)
 	}
 }
 
-impl<'a, 'b, TIndex: Index, TValue: Readable, TReadbox: Readbox<TIndex, TValue>> VariableAccessor<'a, VariableLocation<'b, TIndex, TReadbox>> {
-	pub fn get(&self) -> Option<TValue> {
+impl<'a, I: Index, V: Readable, RB: Readbox<I, V>> VariableAccessor<'a, VariableLocation<I, RB>> {
+	pub fn get(&self) -> Option<V> {
 		let loc = &self.location;
-		loc.prev.read(self.lua, loc.index)
+		loc.prev.read(self.lua, &loc.index)
 	}
 }
 
-impl<TValue: Pushable> Dropbox<String, TValue> for Globals {
-	fn store(&self, lua: &Lua, index: &String, value: TValue) -> Result<(), &'static str> {
-		value.push_to_lua(lua);
-		unsafe { liblua::lua_setglobal(lua.lua, index.to_c_str().unwrap()); }
+impl<I: Index, V: Pushable> Dropbox<I, V> for Globals {
+	fn store(&self, lua: &Lua, index: &I, value: V) -> Result<(), &'static str> {
+		index.lua_set_global(lua, value);
 		Ok(())
 	}
 }
 
-impl<TValue: Readable> Readbox<String, TValue> for Globals {
-	fn read(&self, lua: &Lua, index: &String) -> Option<TValue> {
-		unsafe {
-			liblua::lua_getglobal(lua.lua, index.to_c_str().unwrap());
-			let value = Readable::read_from_lua(lua, -1);
-			liblua::lua_pop(lua.lua, 1);
-			value
-		}
+impl<I: Index, V: Readable> Readbox<I, V> for Globals {
+	fn read(&self, lua: &Lua, index: &I) -> Option<V> {
+		index.lua_get_global(lua)
 	}
 }
 

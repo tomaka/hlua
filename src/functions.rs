@@ -12,7 +12,7 @@ extern fn wrapper(lua: *mut liblua::lua_State) -> libc::c_int {
     return callback(state, toCall, lua_gettop(state)).release();*/
     0
 }
-
+/*
 impl<TRetValue: Pushable> Pushable for proc() -> TRetValue {
     fn push_to_lua(self, lua: &Lua) {
     }
@@ -29,3 +29,4 @@ impl<TParam1: Readable, TRetValue: Pushable> Pushable for fn(TParam1) -> TRetVal
     }
 }
 
+*/
