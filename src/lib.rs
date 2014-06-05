@@ -3,12 +3,15 @@
 #![comment = "Lua bindings for Rust"]
 #![license = "MIT"]
 #![allow(visible_private_types)]
+#![feature(macro_rules)]
 
 extern crate libc;
 extern crate std;
 
 mod liblua;
-pub mod value;
+mod functions;
+mod tables;
+mod values;
 
 /**
  * Main object of the library
@@ -54,7 +57,7 @@ pub trait Index: Pushable + Readable {
  * Object which can store variables
  */
 trait Dropbox<TIndex: Index, TPushable: Pushable> {
-	fn store(&self, &Lua, &TIndex, TPushable);
+	fn store(&self, &Lua, &TIndex, TPushable) -> Result<(), &'static str>;
 }
 
 /**
@@ -104,7 +107,7 @@ impl Lua {
 	/**
 	 * Executes some Lua code on the context
 	 */
-	pub fn execute<T: Readable>(&mut self, code: &std::string::String) -> T {
+	pub fn execute<T: Readable>(&mut self, code: &String) -> T {
 		unimplemented!()
 	}
 
@@ -117,40 +120,29 @@ impl Lua {
 }
 
 impl<'a, 'b, TIndex: Index, TValue: Pushable, TDropbox: Dropbox<TIndex, TValue>> VariableAccessor<'a, VariableLocation<'b, TIndex, TDropbox>> {
-	pub fn set(&mut self, value: TValue) {
-		self.location.store(self.lua, value)
+	pub fn set(&mut self, value: TValue) -> Result<(), &'static str> {
+		let loc = &self.location;
+		loc.prev.store(self.lua, loc.index, value)
 	}
 }
 
 impl<'a, 'b, TIndex: Index, TValue: Readable, TReadbox: Readbox<TIndex, TValue>> VariableAccessor<'a, VariableLocation<'b, TIndex, TReadbox>> {
 	pub fn get(&self) -> Option<TValue> {
-		self.location.read(self.lua)
+		let loc = &self.location;
+		loc.prev.read(self.lua, loc.index)
 	}
 }
 
-impl<'a, TIndex: Index, TValue: Pushable, TDropbox: Dropbox<TIndex, TValue>> VariableLocation<'a, TIndex, TDropbox> {
-	fn store(&self, lua: &Lua, value: TValue) {
-		self.prev.store(lua, self.index, value)
+impl<TValue: Pushable> Dropbox<String, TValue> for Globals {
+	fn store(&self, lua: &Lua, index: &String, value: TValue) -> Result<(), &'static str> {
+		value.push_to_lua(lua);
+		unsafe { liblua::lua_setglobal(lua.lua, index.to_c_str().unwrap()); }
+		Ok(())
 	}
 }
 
-impl<'a, TIndex: Index, TValue: Readable, TReadbox: Readbox<TIndex, TValue>> VariableLocation<'a, TIndex, TReadbox> {
-	fn read(&self, lua: &Lua) -> Option<TValue> {
-		self.prev.read(lua, self.index)
-	}
-}
-
-impl<TValue: Pushable> Dropbox<std::string::String, TValue> for Globals {
-	fn store(&self, lua: &Lua, index: &std::string::String, value: TValue) {
-		unsafe {
-			value.push_to_lua(lua);
-			liblua::lua_setglobal(lua.lua, index.to_c_str().unwrap());
-		}
-	}
-}
-
-impl<TValue: Readable> Readbox<std::string::String, TValue> for Globals {
-	fn read(&self, lua: &Lua, index: &std::string::String) -> Option<TValue> {
+impl<TValue: Readable> Readbox<String, TValue> for Globals {
+	fn read(&self, lua: &Lua, index: &String) -> Option<TValue> {
 		unsafe {
 			liblua::lua_getglobal(lua.lua, index.to_c_str().unwrap());
 			let value = Readable::read_from_lua(lua, -1);
@@ -159,3 +151,16 @@ impl<TValue: Readable> Readbox<std::string::String, TValue> for Globals {
 		}
 	}
 }
+
+/*impl<'a, TIndex: Index, TValue: Pushable, TIndex2: Index, TPrev: Readbox<TIndex2, >> Dropbox<TIndex, TValue> for VariableLocation<'a, TIndex2, TPrev> {
+	fn store(&self, lua: &Lua, index: &TIndex, value: TValue) -> Result<(), &'static str> {
+		match self.prev.read(lua, self.index) {
+			Some(_) => (),
+			None => return Err("Could not load the table")
+		}
+		index.push_to_lua(lua);
+		value.push_to_lua(lua);
+		unsafe { liblua::lua_settable(lua.lua, -3); }
+		Ok(())
+	}
+}*/
