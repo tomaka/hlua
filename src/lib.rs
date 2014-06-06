@@ -100,6 +100,7 @@ pub struct Globals;
 /**
  * Error that can happen when executing Lua code
  */
+#[deriving(Show)]
 pub enum ExecutionError {
 	SyntaxError(String),
 	ExecError(String)
@@ -135,7 +136,7 @@ impl Lua {
 	/**
 	 * Executes some Lua code on the context
 	 */
-	pub fn execute<T: Readable>(&mut self, code: &String) -> Result<T, ExecutionError> {
+	pub fn execute<T: Readable>(&mut self, code: &str) -> Result<T, ExecutionError> {
 		unimplemented!()
 	}
 
