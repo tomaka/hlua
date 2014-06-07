@@ -2,6 +2,8 @@
 
 This library is a high-level binding for Lua. You don't have access to the Lua stack, all you can do is read and write variables.
 
+[![Build Status](https://travis-ci.org/Tomaka17/rust-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-lua)
+
 ### How to compile?
 
 Compile:
