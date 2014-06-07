@@ -109,10 +109,9 @@ impl Readable for String {
                 return None;
             }
 
-            // TODO: check this transmute, why is from_raw_parts taking a mut ptr?
-            let val = std::string::String::from_raw_parts(size as uint, size as uint, std::mem::transmute(cStr));
-
-            Some(val)
+            // I can't manage to make this compile properly, so we just transmute into a static slice
+            let slice = std::slice::raw::buf_as_slice(cStr as *u8, size as uint, |buf| { let b:&'static [u8] = std::mem::transmute(buf); b });
+            String::from_utf8(Vec::from_slice(slice)).ok()
         }
     }
 }
