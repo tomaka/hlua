@@ -194,7 +194,7 @@ impl Lua {
 
     fn callStackTop<T: Readable>(&mut self) -> Result<T, ExecutionError> {
         // calling pcall pops the parameters and pushes output
-        let pcallReturnValue = unsafe { liblua::lua_pcall(self.lua, 1, 1, 0) };     // TODO: 
+        let pcallReturnValue = unsafe { liblua::lua_pcall(self.lua, 0, 1, 0) };     // TODO: 
 
         // if pcall succeeded, returning
         if pcallReturnValue == 0 {
