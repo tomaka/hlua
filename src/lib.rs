@@ -128,6 +128,10 @@ extern "C" fn panic(lua: *mut liblua::lua_State) -> libc::c_int {
     0
 }
 
+extern {
+    pub fn luaL_loadstring(L: *mut liblua::lua_State, s: *libc::c_char) -> libc::c_int;
+}
+
 impl Lua {
     /**
      * Builds a new Lua context
@@ -149,7 +153,8 @@ impl Lua {
      * Executes some Lua code on the context
      */
     pub fn execute<T: Readable>(&mut self, code: &str) -> Result<T, ExecutionError> {
-        unimplemented!()
+        try!(self.load(code));
+        self.callStackTop()
     }
 
     pub fn access<'a, I: Index>(&'a mut self, index: I) -> VariableAccessor<'a, VariableLocation<I, Globals>> {
@@ -165,6 +170,52 @@ impl Lua {
 
     pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
         self.access(index).set(value)
+    }
+
+    fn load(&mut self, code: &str) -> Result<(), ExecutionError> {
+        let loadReturnValue = unsafe { luaL_loadstring(self.lua, code.to_c_str().unwrap()) };
+
+        if loadReturnValue == 0 {
+            return Ok(());
+        }
+
+        let errorMsg: String = Readable::read_from_lua(self, -1).unwrap();
+        unsafe { liblua::lua_pop(self.lua, 1) };
+
+        if loadReturnValue == liblua::LUA_ERRMEM {
+            fail!("LUA_ERRMEM");
+        }
+        if loadReturnValue == liblua::LUA_ERRSYNTAX {
+            return Err(SyntaxError(errorMsg));
+        }
+
+        fail!("Unknown error while calling lua_load");
+    }
+
+    fn callStackTop<T: Readable>(&mut self) -> Result<T, ExecutionError> {
+        // calling pcall pops the parameters and pushes output
+        let pcallReturnValue = unsafe { liblua::lua_pcall(self.lua, 1, 1, 0) };     // TODO: 
+
+        // if pcall succeeded, returning
+        if pcallReturnValue == 0 {
+            return match Readable::read_from_lua(self, -1) {
+                None => fail!("Wrong type"),       // TODO: add to executionerror
+                Some(x) => Ok(x)
+            };
+        }
+
+        // an error occured during execution
+        if pcallReturnValue == liblua::LUA_ERRMEM {
+            fail!("LUA_ERRMEM");
+        }
+
+        if pcallReturnValue == liblua::LUA_ERRRUN {
+            let errorMsg: String = Readable::read_from_lua(self, -1).unwrap();
+            unsafe { liblua::lua_pop(self.lua, 1) };
+            return Err(ExecError(errorMsg));
+        }
+
+        fail!("Unknown error code returned by lua_pcall")
     }
 }
 

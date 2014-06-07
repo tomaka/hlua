@@ -71,6 +71,14 @@ impl<Ret: Pushable> Pushable for fn()->Ret {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn execute() {
+        let mut lua = super::super::Lua::new();
+
+        let val: int = lua.execute("return 5").unwrap();
+        assert_eq!(val, 5);
+    }
+
+    /*#[test]
     fn simple_function() {
         let mut lua = super::super::Lua::new();
 
@@ -79,5 +87,5 @@ mod tests {
 
         let val: int = lua.execute("return ret5()").unwrap();
         assert_eq!(val, 5);
-    }
+    }*/
 }
