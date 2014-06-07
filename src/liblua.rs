@@ -10,9 +10,9 @@ use std::{ default, ptr };
 
 pub static MULTRET: c_int = -1;
 
-pub static LUA_REGISTRYINDEX: c_int = -10000;
-pub static LUA_ENVIRONINDEX: c_int = -10001;
-pub static LUA_GLOBALSINDEX: c_int = -10002;
+pub static LUAI_MAXSTACK: c_int = 1000000;  // or 15000 with 32b        // TODO: 
+pub static LUAI_FIRSTPSEUDOIDX: c_int = (-LUAI_MAXSTACK - 1000);
+pub static LUA_REGISTRYINDEX: c_int = LUAI_FIRSTPSEUDOIDX;
 
 pub static LUA_OK: c_int = 0;
 pub static LUA_YIELD: c_int = 1;
@@ -224,7 +224,7 @@ extern "C" {
 
 #[inline(always)]
 pub fn lua_upvalueindex(i: c_int) -> c_int {
-    LUA_GLOBALSINDEX - i
+    LUA_REGISTRYINDEX - i
 }
 
 #[inline(always)]
