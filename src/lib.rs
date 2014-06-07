@@ -11,6 +11,7 @@ extern crate std;
 mod liblua;
 mod functions;
 mod tables;
+mod userdata;
 mod values;
 
 /**
