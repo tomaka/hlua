@@ -148,6 +148,15 @@ impl Index for ~str {
 }
 
 impl Index for &'static str {
+    fn lua_set_global<T: Pushable>(&self, lua: &Lua, value: T) {
+        value.push_to_lua(lua);
+        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()); }
+    }
+
+    fn lua_get_global<T: Readable>(&self, lua: &Lua) -> Option<T> {
+        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()); }
+        Readable::read_from_lua(lua, -1)
+    }
 }
 
 /*impl GlobalsIndex for &'static str {

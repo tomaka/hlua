@@ -58,18 +58,22 @@ pub trait Readable {
  */
 pub trait Index: Pushable + Readable {
     fn lua_set_global<T: Pushable>(&self, lua: &Lua, value: T) {
-        unsafe { liblua::lua_pushglobaltable(lua.lua); }
+        unimplemented!();   // TODO: not working
+        /*unsafe { liblua::lua_pushglobaltable(lua.lua); }
         value.push_to_lua(lua);
         self.push_to_lua(lua);
         unsafe { liblua::lua_settable(lua.lua, -3); }
-        unsafe { liblua::lua_pop(lua.lua, 1); }
+        unsafe { liblua::lua_pop(lua.lua, 1); }*/
     }
 
     fn lua_get_global<T: Readable>(&self, lua: &Lua) -> Option<T> {
-        unsafe { liblua::lua_pushglobaltable(lua.lua); }
+        unimplemented!();   // TODO: not working
+        /*unsafe { liblua::lua_pushglobaltable(lua.lua); }
         self.push_to_lua(lua);
         unsafe { liblua::lua_gettable(lua.lua, -2); }
-        Readable::read_from_lua(lua, -1)
+        let val = Readable::read_from_lua(lua, -1);
+        unsafe { liblua::lua_pop(lua.lua, 1); }
+        val*/
     }
 }
 
