@@ -24,9 +24,9 @@ pub struct Lua {
 /**
  * Object which allows access to a Lua variable
  */
-pub struct VariableAccessor<'a, TVariableLocation> {
+pub struct LoadedVariable<'a> {
     lua: &'a mut Lua,
-    location: TVariableLocation
+    size: int       // number of elements at the top of the stack
 }
 
 /**
@@ -34,12 +34,6 @@ pub struct VariableAccessor<'a, TVariableLocation> {
  */
 pub trait Pushable {
     fn push_to_lua(&self, &Lua);
-}
-
-impl<'a, T:Pushable> Pushable for &'a T {
-    fn push_to_lua(&self, lua: &Lua) {
-        (*self).push_to_lua(lua)
-    }
 }
 
 /**
@@ -58,49 +52,26 @@ pub trait Readable {
  * Types that can be indices in Lua tables
  */
 pub trait Index: Pushable + Readable {
-    fn lua_set_global<T: Pushable>(&self, lua: &Lua, value: T) {
-        unimplemented!();   // TODO: not working
-        /*unsafe { liblua::lua_pushglobaltable(lua.lua); }
-        value.push_to_lua(lua);
-        self.push_to_lua(lua);
-        unsafe { liblua::lua_settable(lua.lua, -3); }
-        unsafe { liblua::lua_pop(lua.lua, 1); }*/
-    }
-
-    fn lua_get_global<T: Readable>(&self, lua: &Lua) -> Option<T> {
-        unimplemented!();   // TODO: not working
-        /*unsafe { liblua::lua_pushglobaltable(lua.lua); }
-        self.push_to_lua(lua);
-        unsafe { liblua::lua_gettable(lua.lua, -2); }
-        let val = Readable::read_from_lua(lua, -1);
-        unsafe { liblua::lua_pop(lua.lua, 1); }
-        val*/
-    }
 }
 
 /**
  * Object which can store variables
  */
-trait Dropbox<I: Index, V: Pushable> {
-    fn store(&self, &Lua, &I, V) -> Result<(), &'static str>;
-}
-
-/**
- * Object which you can read variables from
- */
-trait Readbox<I: Index, V: Readable> {
-    fn read(&self, &Lua, &I) -> Option<V>;
-}
-
-struct VariableLocation<I, Prev> {
-    index: I,
-    prev: Prev
+pub trait Table<I, LV> {
+    /// Loads the given index at the top of the stack
+    fn get<V: Readable>(&mut self, &I) -> Option<V>;
+    /// Stores the value in the table
+    fn set<V: Pushable>(&mut self, &I, V) -> Result<(), &'static str>;
+    ///
+    fn access(self, index: &I) -> LV;
 }
 
 /**
  * Represents the global variables
  */
-pub struct Globals;
+struct Globals<'a> {
+    lua: &'a mut Lua
+}
 
 /**
  * Error that can happen when executing Lua code
@@ -158,19 +129,19 @@ impl Lua {
         self.callStackTop()
     }
 
-    pub fn access<'a, I: Index>(&'a mut self, index: I) -> VariableAccessor<'a, VariableLocation<I, Globals>> {
-        VariableAccessor {
-            lua: self,
-            location: VariableLocation { index: index, prev: Globals }
-        }
+    pub fn access<'a, I: Str>(&'a mut self, index: I) -> LoadedVariable<'a> {
+        let g = Globals{lua: self};
+        g.access(&index)
     }
 
-    pub fn get<I: Index, V: Readable>(&mut self, index: I) -> Option<V> {
-        self.access(index).get()
+    pub fn get<I: Str, V: Readable>(&mut self, index: I) -> Option<V> {
+        let mut g = Globals{lua: self};
+        g.get(&index)
     }
 
-    pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
-        self.access(index).set(value)
+    pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
+        let mut g = Globals{lua: self};
+        g.set(&index, value)
     }
 
     fn load(&mut self, code: &str) -> Result<(), ExecutionError> {
@@ -220,42 +191,94 @@ impl Lua {
     }
 }
 
-impl<'a, I: Index, V: Pushable, DB: Dropbox<I, V>> VariableAccessor<'a, VariableLocation<I, DB>> {
-    pub fn set(&mut self, value: V) -> Result<(), &'static str> {
-        let loc = &self.location;
-        loc.prev.store(self.lua, &loc.index, value)
-    }
-}
-
-impl<'a, I: Index, V: Readable, RB: Readbox<I, V>> VariableAccessor<'a, VariableLocation<I, RB>> {
-    pub fn get(&self) -> Option<V> {
-        let loc = &self.location;
-        loc.prev.read(self.lua, &loc.index)
-    }
-}
-
-impl<I: Index, V: Pushable> Dropbox<I, V> for Globals {
-    fn store(&self, lua: &Lua, index: &I, value: V) -> Result<(), &'static str> {
-        index.lua_set_global(lua, value);
-        Ok(())
-    }
-}
-
-impl<I: Index, V: Readable> Readbox<I, V> for Globals {
-    fn read(&self, lua: &Lua, index: &I) -> Option<V> {
-        index.lua_get_global(lua)
-    }
-}
-
-/*impl<'a, TIndex: Index, TValue: Pushable, TIndex2: Index, TPrev: Readbox<TIndex2, >> Dropbox<TIndex, TValue> for VariableLocation<'a, TIndex2, TPrev> {
-    fn store(&self, lua: &Lua, index: &TIndex, value: TValue) -> Result<(), &'static str> {
-        match self.prev.read(lua, self.index) {
-            Some(_) => (),
-            None => return Err("Could not load the table")
-        }
-        index.push_to_lua(lua);
-        value.push_to_lua(lua);
-        unsafe { liblua::lua_settable(lua.lua, -3); }
-        Ok(())
+// TODO: this destructor crash the compiler
+// https://github.com/mozilla/rust/issues/13853
+// https://github.com/mozilla/rust/issues/14377
+/*impl<'a> Drop for LoadedVariable<'a> {
+    fn drop(&mut self) {
+        unsafe { liblua::lua_pop(self.lua.lua, self.size as i32) }
     }
 }*/
+
+impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
+    fn get<V: Readable>(&mut self, index: &I) -> Option<V> {
+        unsafe { liblua::lua_getglobal(self.lua.lua, index.as_slice().to_c_str().unwrap()); }
+        let val = Readable::read_from_lua(self.lua, -1);
+        unsafe { liblua::lua_pop(self.lua.lua, 1); }
+        val
+    }
+
+    fn set<V: Pushable>(&mut self, index: &I, value: V) -> Result<(), &'static str> {
+        value.push_to_lua(self.lua);
+        unsafe { liblua::lua_setglobal(self.lua.lua, index.as_slice().to_c_str().unwrap()); }
+        Ok(())
+    }
+
+    fn access(self, index: &I) -> LoadedVariable<'a> {
+        unsafe {
+            liblua::lua_getglobal(self.lua.lua, index.as_slice().to_c_str().unwrap());
+        }
+
+        // TODO: check if not null
+
+        LoadedVariable {
+            lua: self.lua,
+            size: 1
+        }
+    }
+}
+
+impl<'a, I: Index> Table<I, LoadedVariable<'a>> for LoadedVariable<'a> {
+    fn get<V: Readable>(&mut self, index: &I) -> Option<V> {
+        index.push_to_lua(self.lua);
+        unsafe { liblua::lua_gettable(self.lua.lua, -2); }
+        let val = Readable::read_from_lua(self.lua, -1);
+        unsafe { liblua::lua_pop(self.lua.lua, 1); }
+        val
+    }
+
+    fn set<V: Pushable>(&mut self, index: &I, value: V) -> Result<(), &'static str> {
+        value.push_to_lua(self.lua);
+        index.push_to_lua(self.lua);
+        unsafe { liblua::lua_settable(self.lua.lua, -3); }
+        unsafe { liblua::lua_pop(self.lua.lua, 1); }
+        Ok(())
+    }
+
+    fn access(self, index: &I) -> LoadedVariable<'a> {
+        index.push_to_lua(self.lua);
+        unsafe { liblua::lua_gettable(self.lua.lua, -2); }
+
+        LoadedVariable {
+            lua: self.lua,
+            size: self.size + 1
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn globals_readwrite() {
+        let mut lua = super::Lua::new();
+
+        lua.set("a", 2).unwrap();
+        let x: int = lua.get("a").unwrap();
+        assert_eq!(x, 2)
+    }
+
+    // TODO: doesn't compile, have absolutely NO IDEA why
+    /*#[test]
+    fn table_readwrite() {
+        let mut lua = super::Lua::new();
+
+        lua.execute("a = { foo = 5 }");
+
+        assert_eq!(lua.access("a").get(&"foo").unwrap(), 2);
+
+        {   let access = lua.access("a");
+            access.set(5, 3);
+            assert_eq!(access.get(5), 3);
+        }
+    }*/
+}

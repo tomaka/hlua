@@ -131,6 +131,10 @@ impl Pushable for &'static str {
     }
 }
 
+impl Index for &'static str {
+
+}
+
 impl Readable for ~str {
     fn read_from_lua(lua: &Lua, index: i32) -> Option<~str> {
         unimplemented!()
@@ -146,46 +150,14 @@ impl Readable for &'static str {
 impl Index for ~str {
 }
 
-impl Index for &'static str {
-    fn lua_set_global<T: Pushable>(&self, lua: &Lua, value: T) {
-        value.push_to_lua(lua);
-        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()); }
-    }
-
-    fn lua_get_global<T: Readable>(&self, lua: &Lua) -> Option<T> {
-        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()); }
-        Readable::read_from_lua(lua, -1)
-    }
-}
-
-/*impl GlobalsIndex for &'static str {
-    fn lua_set_global(&self, lua: &Lua) {
-        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()) }
-    }
-
-    fn lua_get_global(&self, lua: &Lua) {
-        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()) }
-    }
-}
-
-impl GlobalsIndex for ~str {
-    fn lua_set_global(&self, lua: &Lua) {
-        unsafe { liblua::lua_setglobal(lua.lua, self.to_c_str().unwrap()) }
-    }
-
-    fn lua_get_global(&self, lua: &Lua) {
-        unsafe { liblua::lua_getglobal(lua.lua, self.to_c_str().unwrap()) }
-    }
-}*/
-
 #[cfg(test)]
 mod tests {
     #[test]
     fn readwrite_ints() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2);
+        lua.set("a", 2).unwrap();
         let x: int = lua.get("a").unwrap();
-        assert_eq!(x, 2)
+        assert_eq!(x, 2);
     }
 }

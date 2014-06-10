@@ -4,6 +4,8 @@ This library is a high-level binding for Lua. You don't have access to the Lua s
 
 [![Build Status](https://travis-ci.org/Tomaka17/rust-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-lua)
 
+*Important*: the library is broken for the moment because of a bug in the rust compiler (see https://github.com/mozilla/rust/issues/13853 and https://github.com/mozilla/rust/issues/14377)
+
 ### How to compile?
 
 Compile:
