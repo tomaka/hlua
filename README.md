@@ -49,3 +49,9 @@ The `execute` function returns a `Result<Readable, ExecutionError>`.
     lua.get("c").unwrap();  // return 6
     
 In Lua, functions are exactly like regular variables.
+
+#### Others features
+
+Other features include: reading/writing from a table, reading a function and calling it later, writing closures, etc. They will only be implemented when the Rust compiler fixes some bugs.
+
+Note for any Rust contributor that reads this: implementing associated items (https://github.com/mozilla/rust/issues/5033) will **immensely** easen my work. I can't stress this enough: whithout these, writing this library is difficult and annoying, but with associated items it would become a piece of cake.
