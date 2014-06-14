@@ -119,35 +119,12 @@ impl Readable for String {
 impl Index for String {
 }
 
-impl Pushable for ~str {
+impl<'a> Pushable for &'a str {
     fn push_to_lua(&self, lua: &Lua) {
-        String::from_str(*self).push_to_lua(lua)
+        unsafe {
+            liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap())
+        }
     }
-}
-
-impl Pushable for &'static str {
-    fn push_to_lua(&self, lua: &Lua) {
-        String::from_str(*self).push_to_lua(lua)
-    }
-}
-
-impl Index for &'static str {
-
-}
-
-impl Readable for ~str {
-    fn read_from_lua(lua: &Lua, index: i32) -> Option<~str> {
-        unimplemented!()
-    }
-}
-
-impl Readable for &'static str {
-    fn read_from_lua(lua: &Lua, index: i32) -> Option<&'static str> {
-        unimplemented!()
-    }
-}
-
-impl Index for ~str {
 }
 
 #[cfg(test)]
