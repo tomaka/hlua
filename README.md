@@ -1,11 +1,11 @@
 ## rust-hl-lua
 
-This library is a high-level binding for Lua 5.2. You don't have access to the Lua stack, all you can do is read and write variables.
+This library is a high-level binding for Lua 5.2. You don't have access to the Lua stack, all you can do is read/write variables (including callbacks) and execute Lua code.
 
 [![Build Status](https://travis-ci.org/Tomaka17/rust-hl-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-hl-lua)
 
 *Important*: the library is a bit broken for the moment because of a bug in the rust compiler (see https://github.com/mozilla/rust/issues/13853 and https://github.com/mozilla/rust/issues/14889).
-The library should be working but things pushed on the Lua stack are not popped. I don't really know whether this is simply a memory leak or if it can cause crashed.
+The library should be working but things pushed on the Lua stack are not popped. I don't really know whether this is simply a memory leak or if it can cause crashes.
 
 ### How to install it?
 
@@ -65,7 +65,7 @@ In Lua, functions are exactly like regular variables.
  - [ ] Iterating through Lua tables
  - [ ] Reading or loading a function and calling it later
  - [ ] Support for static closures
- - [ ] Access to the metatables of objects
+ - [ ] Access to the metatables of tables and user data
+ - [ ] Writing functions with parameters
  - [ ] Access to the registry
  - [ ] Better user data
- - [ ] Possibility to writes closures (waiting for static closures to do this)
