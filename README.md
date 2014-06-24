@@ -66,3 +66,4 @@ In Lua, functions are exactly like regular variables.
  - [ ] Support for static closures
  - [ ] Access to the metatables of objects
  - [ ] Access to the registry
+ - [ ] Better user data

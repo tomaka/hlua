@@ -12,7 +12,7 @@ pub mod functions_read;
 mod functions_write;
 mod liblua;
 mod tables;
-mod userdata;
+pub mod userdata;
 mod values;
 
 /**
@@ -82,6 +82,13 @@ pub enum ExecutionError {
     SyntaxError(String),
     ExecError(String)
 }
+
+/**
+ * 
+ */
+pub type UserData<T> = userdata::UserData<T>;
+
+
 
 // this alloc function is required to create a lua state
 extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void {

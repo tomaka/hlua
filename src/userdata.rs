@@ -16,6 +16,22 @@ impl<T:Clone> UserData<T> {
     }
 }
 
+impl<T> Deref<T> for UserData<T> {
+    fn deref<'a>(&'a self)
+        -> &'a T
+    {
+        &self.value
+    }
+}
+
+impl<T> DerefMut<T> for UserData<T> {
+    fn deref_mut<'a>(&'a mut self)
+        -> &'a mut T
+    {
+        &mut self.value
+    }
+}
+
 // TODO: handle destructors
 
 impl<T:Clone> Pushable for UserData<T> {
