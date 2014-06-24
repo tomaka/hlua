@@ -8,7 +8,7 @@ use super::Pushable;
 use super::Readable;
 
 impl<T:Pushable> Pushable for Vec<T> {
-    fn push_to_lua(&self, lua: &Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) {
         unimplemented!()
     }
 }

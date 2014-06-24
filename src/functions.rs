@@ -28,7 +28,7 @@ extern fn wrapper1(lua: *mut liblua::lua_State) -> libc::c_int {
 
 fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: fn()->Ret) -> libc::c_int {
     let ret = p();
-    ret.push_to_lua(&Lua{lua:lua});
+    ret.push_to_lua(&mut Lua{lua:lua});
     1
 }
 
@@ -53,7 +53,7 @@ fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::
 }*/
 
 impl<Ret: Pushable> Pushable for fn()->Ret {
-    fn push_to_lua(&self, lua: &Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) {
         unsafe {
             // pushing the function pointer as a lightuserdata
             liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(*self));

@@ -19,7 +19,7 @@ impl<T:Clone> UserData<T> {
 // TODO: handle destructors
 
 impl<T:Clone> Pushable for UserData<T> {
-    fn push_to_lua(&self, lua: &Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) {
         let dataRaw = unsafe { liblua::lua_newuserdata(lua.lua, std::mem::size_of_val(&self.value) as libc::size_t) };
         let data: &mut T = unsafe { std::mem::transmute(dataRaw) };
         (*data) = self.value.clone();
@@ -27,7 +27,7 @@ impl<T:Clone> Pushable for UserData<T> {
 }
 
 impl<T:Clone> Readable for UserData<T> {
-    fn read_from_lua(lua: &Lua, index: i32) -> Option<UserData<T>> {
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<UserData<T>> {
         // TODO: check type
         let dataPtr = unsafe { liblua::lua_touserdata(lua.lua, index) };
         let data: &T = unsafe { std::mem::transmute(dataPtr) };

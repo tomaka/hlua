@@ -33,7 +33,7 @@ pub struct LoadedVariable<'a> {
  * Should be implemented by whatever type is pushable on the Lua stack
  */
 pub trait Pushable {
-    fn push_to_lua(&self, &Lua);
+    fn push_to_lua(&self, &mut Lua);
 }
 
 /**
@@ -45,7 +45,7 @@ pub trait Readable {
      *  * `lua` - The Lua object to read from
      *  * `index` - The index on the stack to read from
      */
-    fn read_from_lua(lua: &Lua, index: i32) -> Option<Self>;
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<Self>;
 }
 
 /**
