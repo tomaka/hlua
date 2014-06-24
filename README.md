@@ -1,20 +1,22 @@
-## rust-lua
+## rust-hl-lua
 
-This library is a high-level binding for Lua. You don't have access to the Lua stack, all you can do is read and write variables.
+This library is a high-level binding for Lua 5.2. You don't have access to the Lua stack, all you can do is read and write variables.
 
-[![Build Status](https://travis-ci.org/Tomaka17/rust-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-lua)
+[![Build Status](https://travis-ci.org/Tomaka17/rust-hl-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-hl-lua)
 
 *Important*: the library is broken for the moment because of a bug in the rust compiler (see https://github.com/mozilla/rust/issues/13853 and https://github.com/mozilla/rust/issues/14377)
 
-### How to compile?
+### How to install it?
 
-Compile:
+Add this to the `Cargo.toml` file of your project
 
-    rustc src/lib.rs
-
-Build docs:
+    [dependencies.rust-hl-lua]
     
-    rustdoc src/lib.rs
+    git = "https://github.com/Tomaka17/rust-hl-lua"
+
+If you don't use cargo yet, just compile with `rustc src/lib.rs`.
+
+In the future, this library will directly include the lua library.
 
 ### How to use it?
 
