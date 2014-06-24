@@ -134,6 +134,21 @@ impl Readable for bool {
 impl Index for bool {
 }
 
+impl Pushable for () {
+    fn push_to_lua(&self, lua: &mut Lua) {
+        unsafe { liblua::lua_pushnil(lua.lua) }
+    }
+}
+
+impl Readable for () {
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<()> {
+        match unsafe { liblua::lua_isnil(lua.lua, index) } {
+            true => Some(()),
+            _ => None
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
