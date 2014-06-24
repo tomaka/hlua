@@ -8,8 +8,8 @@
 extern crate libc;
 extern crate std;
 
+mod functions_write;
 mod liblua;
-mod functions;
 mod tables;
 mod userdata;
 mod values;

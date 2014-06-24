@@ -5,7 +5,6 @@ extern crate sync;
 use super::liblua;
 use super::Lua;
 use super::Pushable;
-use super::Readable;
 
 extern fn wrapper1(lua: *mut liblua::lua_State) -> libc::c_int {
     unsafe {
@@ -74,7 +73,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
 
         fn ret5() -> int { 5 };
-        lua.set("ret5", ret5);
+        lua.set("ret5", ret5).unwrap();
 
         let val: int = lua.execute("return ret5()").unwrap();
         assert_eq!(val, 5);
