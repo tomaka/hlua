@@ -82,7 +82,7 @@ pub enum ExecutionError {
     ExecError(String)
 }
 
-
+// this alloc function is required to create a lua state
 extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void {
     unsafe {
         if nsize == 0 {
@@ -94,12 +94,13 @@ extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc
     }
 }
 
+// called whenever lua encounters an unexpected error
 extern "C" fn panic(lua: *mut liblua::lua_State) -> libc::c_int {
     let err = unsafe { liblua::lua_tostring(lua, -1) };
-    println!("PANIC: unprotected error in call to Lua API ({})\n", err);
-    0
+    fail!("PANIC: unprotected error in call to Lua API ({})\n", err);
 }
 
+// TODO: don't put this here
 extern {
     pub fn luaL_loadstring(L: *mut liblua::lua_State, s: *libc::c_char) -> libc::c_int;
 }
@@ -126,7 +127,7 @@ impl Lua {
      */
     pub fn execute<T: Readable>(&mut self, code: &str) -> Result<T, ExecutionError> {
         try!(self.load(code));
-        self.callStackTop()
+        self.call_stack_top()
     }
 
     pub fn access<'a, I: Str>(&'a mut self, index: I) -> LoadedVariable<'a> {
@@ -134,15 +135,22 @@ impl Lua {
         g.access(&index)
     }
 
+    /**
+     * Reads the value of a global variable
+     */
     pub fn get<I: Str, V: Readable>(&mut self, index: I) -> Option<V> {
         let mut g = Globals{lua: self};
         g.get(&index)
     }
 
+    /**
+     * Modifies the value of a global variable
+     */
     pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
         let mut g = Globals{lua: self};
         g.set(&index, value)
     }
+
 
     fn load(&mut self, code: &str) -> Result<(), ExecutionError> {
         let loadReturnValue = unsafe { luaL_loadstring(self.lua, code.to_c_str().unwrap()) };
@@ -164,7 +172,7 @@ impl Lua {
         fail!("Unknown error while calling lua_load");
     }
 
-    fn callStackTop<T: Readable>(&mut self) -> Result<T, ExecutionError> {
+    fn call_stack_top<T: Readable>(&mut self) -> Result<T, ExecutionError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { liblua::lua_pcall(self.lua, 0, 1, 0) };     // TODO: 
 
