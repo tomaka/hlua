@@ -50,6 +50,6 @@ The `execute` function returns a `Result<Readable, ExecutionError>`.
     
 In Lua, functions are exactly like regular variables.
 
-#### Others features
+#### Others features to come
 
-Other features include: reading/writing from a table, reading a function and calling it later, writing closures, etc. They will only be implemented when the Rust compiler fixes some bugs.
+Other features (not yet implemented) include: reading/writing from a table, reading a function and calling it later, writing closures, etc.
