@@ -16,13 +16,11 @@ macro_rules! integer_impl(
         }
         impl Readable for $t {
             fn read_from_lua(lua: &Lua, index: i32) -> Option<$t> {
-                unsafe {
-                    let success: libc::c_int = std::mem::uninitialized();
-                    let val = liblua::lua_tointegerx(lua.lua, index, std::mem::transmute(&success));
-                    match success {
-                        0 => None,
-                        _ => Some(val as $t)
-                    }
+                let success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tointegerx(lua.lua, index, &success) };
+                match success {
+                    0 => None,
+                    _ => Some(val as $t)
                 }
             }
         }
@@ -46,13 +44,11 @@ macro_rules! unsigned_impl(
         }
         impl Readable for $t {
             fn read_from_lua(lua: &Lua, index: i32) -> Option<$t> {
-                unsafe {
-                    let success: libc::c_int = std::mem::uninitialized();
-                    let val = liblua::lua_tounsignedx(lua.lua, index, std::mem::transmute(&success));
-                    match success {
-                        0 => None,
-                        _ => Some(val as $t)
-                    }
+                let success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tounsignedx(lua.lua, index, &success) };
+                match success {
+                    0 => None,
+                    _ => Some(val as $t)
                 }
             }
         }
@@ -76,13 +72,11 @@ macro_rules! numeric_impl(
         }
         impl Readable for $t {
             fn read_from_lua(lua: &Lua, index: i32) -> Option<$t> {
-                unsafe {
-                    let success: libc::c_int = std::mem::uninitialized();
-                    let val = liblua::lua_tonumberx(lua.lua, index, std::mem::transmute(&success));
-                    match success {
-                        0 => None,
-                        _ => Some(val as $t)
-                    }
+                let success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tonumberx(lua.lua, index, &success) };
+                match success {
+                    0 => None,
+                    _ => Some(val as $t)
                 }
             }
         }
@@ -102,17 +96,13 @@ impl Pushable for std::string::String {
 
 impl Readable for String {
     fn read_from_lua(lua: &Lua, index: i32) -> Option<std::string::String> {
-        unsafe {
-            let size: libc::size_t = std::mem::uninitialized();
-            let cStr = liblua::lua_tolstring(lua.lua, index, std::mem::transmute(&size));
-            if cStr.is_null() {
-                return None;
-            }
-
-            // I can't manage to make this compile properly, so we just transmute into a static slice
-            let slice = std::slice::raw::buf_as_slice(cStr as *u8, size as uint, |buf| { let b:&'static [u8] = std::mem::transmute(buf); b });
-            String::from_utf8(Vec::from_slice(slice)).ok()
+        let mut size: libc::size_t = unsafe { std::mem::uninitialized() };
+        let cStrRaw = unsafe { liblua::lua_tolstring(lua.lua, index, &mut size) };
+        if cStrRaw.is_null() {
+            return None;
         }
+
+        unsafe { std::c_str::CString::new(cStrRaw, false) }.as_str().map(|s| s.to_string())
     }
 }
 
@@ -121,9 +111,7 @@ impl Index for String {
 
 impl<'a> Pushable for &'a str {
     fn push_to_lua(&self, lua: &Lua) {
-        unsafe {
-            liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap())
-        }
+        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
     }
 }
 
