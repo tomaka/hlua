@@ -1,0 +1,10 @@
+[package]
+
+name = "rust-lua"
+version = "0.1.0"
+authors = [ "pierre.krieger1708@gmail.com" ]
+
+[[lib]]
+
+name = "hello-world"
+path = "src/lib.rs"
