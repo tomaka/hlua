@@ -27,7 +27,9 @@ fn wrapper2closure<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: l
 
 fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: fn()->Ret) -> libc::c_int {
     let ret = p();
-    ret.push_to_lua(&mut Lua{lua:lua});
+    let mut tmpLua = Lua{lua:lua};
+    ret.push_to_lua(&mut tmpLua);
+    unsafe { std::mem::forget(tmpLua) };   // do not call lua_close on this temporary context
     1
 }
 

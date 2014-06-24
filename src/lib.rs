@@ -155,6 +155,12 @@ impl Lua {
     }
 }
 
+impl Drop for Lua {
+    fn drop(&mut self) {
+        unsafe { liblua::lua_close(self.lua) }
+    }
+}
+
 // TODO: this destructor crash the compiler
 // https://github.com/mozilla/rust/issues/13853
 // https://github.com/mozilla/rust/issues/14377
