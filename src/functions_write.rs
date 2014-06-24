@@ -18,11 +18,12 @@ extern fn wrapper1(lua: *mut liblua::lua_State) -> libc::c_int {
     }
 }
 
-/*fn wrapper2proc<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: &proc()->Ret) -> libc::c_int {
-    let ret = p();
-    ret.push_to_lua(Lua{lua:lua});
-    1
-}*/
+fn wrapper2closure<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: &||->Ret) -> libc::c_int {
+    unimplemented!()
+    /*let ret = p();
+    ret.push_to_lua(&mut Lua{lua:lua});
+    1*/
+}
 
 fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: fn()->Ret) -> libc::c_int {
     let ret = p();
@@ -30,39 +31,35 @@ fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::
     1
 }
 
-/*impl<Ret: Pushable> Pushable for proc()->Ret {
-    fn push_to_lua(&self, lua: &Lua) {
-        unsafe {
-            // pushing the std::raw::Procedure as a userdata
-            let rawProc: &std::raw::Procedure = std::mem::transmute(self);
-            let mut userDataPtr = liblua::lua_newuserdata(lua.lua, std::mem::size_of_val(rawProc) as libc::size_t);
-            let userData: &mut std::raw::Procedure = std::mem::transmute(userDataPtr);
-            userData.code = rawProc.code;
-            userData.env = rawProc.env;
+impl<Ret: Pushable> Pushable for ||:'static->Ret {
+    fn push_to_lua(&self, lua: &mut Lua) {
+        // pushing the std::raw::Closure as a userdata
+        let rawClosure: &std::raw::Closure = unsafe { std::mem::transmute(self) };
+        let mut userDataPtr = unsafe { liblua::lua_newuserdata(lua.lua, std::mem::size_of_val(rawClosure) as libc::size_t) };
+        let userData: &mut std::raw::Closure = unsafe { std::mem::transmute(userDataPtr) };
+        userData.code = rawClosure.code;
+        userData.env = rawClosure.env;
 
-            // pushing wrapper2 as a lightuserdata
-            let wrapper2: &fn(*mut liblua::lua_State, libc::c_int, &proc()->Ret)->libc::c_int = &wrapper2proc;
-            liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(wrapper2));
+        // pushing wrapper2 as a lightuserdata
+        let wrapper2: &fn(*mut liblua::lua_State, libc::c_int, &||->Ret)->libc::c_int = &wrapper2closure;
+        unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(wrapper2)) };
 
-            // pushing wrapper1 as a closure
-            liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2);
-        }
+        // pushing wrapper1 as a closure
+        unsafe { liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2) };
     }
-}*/
+}
 
 impl<Ret: Pushable> Pushable for fn()->Ret {
     fn push_to_lua(&self, lua: &mut Lua) {
-        unsafe {
-            // pushing the function pointer as a lightuserdata
-            liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(*self));
+        // pushing the function pointer as a lightuserdata
+        unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(*self)) };
 
-            // pushing wrapper2 as a lightuserdata
-            let wrapper2: fn(*mut liblua::lua_State, libc::c_int, fn()->Ret)->libc::c_int = wrapper2fn;
-            liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(wrapper2));
+        // pushing wrapper2 as a lightuserdata
+        let wrapper2: fn(*mut liblua::lua_State, libc::c_int, fn()->Ret)->libc::c_int = wrapper2fn;
+        unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(wrapper2)) };
 
-            // pushing wrapper1 as a closure
-            liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2);
-        }
+        // pushing wrapper1 as a closure
+        unsafe { liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2) };
     }
 }
 
