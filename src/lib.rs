@@ -275,6 +275,14 @@ mod tests {
         assert_eq!(x, 2)
     }
 
+    #[test]
+    fn execute() {
+        let mut lua = super::Lua::new();
+
+        let val: int = lua.execute("return 5").unwrap();
+        assert_eq!(val, 5);
+    }
+
     // TODO: doesn't compile, have absolutely NO IDEA why
     /*#[test]
     fn table_readwrite() {
