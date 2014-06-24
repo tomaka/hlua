@@ -42,7 +42,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
         let d = super::UserData::new(2);
 
-        lua.set("a", d);
+        lua.set("a", d).unwrap();
         let x: super::UserData<int> = lua.get("a").unwrap();
         assert_eq!(x.value, 2)
     }
