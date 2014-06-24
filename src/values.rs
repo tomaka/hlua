@@ -115,6 +115,25 @@ impl<'a> Pushable for &'a str {
     }
 }
 
+impl Pushable for bool {
+    fn push_to_lua(&self, lua: &mut Lua) {
+        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as libc::c_int) }
+    }
+}
+
+impl Readable for bool {
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<bool> {
+        if unsafe { liblua::lua_isboolean(lua.lua, index) } != true {
+            return None;
+        }
+
+        Some(unsafe { liblua::lua_toboolean(lua.lua, index) != 0 })
+    }
+}
+
+impl Index for bool {
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
