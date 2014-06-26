@@ -50,8 +50,6 @@ The `execute` function returns a `Result<Readable, ExecutionError>`.
 
 #### Writing functions
 
-*(note: functions with parameters are not yet supported)*
-
     fn add(a: int, b: int) -> int {
         a + b
     }
@@ -103,7 +101,7 @@ You can't store the function for the moment, but this will be possible in the fu
  - [ ] Reading/writing containers
  - [ ] Writing functions
    - [x] Basic support
-   - [ ] Functions with parameters
+   - [x] Functions with parameters
    - [ ] Static closures
  - [ ] Reading or loading a function and calling it later
  - [ ] Access to the metatables of tables and user data

@@ -16,6 +16,7 @@ mod functions_write;
 mod liblua;
 pub mod lua_tables;
 mod tables;
+mod tuples;
 pub mod userdata;
 mod values;
 

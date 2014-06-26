@@ -26,7 +26,7 @@ impl<'lua> LuaTable<'lua> {
     pub fn iter<'me>(&'me mut self)
         -> LuaTableIterator<'lua, 'me>
     {
-        ().push_to_lua(self.variable.lua);
+        unsafe { liblua::lua_pushnil(self.variable.lua.lua) };
         LuaTableIterator { table: self }
     }
 

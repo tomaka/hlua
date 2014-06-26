@@ -186,26 +186,19 @@ impl Index for bool {
 
 impl Pushable for () {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        unsafe { liblua::lua_pushnil(lua.lua) };
-        1
+        0
     }
 }
 
 impl CopyReadable for () {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<()> {
-        match unsafe { liblua::lua_isnil(lua.lua, index) } {
-            true => Some(()),
-            _ => None
-        }
+        Some(())
     }
 }
 
 impl<'a> ConsumeReadable<'a> for () {
     fn read_from_variable(var: LoadedVariable<'a>) -> Result<(), LoadedVariable<'a>> {
-        match CopyReadable::read_from_lua(var.lua, -1) {
-            None => Err(var),
-            Some(a) => Ok(a)
-        }
+        Ok(())
     }
 }
 
