@@ -74,9 +74,29 @@ mod tests {
         let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
 
         let mut table: LuaTable = lua.get("a").unwrap();
+        let mut counter = 0u;
 
-        let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
+        for (key, value) in table.iter().filter_map(|e| e) {
+            let k: uint = key;
+            let v: uint = value;
+            assert_eq!(key + value, 10);
+            counter += 1;
+        }
 
-        assert_eq!(tableContent, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
+        assert_eq!(counter, 3);
+    }
+
+    #[test]
+    fn iterable_multipletimes() {
+        let mut lua = Lua::new();
+
+        let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
+
+        let mut table: LuaTable = lua.get("a").unwrap();
+
+        for _ in range(0u, 10) {
+            let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
+            assert_eq!(tableContent, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
+        }
     }
 }
