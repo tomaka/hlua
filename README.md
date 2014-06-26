@@ -27,6 +27,8 @@ The `Lua` struct is the main element of this library. It represents a context in
 
     let mut lua = Lua::new();     // mutable is mandatory
 
+[You can check the documentation here](http://rust-ci.org/Tomaka17/rust-hl-lua/doc/rust-hl-lua/).
+
 #### Reading and writing variables
 
     lua.set("x", 2);
@@ -66,13 +68,10 @@ Manipulating a Lua table can be done by reading a `LuaTable` object.
 
     let mut table: rust-hl-lua::LuaTable = lua.get("a").unwrap();
 
-You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<()>`.
+You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<(Key, Value)>`, the `Option` being empty when either the key or the value is not convertible to the requested type. The `filter_map` function (provided by the standard `Iterator` trait) is very useful when dealing with this.
 
-    for elem in table.iter() {
-        match elem {
-            &Some(key, value) => ...,
-            &None => fail!("Could not read key or value because they are of the wrong type")
-        }
+    for (key, value) in table.iter().filter_map(|e| e) {
+        ...
     }
 
 You can also retreive individual values: *(note: this is not yet supported)*
