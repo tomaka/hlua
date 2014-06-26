@@ -79,6 +79,21 @@ You can also retreive and modify individual indices:
     let x = table.get("a").unwrap();
     table.set("b", "hello");
 
+#### Calling Lua functions
+
+You can call Lua functions by reading a `functions_read::LuaFunction`.
+
+    lua.execute("
+        get_five = function() { return 5; };
+    ")
+
+    let get_five: functions_read::LuaFunction = lua.get("get_five");
+    let value: int = get_five().unwrap();
+    assert_eq!(value, 5);
+
+This object holds a mutable reference of `Lua`, so you can't read or modify the lua object while the `get_five` variable exists.
+You can't store the function for the moment, but this will be possible in the future.
+
 ### Roadmap
 
  - [ ] Reading/writing inside Lua tables
