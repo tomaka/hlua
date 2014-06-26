@@ -74,15 +74,17 @@ You can then iterate through the table with the `.iter()` function. Note that th
         ...
     }
 
-You can also retreive individual values: *(note: this is not yet supported)*
+You can also retreive and modify individual indices:
 
     let x = table.get("a").unwrap();
+    table.set("b", "hello");
 
 ### Roadmap
 
  - [ ] Reading/writing inside Lua tables
    - [x] Iterating through tables
-   - [ ] Reading elements
+   - [x] Reading elements by value
+   - [ ] Reading functions and sub-tables
  - [ ] Reading/writing containers
  - [ ] Writing functions
    - [x] Basic support

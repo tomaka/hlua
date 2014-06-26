@@ -1,18 +1,18 @@
-use { CopyReadable, ConsumeReadable, LoadedVariable, Pushable };
+use { CopyReadable, ConsumeReadable, LoadedVariable, Pushable, Index };
 use liblua;
 
-pub struct LuaTable<'a> {
-    variable: LoadedVariable<'a>
+pub struct LuaTable<'lua> {
+    variable: LoadedVariable<'lua>
 }
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
-pub struct LuaTableIterator<'a, 'b> {
-    table: &'b mut LuaTable<'a>
+pub struct LuaTableIterator<'lua, 'table> {
+    table: &'table mut LuaTable<'lua>
 }
 
-impl<'a> ConsumeReadable<'a> for LuaTable<'a> {
-    fn read_from_variable(var: LoadedVariable<'a>)
-        -> Result<LuaTable<'a>, LoadedVariable<'a>>
+impl<'lua> ConsumeReadable<'lua> for LuaTable<'lua> {
+    fn read_from_variable(var: LoadedVariable<'lua>)
+        -> Result<LuaTable<'lua>, LoadedVariable<'lua>>
     {
         if unsafe { liblua::lua_istable(var.lua.lua, -1) } {
             Ok(LuaTable{ variable: var })
@@ -22,12 +22,26 @@ impl<'a> ConsumeReadable<'a> for LuaTable<'a> {
     }
 }
 
-impl<'a> LuaTable<'a> {
-    pub fn iter<'b>(&'b mut self)
-        -> LuaTableIterator<'a, 'b>
+impl<'lua> LuaTable<'lua> {
+    pub fn iter<'me>(&'me mut self)
+        -> LuaTableIterator<'lua, 'me>
     {
         ().push_to_lua(self.variable.lua);
         LuaTableIterator { table: self }
+    }
+
+    pub fn get<R: CopyReadable, I: Index>(&mut self, index: I) -> Option<R> {
+        index.push_to_lua(self.variable.lua);
+        unsafe { liblua::lua_gettable(self.variable.lua.lua, -2); }
+        let value = CopyReadable::read_from_lua(self.variable.lua, -1);
+        unsafe { liblua::lua_pop(self.variable.lua.lua, 1); }
+        value
+    }
+
+    pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) {
+        index.push_to_lua(self.variable.lua);
+        value.push_to_lua(self.variable.lua);
+        unsafe { liblua::lua_settable(self.variable.lua.lua, -3); }
     }
 }
 
@@ -71,7 +85,7 @@ mod tests {
     fn iterable() {
         let mut lua = Lua::new();
 
-        let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
+        let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
         let mut table: LuaTable = lua.get("a").unwrap();
         let mut counter = 0u;
@@ -90,7 +104,7 @@ mod tests {
     fn iterable_multipletimes() {
         let mut lua = Lua::new();
 
-        let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
+        let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
         let mut table: LuaTable = lua.get("a").unwrap();
 
@@ -98,5 +112,23 @@ mod tests {
             let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
             assert_eq!(tableContent, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
         }
+    }
+
+    #[test]
+    fn get_set() {
+        let mut lua = Lua::new();
+
+        let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+        let mut table: LuaTable = lua.get("a").unwrap();
+
+        let x: int = table.get(2i).unwrap();
+        assert_eq!(x, 8);
+
+        table.set(3i, "hello");
+        let y: String = table.get(3i).unwrap();
+        assert_eq!(y.as_slice(), "hello");
+
+        let z: int = table.get(1i).unwrap();
+        assert_eq!(z, 9);
     }
 }
