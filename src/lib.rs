@@ -161,10 +161,9 @@ impl Lua {
     /**
      * Modifies the value of a global variable
      */
-    pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
+    pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
         unsafe { liblua::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
-        Ok(())
     }
 }
 
@@ -198,7 +197,7 @@ mod tests {
     fn globals_readwrite() {
         let mut lua = super::Lua::new();
 
-        lua.set("a", 2i).unwrap();
+        lua.set("a", 2i);
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2)
     }

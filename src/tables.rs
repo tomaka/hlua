@@ -32,7 +32,7 @@ mod tests {
     fn write() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", vec!(9i, 8, 7)).unwrap();
+        lua.set("a", vec!(9i, 8, 7));
 
         // TODO: test if it worked once reading tables is supported
     }

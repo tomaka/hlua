@@ -208,7 +208,7 @@ mod tests {
     fn read_ints() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2i).unwrap();
+        lua.set("a", 2i);
 
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2);
@@ -241,7 +241,7 @@ mod tests {
 
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2i).unwrap();
+        lua.set("a", 2i);
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2);
     }
@@ -250,8 +250,8 @@ mod tests {
     fn readwrite_floats() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2.51234 as f32).unwrap();
-        lua.set("b", 3.4123456789 as f64).unwrap();
+        lua.set("a", 2.51234 as f32);
+        lua.set("b", 3.4123456789 as f64);
 
         let x: f32 = lua.get("a").unwrap();
         assert!(x - 2.51234 < 0.000001);
@@ -270,8 +270,8 @@ mod tests {
     fn readwrite_bools() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", true).unwrap();
-        lua.set("b", false).unwrap();
+        lua.set("a", true);
+        lua.set("b", false);
 
         let x: bool = lua.get("a").unwrap();
         assert_eq!(x, true);
@@ -284,8 +284,8 @@ mod tests {
     fn readwrite_strings() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", "hello").unwrap();
-        lua.set("b", "hello".to_string()).unwrap();
+        lua.set("a", "hello");
+        lua.set("b", "hello".to_string());
 
         let x: String = lua.get("a").unwrap();
         assert_eq!(x.as_slice(), "hello");
@@ -298,7 +298,7 @@ mod tests {
     fn int_to_string() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2i).unwrap();
+        lua.set("a", 2i);
 
         let x: String = lua.get("a").unwrap();
         assert_eq!(x.as_slice(), "2");
@@ -308,8 +308,8 @@ mod tests {
     fn string_to_int() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", "2").unwrap();
-        lua.set("b", "aaa").unwrap();
+        lua.set("a", "2");
+        lua.set("b", "aaa");
 
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2);

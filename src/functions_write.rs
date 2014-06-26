@@ -98,7 +98,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
 
         fn ret5() -> int { 5 };
-        lua.set("ret5", ret5).unwrap();
+        lua.set("ret5", ret5);
 
         let val: int = lua.execute("return ret5()").unwrap();
         assert_eq!(val, 5);
@@ -109,7 +109,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
 
         fn plus_one(val: int) -> int { val + 1 };
-        lua.set("plus_one", plus_one).unwrap();
+        lua.set("plus_one", plus_one);
 
         let val: int = lua.execute("return plus_one(3)").unwrap();
         assert_eq!(val, 4);
@@ -120,7 +120,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
 
         fn add(val1: int, val2: int) -> int { val1 + val2 };
-        lua.set("add", add).unwrap();
+        lua.set("add", add);
 
         let val: int = lua.execute("return add(3, 7)").unwrap();
         assert_eq!(val, 10);
@@ -131,7 +131,7 @@ mod tests {
         let mut lua = super::super::Lua::new();
 
         fn add(val1: int, val2: int) -> int { val1 + val2 };
-        lua.set("add", add).unwrap();
+        lua.set("add", add);
 
         match lua.execute("return add(3, \"hello\")") {
             Ok(x) => { let a: int = x; fail!() },
