@@ -9,6 +9,7 @@ extern crate libc;
 extern crate std;
 
 pub use lua_tables::LuaTable;
+pub use userdata::UserData;
 
 pub mod functions_read;
 mod functions_write;
@@ -96,13 +97,6 @@ pub trait Table<I, LV> {
 }
 
 /**
- * Represents the global variables
- */
-struct Globals<'a> {
-    lua: &'a mut Lua
-}
-
-/**
  * Error that can happen when executing Lua code
  */
 #[deriving(Show)]
@@ -110,12 +104,6 @@ pub enum ExecutionError {
     SyntaxError(String),
     ExecError(String)
 }
-
-/**
- * 
- */
-pub type UserData<T> = userdata::UserData<T>;
-
 
 
 // this alloc function is required to create a lua state
@@ -161,11 +149,6 @@ impl Lua {
         f.call()
     }
 
-    pub fn access<'a, I: Str>(&'a mut self, index: I) -> LoadedVariable<'a> {
-        let g = Globals{lua: self};
-        g.access(&index)
-    }
-
     /**
      * Reads the value of a global variable
      */
@@ -178,8 +161,9 @@ impl Lua {
      * Modifies the value of a global variable
      */
     pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) -> Result<(), &'static str> {
-        let mut g = Globals{lua: self};
-        g.set(&index, value)
+        value.push_to_lua(self);
+        unsafe { liblua::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        Ok(())
     }
 }
 
@@ -204,34 +188,6 @@ impl<'a> LoadedVariable<'a> {
         unsafe { liblua::lua_pop(self.lua.lua, nb as libc::c_int); }
         self.size -= nb;
         self
-    }
-}
-
-impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
-    fn get<V: CopyReadable>(&mut self, index: &I) -> Option<V> {
-        unsafe { liblua::lua_getglobal(self.lua.lua, index.as_slice().to_c_str().unwrap()); }
-        let val = CopyReadable::read_from_lua(self.lua, -1);
-        unsafe { liblua::lua_pop(self.lua.lua, 1); }
-        val
-    }
-
-    fn set<V: Pushable>(&mut self, index: &I, value: V) -> Result<(), &'static str> {
-        value.push_to_lua(self.lua);
-        unsafe { liblua::lua_setglobal(self.lua.lua, index.as_slice().to_c_str().unwrap()); }
-        Ok(())
-    }
-
-    fn access(self, index: &I) -> LoadedVariable<'a> {
-        unsafe {
-            liblua::lua_getglobal(self.lua.lua, index.as_slice().to_c_str().unwrap());
-        }
-
-        // TODO: check if not null
-
-        LoadedVariable {
-            lua: self.lua,
-            size: 1
-        }
     }
 }
 
