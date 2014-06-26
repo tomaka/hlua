@@ -5,25 +5,33 @@ extern crate sync;
 use super::liblua;
 use { Lua, Pushable, CopyReadable };
 
+// this function is the main entry point when Lua wants to call one of our functions
 extern fn wrapper1(lua: *mut liblua::lua_State) -> libc::c_int {
-    // TODO: in the future the value to load will not be the upvalue itself, but the value pointed by the upvalue
+    // we load the pointer to the wrapper2 function from an upvalue (an upvalue is a value that was pushed alongside our function)
     let wrapper2raw = unsafe { liblua::lua_touserdata(lua, liblua::lua_upvalueindex(2)) };
     let wrapper2: fn(*mut liblua::lua_State)->libc::c_int = unsafe { std::mem::transmute(wrapper2raw) };
+
     wrapper2(lua)
 }
 
+// this function is called when Lua wants to call one of our functions
 fn wrapper2<T: AnyCallable>(lua: *mut liblua::lua_State) -> libc::c_int {
+    // loading the object that we want to call from the Lua context
+    // TODO: in the future the value to load will not be the upvalue itself, but the value pointed by the upvalue
     let dataRaw = unsafe { liblua::lua_touserdata(lua, liblua::lua_upvalueindex(1)) };
     let data: &T = unsafe { std::mem::transmute(&dataRaw) };
 
     data.load_args_and_call(lua)
 }
 
+// this trait should be implemented on objects that are pushed to be callbacks
 trait AnyCallable {
-    fn load_args_and_call(&self, lua: *mut liblua::lua_State)
-        -> libc::c_int;
+    fn load_args_and_call(&self, lua: *mut liblua::lua_State) -> libc::c_int;
 }
 
+// should be implemented by objects that can be called
+// this will be removed in favor of std::ops::Fn when it is widely supported
+// "Args" should be a tuple containing the parameters
 trait Callable<Args: CopyReadable, Ret: Pushable> {
     fn do_call(&self, args: Args) -> Ret;
 }
@@ -32,10 +40,12 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
     fn load_args_and_call(&self, lua: *mut liblua::lua_State)
         -> libc::c_int
     {
-        let mut tmpLua = Lua{lua:lua};      // this is actually pretty dangerous (even if we forget it at the end) because in case of unwinding lua_close will be called
+        // creating a temporary Lua context in order to pass it to push & read functions
+        // this is actually pretty dangerous (even if we forget it at the end) because in case of unwinding lua_close will be called
+        let mut tmpLua = Lua{lua:lua};
 
+        // trying to read the arguments
         let argumentsCount = unsafe { liblua::lua_gettop(lua) } as int;
-
         let args = match CopyReadable::read_from_lua(&mut tmpLua, -argumentsCount as libc::c_int) {      // TODO: what if the user has the wrong params?
             None => {
                 let errMsg = format!("wrong parameter types for callback function");
@@ -47,23 +57,28 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
         };
 
         let retValue = self.do_call(args);
+
+        // pushing back the result of the function on the stack
         let nb = retValue.push_to_lua(&mut tmpLua);
 
-        unsafe { std::mem::forget(tmpLua) };   // do not call lua_close on this temporary context
+        // do not call lua_close on this temporary context
+        unsafe { std::mem::forget(tmpLua) };
 
         nb as libc::c_int
     }
 }
 
+// this macro will allow us to handle multiple parameters count
 macro_rules! pushable_function(
     ($b:block | $($ty:ident),*) => (
         impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Pushable for fn($($ty),*)->Ret {
             fn push_to_lua(&self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a lightuserdata
+                // TODO: should be pushed as a real user data instead, for compatibility with non-functions
                 unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(*self)) };
 
                 // pushing wrapper2 as a lightuserdata
-                let wrapper2 = wrapper2::<fn($($ty),*)->Ret>;
+                let wrapper2: fn(*mut liblua::lua_State)->libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
                 unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(wrapper2)) };
 
                 // pushing wrapper1 as a closure
@@ -75,9 +90,7 @@ macro_rules! pushable_function(
 
         #[allow(unused_variable)]
         impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Callable<($($ty),*),Ret> for fn($($ty),*)->Ret {
-            fn do_call(&self, args: ($($ty),*))
-                -> Ret
-            {
+            fn do_call(&self, args: ($($ty),*)) -> Ret {
                 $b
             }
         }
@@ -91,6 +104,8 @@ pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2
 pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
 pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
 // TODO: finish
+
+
 
 #[cfg(test)]
 mod tests {
