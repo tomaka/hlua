@@ -1,6 +1,6 @@
 env:
   global:
-    - secure: VbEIoGElnlAvRYuAAiYEmOPQrGCPCrJFBAz+mGSaGaIBu/B6lC/gkjt6C4xZunVyS/xtfpRxrjoL9A+mYiPUlUYCvRlnGHjOD4Evbvug4y/sU0sgHSo6VH3lmzZRVsHjjrP1gEI/dK9lVCtA0Z0jf+axxmpGPFs5+4bbkvprrR0=
+    - secure: dYGqnQE23opgikuMGbQj21m4+tRCSpeOgTHfcsunthXBySoJn/0u/K7/xizwvpIsuYxS1mQHWHyspih9aXsU/7CMXY6ULksqksHHA46oRVVJFwvN11qcHxaAvQj2fvUTBzT+2WF3mk5qWgdXrnyeBOogGPG84W1Bz6NbrAhYQjM=
 before_install:
   - yes | sudo add-apt-repository ppa:hansjorg/rust
   - sudo apt-get update
