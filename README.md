@@ -87,15 +87,16 @@ You can also retreive and modify individual indices:
 You can call Lua functions by reading a `functions_read::LuaFunction`.
 
     lua.execute("
-        get_five = function() { return 5; };
-    ")
+        function get_five() 
+            return 5
+        end");
 
-    let get_five: functions_read::LuaFunction = lua.get("get_five");
+    let get_five: functions_read::LuaFunction = lua.get("get_five").unwrap();
     let value: int = get_five().unwrap();
     assert_eq!(value, 5);
 
-This object holds a mutable reference of `Lua`, so you can't read or modify the lua object while the `get_five` variable exists.
-You can't store the function for the moment, but this will be possible in the future.
+This object holds a mutable reference of `Lua`, so you can't read or modify anything in the Lua context while the `get_five` variable exists.
+It is not possible to store the function for the moment, but it may be in the future.
 
 ### Roadmap
 
