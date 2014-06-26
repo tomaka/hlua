@@ -35,10 +35,11 @@ impl<T> DerefMut<T> for UserData<T> {
 // TODO: handle destructors
 
 impl<T:Clone> Pushable for UserData<T> {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         let dataRaw = unsafe { liblua::lua_newuserdata(lua.lua, std::mem::size_of_val(&self.value) as libc::size_t) };
         let data: &mut T = unsafe { std::mem::transmute(dataRaw) };
         (*data) = self.value.clone();
+        1
     }
 }
 

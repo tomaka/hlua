@@ -10,8 +10,9 @@ use super::Readable;
 macro_rules! integer_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) {
-                unsafe { liblua::lua_pushinteger(lua.lua, *self as liblua::lua_Integer) }
+            fn push_to_lua(&self, lua: &mut Lua) -> uint {
+                unsafe { liblua::lua_pushinteger(lua.lua, *self as liblua::lua_Integer) };
+                1
             }
         }
         impl Readable for $t {
@@ -38,8 +39,9 @@ integer_impl!(i32)
 macro_rules! unsigned_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) {
-                unsafe { liblua::lua_pushunsigned(lua.lua, *self as liblua::lua_Unsigned) }
+            fn push_to_lua(&self, lua: &mut Lua) -> uint {
+                unsafe { liblua::lua_pushunsigned(lua.lua, *self as liblua::lua_Unsigned) };
+                1
             }
         }
         impl Readable for $t {
@@ -66,8 +68,9 @@ unsigned_impl!(u32)
 macro_rules! numeric_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) {
-                unsafe { liblua::lua_pushnumber(lua.lua, *self as f64) }
+            fn push_to_lua(&self, lua: &mut Lua) -> uint {
+                unsafe { liblua::lua_pushnumber(lua.lua, *self as f64) };
+                1
             }
         }
         impl Readable for $t {
@@ -89,8 +92,9 @@ numeric_impl!(f32)
 numeric_impl!(f64)
 
 impl Pushable for std::string::String {
-    fn push_to_lua(&self, lua: &mut Lua) {
-        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
+        1
     }
 }
 
@@ -110,14 +114,16 @@ impl Index for String {
 }
 
 impl<'a> Pushable for &'a str {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
+        1
     }
 }
 
 impl Pushable for bool {
-    fn push_to_lua(&self, lua: &mut Lua) {
-        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as libc::c_int) }
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as libc::c_int) };
+        1
     }
 }
 
@@ -135,8 +141,9 @@ impl Index for bool {
 }
 
 impl Pushable for () {
-    fn push_to_lua(&self, lua: &mut Lua) {
-        unsafe { liblua::lua_pushnil(lua.lua) }
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+        unsafe { liblua::lua_pushnil(lua.lua) };
+        1
     }
 }
 

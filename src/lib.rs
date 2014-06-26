@@ -27,14 +27,29 @@ pub struct Lua {
  */
 pub struct LoadedVariable<'a> {
     lua: &'a mut Lua,
-    size: int       // number of elements at the top of the stack
+    size: uint       // number of elements at the top of the stack
 }
 
 /**
  * Should be implemented by whatever type is pushable on the Lua stack
  */
 pub trait Pushable {
-    fn push_to_lua(&self, &mut Lua);
+    /**
+     * Pushes the value on the top of the stack
+     * Must return the number of elements pushed
+     */
+    fn push_to_lua(&self, lua: &mut Lua) -> uint;
+
+    /**
+     * Pushes over another element
+     */
+    fn push_over<'a>(&self, mut over: LoadedVariable<'a>)
+        -> (LoadedVariable<'a>, uint)
+    {
+        let val = self.push_to_lua(over.lua);
+        over.size += val;
+        (over, val)
+    }
 }
 
 /**

@@ -28,13 +28,13 @@ fn wrapper2closure<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: l
 fn wrapper2fn<Ret: Pushable>(lua: *mut liblua::lua_State, argumentsCount: libc::c_int, p: fn()->Ret) -> libc::c_int {
     let ret = p();
     let mut tmpLua = Lua{lua:lua};
-    ret.push_to_lua(&mut tmpLua);
+    let pushed = ret.push_to_lua(&mut tmpLua);
     unsafe { std::mem::forget(tmpLua) };   // do not call lua_close on this temporary context
-    1
+    pushed as libc::c_int
 }
 
 impl<Ret: Pushable> Pushable for ||:'static->Ret {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         // pushing the std::raw::Closure as a userdata
         let rawClosure: &std::raw::Closure = unsafe { std::mem::transmute(self) };
         let mut userDataPtr = unsafe { liblua::lua_newuserdata(lua.lua, std::mem::size_of_val(rawClosure) as libc::size_t) };
@@ -48,11 +48,13 @@ impl<Ret: Pushable> Pushable for ||:'static->Ret {
 
         // pushing wrapper1 as a closure
         unsafe { liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2) };
+
+        1
     }
 }
 
 impl<Ret: Pushable> Pushable for fn()->Ret {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         // pushing the function pointer as a lightuserdata
         unsafe { liblua::lua_pushlightuserdata(lua.lua, std::mem::transmute(*self)) };
 
@@ -62,6 +64,8 @@ impl<Ret: Pushable> Pushable for fn()->Ret {
 
         // pushing wrapper1 as a closure
         unsafe { liblua::lua_pushcclosure(lua.lua, std::mem::transmute(wrapper1), 2) };
+
+        1
     }
 }
 

@@ -6,13 +6,13 @@ use super::Lua;
 use super::Pushable;
 
 impl<T: Pushable> Pushable for Vec<T> {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         self.as_slice().push_to_lua(lua)
     }
 }
 
 impl<'a, T: Pushable> Pushable for &'a [T] {
-    fn push_to_lua(&self, lua: &mut Lua) {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
         // creating empty table
         unsafe { liblua::lua_newtable(lua.lua) };
 
@@ -21,6 +21,8 @@ impl<'a, T: Pushable> Pushable for &'a [T] {
             self[i].push_to_lua(lua);
             unsafe { liblua::lua_settable(lua.lua, -3) };
         }
+
+        1
     }
 }
 
