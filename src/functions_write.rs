@@ -38,7 +38,7 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
 
         let args = match CopyReadable::read_from_lua(&mut tmpLua, -argumentsCount as libc::c_int) {      // TODO: what if the user has the wrong params?
             None => {
-                let errMsg = format!("unable to read parameters");
+                let errMsg = format!("wrong parameter types for callback function");
                 errMsg.push_to_lua(&mut tmpLua);
                 unsafe { liblua::lua_error(lua); }
                 unreachable!()
@@ -124,5 +124,18 @@ mod tests {
 
         let val: int = lua.execute("return add(3, 7)").unwrap();
         assert_eq!(val, 10);
+    }
+
+    #[test]
+    fn wrong_arguments_types() {
+        let mut lua = super::super::Lua::new();
+
+        fn add(val1: int, val2: int) -> int { val1 + val2 };
+        lua.set("add", add).unwrap();
+
+        match lua.execute("return add(3, \"hello\")") {
+            Ok(x) => { let a: int = x; fail!() },
+            Err(_) => ()        // TODO: check for execerror
+        }
     }
 }
