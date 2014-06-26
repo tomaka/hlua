@@ -81,12 +81,15 @@ You can also retreive individual values: *(note: this is not yet supported)*
 
 ### Roadmap
 
- - [ ] Reading/writing inside a Lua table
+ - [ ] Reading/writing inside Lua tables
+   - [x] Iterating through tables
+   - [ ] Reading elements
  - [ ] Reading/writing containers
- - [ ] Iterating through Lua tables
+ - [ ] Writing functions
+   - [x] Basic support
+   - [ ] Functions with parameters
+   - [ ] Static closures
  - [ ] Reading or loading a function and calling it later
- - [ ] Support for static closures
  - [ ] Access to the metatables of tables and user data
- - [ ] Writing functions with parameters
  - [ ] Access to the registry
  - [ ] Better user data
