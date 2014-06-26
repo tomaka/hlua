@@ -3,7 +3,8 @@ extern crate std;
 
 use super::liblua;
 use super::Lua;
-use super::Readable;
+use super::ConsumeReadable;
+use super::CopyReadable;
 use super::LoadedVariable;
 use super::{ ExecutionError, ExecError };
 
@@ -17,13 +18,13 @@ extern {
 }
 
 impl<'a> LuaFunction<'a> {
-    pub fn call<V: Readable>(&mut self) -> Result<V, ExecutionError> {
+    pub fn call<V: CopyReadable>(&mut self) -> Result<V, ExecutionError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { liblua::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
 
         // if pcall succeeded, returning
         if pcallReturnValue == 0 {
-            return match Readable::read_from_lua(self.variable.lua, -1) {
+            return match CopyReadable::read_from_lua(self.variable.lua, -1) {
                 None => fail!("Wrong type"),       // TODO: add to executionerror
                 Some(x) => Ok(x)
             };
@@ -35,7 +36,7 @@ impl<'a> LuaFunction<'a> {
         }
 
         if pcallReturnValue == liblua::LUA_ERRRUN {
-            let errorMsg: String = Readable::read_from_lua(self.variable.lua, -1).unwrap();
+            let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).unwrap();
             unsafe { liblua::lua_pop(self.variable.lua.lua, 1) };
             return Err(ExecError(errorMsg));
         }
@@ -57,7 +58,7 @@ impl<'a> LuaFunction<'a> {
             });
         }
 
-        let errorMsg: String = Readable::read_from_lua(lua, -1).unwrap();
+        let errorMsg: String = CopyReadable::read_from_lua(lua, -1).unwrap();
         unsafe { liblua::lua_pop(lua.lua, 1) };
 
         if loadReturnValue == liblua::LUA_ERRMEM {
@@ -72,9 +73,21 @@ impl<'a> LuaFunction<'a> {
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-impl<'a, Ret: Readable> std::ops::FnMut<(), Ret> for LuaFunction<'a> {
+impl<'a, Ret: CopyReadable> std::ops::FnMut<(), Ret> for LuaFunction<'a> {
     fn call_mut(&mut self, _: ()) -> Ret {
         self.call().unwrap()
+    }
+}
+
+impl<'a> ConsumeReadable<'a> for LuaFunction<'a> {
+    fn read_from_variable(var: LoadedVariable<'a>)
+        -> Result<LuaFunction<'a>, LoadedVariable<'a>>
+    {
+        if unsafe { liblua::lua_isfunction(var.lua.lua, -1) } {
+            Ok(LuaFunction{ variable: var })
+        } else {
+            Err(var)
+        }
     }
 }
 

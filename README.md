@@ -38,7 +38,7 @@ The `get` function returns an `Option<T>`
 
 The base types that can be read and written are: `int`, `i8`, `i16`, `i32`, `uint`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`.
 
-If you wish so, you can also add other types by implementing the `Pushable` and `Readable` traits.
+If you wish so, you can also add other types by implementing the `Pushable` and `CopyReadable`/`ConsumeReadable` traits.
 
 #### Executing Lua
 

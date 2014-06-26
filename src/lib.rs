@@ -53,9 +53,19 @@ pub trait Pushable {
 }
 
 /**
- * Should be implemented by whatever type can be read from the Lua stack
+ * Should be implemented by types that can be read by consomming a LoadedVariable
  */
-pub trait Readable {
+pub trait ConsumeReadable<'a> {
+    /**
+     * Returns the LoadedVariable in case of failure
+     */
+    fn read_from_variable(LoadedVariable<'a>) -> Result<Self, LoadedVariable<'a>>;
+}
+
+/**
+ * Should be implemented by whatever type can be read by copy from the Lua stack
+ */
+pub trait CopyReadable {
     /**
      * # Arguments
      *  * `lua` - The Lua object to read from
@@ -67,7 +77,7 @@ pub trait Readable {
 /**
  * Types that can be indices in Lua tables
  */
-pub trait Index: Pushable + Readable {
+pub trait Index: Pushable + CopyReadable {
 }
 
 /**
@@ -75,7 +85,7 @@ pub trait Index: Pushable + Readable {
  */
 pub trait Table<I, LV> {
     /// Loads the given index at the top of the stack
-    fn get<V: Readable>(&mut self, &I) -> Option<V>;
+    fn get<V: CopyReadable>(&mut self, &I) -> Option<V>;
     /// Stores the value in the table
     fn set<V: Pushable>(&mut self, &I, V) -> Result<(), &'static str>;
     ///
@@ -143,7 +153,7 @@ impl Lua {
     /**
      * Executes some Lua code on the context
      */
-    pub fn execute<T: Readable>(&mut self, code: &str) -> Result<T, ExecutionError> {
+    pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, ExecutionError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
@@ -156,7 +166,7 @@ impl Lua {
     /**
      * Reads the value of a global variable
      */
-    pub fn get<I: Str, V: Readable>(&mut self, index: I) -> Option<V> {
+    pub fn get<I: Str, V: CopyReadable>(&mut self, index: I) -> Option<V> {
         let mut g = Globals{lua: self};
         g.get(&index)
     }
@@ -195,9 +205,9 @@ impl<'a> LoadedVariable<'a> {
 }
 
 impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
-    fn get<V: Readable>(&mut self, index: &I) -> Option<V> {
+    fn get<V: CopyReadable>(&mut self, index: &I) -> Option<V> {
         unsafe { liblua::lua_getglobal(self.lua.lua, index.as_slice().to_c_str().unwrap()); }
-        let val = Readable::read_from_lua(self.lua, -1);
+        let val = CopyReadable::read_from_lua(self.lua, -1);
         unsafe { liblua::lua_pop(self.lua.lua, 1); }
         val
     }
@@ -223,10 +233,10 @@ impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
 }
 
 impl<'a, I: Index> Table<I, LoadedVariable<'a>> for LoadedVariable<'a> {
-    fn get<V: Readable>(&mut self, index: &I) -> Option<V> {
+    fn get<V: CopyReadable>(&mut self, index: &I) -> Option<V> {
         index.push_to_lua(self.lua);
         unsafe { liblua::lua_gettable(self.lua.lua, -2); }
-        let val = Readable::read_from_lua(self.lua, -1);
+        let val = CopyReadable::read_from_lua(self.lua, -1);
         unsafe { liblua::lua_pop(self.lua.lua, 1); }
         val
     }

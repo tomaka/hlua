@@ -4,7 +4,7 @@ extern crate std;
 use super::liblua;
 use super::Lua;
 use super::Pushable;
-use super::Readable;
+use super::{ ConsumeReadable, CopyReadable, LoadedVariable };
 
 pub struct UserData<T> {
     value: T
@@ -43,12 +43,21 @@ impl<T:Clone> Pushable for UserData<T> {
     }
 }
 
-impl<T:Clone> Readable for UserData<T> {
+impl<T:Clone> CopyReadable for UserData<T> {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<UserData<T>> {
         // TODO: check type
         let dataPtr = unsafe { liblua::lua_touserdata(lua.lua, index) };
         let data: &T = unsafe { std::mem::transmute(dataPtr) };
         Some(UserData{value: data.clone()})
+    }
+}
+
+impl<'a, T:Clone> ConsumeReadable<'a> for UserData<T> {
+    fn read_from_variable(var: LoadedVariable<'a>) -> Result<UserData<T>, LoadedVariable<'a>> {
+        match CopyReadable::read_from_lua(var.lua, -1) {
+            None => Err(var),
+            Some(a) => Ok(a)
+        }
     }
 }
 
