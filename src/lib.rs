@@ -176,14 +176,23 @@ impl Drop for Lua {
     }
 }
 
-// TODO: this destructor crash the compiler
+// TODO: this destructor crashes the compiler
 // https://github.com/mozilla/rust/issues/13853
 // https://github.com/mozilla/rust/issues/14377
 /*impl<'a> Drop for LoadedVariable<'a> {
     fn drop(&mut self) {
-        unsafe { liblua::lua_pop(self.lua.lua, self.size as i32) }
+        unsafe { liblua::lua_pop(self.lua.lua, self.size as libc::c_int) }
     }
 }*/
+
+impl<'a> LoadedVariable<'a> {
+    fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a> {
+        assert!(nb <= self.size);
+        unsafe { liblua::lua_pop(self.lua.lua, nb as libc::c_int); }
+        self.size -= nb;
+        self
+    }
+}
 
 impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
     fn get<V: Readable>(&mut self, index: &I) -> Option<V> {
