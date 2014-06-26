@@ -8,9 +8,12 @@
 extern crate libc;
 extern crate std;
 
+pub use lua_tables::LuaTable;
+
 pub mod functions_read;
 mod functions_write;
 mod liblua;
+pub mod lua_tables;
 mod tables;
 pub mod userdata;
 mod values;
@@ -166,9 +169,9 @@ impl Lua {
     /**
      * Reads the value of a global variable
      */
-    pub fn get<I: Str, V: CopyReadable>(&mut self, index: I) -> Option<V> {
-        let mut g = Globals{lua: self};
-        g.get(&index)
+    pub fn get<'a, I: Str, V: ConsumeReadable<'a>>(&'a mut self, index: I) -> Option<V> {
+        unsafe { liblua::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
     /**
@@ -228,34 +231,6 @@ impl<'a, I: Str> Table<I, LoadedVariable<'a>> for Globals<'a> {
         LoadedVariable {
             lua: self.lua,
             size: 1
-        }
-    }
-}
-
-impl<'a, I: Index> Table<I, LoadedVariable<'a>> for LoadedVariable<'a> {
-    fn get<V: CopyReadable>(&mut self, index: &I) -> Option<V> {
-        index.push_to_lua(self.lua);
-        unsafe { liblua::lua_gettable(self.lua.lua, -2); }
-        let val = CopyReadable::read_from_lua(self.lua, -1);
-        unsafe { liblua::lua_pop(self.lua.lua, 1); }
-        val
-    }
-
-    fn set<V: Pushable>(&mut self, index: &I, value: V) -> Result<(), &'static str> {
-        value.push_to_lua(self.lua);
-        index.push_to_lua(self.lua);
-        unsafe { liblua::lua_settable(self.lua.lua, -3); }
-        unsafe { liblua::lua_pop(self.lua.lua, 1); }
-        Ok(())
-    }
-
-    fn access(self, index: &I) -> LoadedVariable<'a> {
-        index.push_to_lua(self.lua);
-        unsafe { liblua::lua_gettable(self.lua.lua, -2); }
-
-        LoadedVariable {
-            lua: self.lua,
-            size: self.size + 1
         }
     }
 }

@@ -48,6 +48,8 @@ The `execute` function returns a `Result<Readable, ExecutionError>`.
 
 #### Writing functions
 
+*(note: functions with parameters are not yet supported)*
+
     fn add(a: int, b: int) -> int {
         a + b
     }
@@ -58,9 +60,28 @@ The `execute` function returns a `Result<Readable, ExecutionError>`.
     
 In Lua, functions are exactly like regular variables.
 
+#### Manipulating Lua tables
+
+Manipulating a Lua table can be done by reading a `LuaTable` object.
+
+    let mut table: rust-hl-lua::LuaTable = lua.get("a").unwrap();
+
+You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<()>`.
+
+    for elem in table.iter() {
+        match elem {
+            &Some(key, value) => ...,
+            &None => fail!("Could not read key or value because they are of the wrong type")
+        }
+    }
+
+You can also retreive individual values: *(note: this is not yet supported)*
+
+    let x = table.get("a").unwrap();
+
 ### Roadmap
 
- - [ ] Reading/writing from a Lua table
+ - [ ] Reading/writing inside a Lua table
  - [ ] Reading/writing containers
  - [ ] Iterating through Lua tables
  - [ ] Reading or loading a function and calling it later
