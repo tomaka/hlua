@@ -1,7 +1,3 @@
-extern crate libc;
-extern crate std;
-
-use super::liblua;
 use { Lua, Pushable, CopyReadable };
 
 macro_rules! tuple_impl(
@@ -15,6 +11,7 @@ macro_rules! tuple_impl(
         }
 
         // TODO: what if T or U are also tuples? indices won't match
+        #[allow(dead_assignment)]
         impl<$($ty: CopyReadable),+> CopyReadable for ($($ty),+) {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<($($ty),+)> {
 

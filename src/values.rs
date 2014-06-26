@@ -185,19 +185,19 @@ impl Index for bool {
 }
 
 impl Pushable for () {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(&self, _: &mut Lua) -> uint {
         0
     }
 }
 
 impl CopyReadable for () {
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<()> {
+    fn read_from_lua(_: &mut Lua, _: i32) -> Option<()> {
         Some(())
     }
 }
 
 impl<'a> ConsumeReadable<'a> for () {
-    fn read_from_variable(var: LoadedVariable<'a>) -> Result<(), LoadedVariable<'a>> {
+    fn read_from_variable(_: LoadedVariable<'a>) -> Result<(), LoadedVariable<'a>> {
         Ok(())
     }
 }

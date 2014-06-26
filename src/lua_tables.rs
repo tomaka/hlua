@@ -91,8 +91,8 @@ mod tests {
         let mut counter = 0u;
 
         for (key, value) in table.iter().filter_map(|e| e) {
-            let k: uint = key;
-            let v: uint = value;
+            let _: uint = key;
+            let _: uint = value;
             assert_eq!(key + value, 10);
             counter += 1;
         }

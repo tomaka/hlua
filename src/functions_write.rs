@@ -34,7 +34,7 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
     {
         let mut tmpLua = Lua{lua:lua};      // this is actually pretty dangerous (even if we forget it at the end) because in case of unwinding lua_close will be called
 
-        let argumentsCount = unsafe { liblua::lua_gettop(lua) } as uint;
+        let argumentsCount = unsafe { liblua::lua_gettop(lua) } as int;
 
         let args = match CopyReadable::read_from_lua(&mut tmpLua, -argumentsCount as libc::c_int) {      // TODO: what if the user has the wrong params?
             None => {
@@ -73,6 +73,7 @@ macro_rules! pushable_function(
             }
         }
 
+        #[allow(unused_variable)]
         impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Callable<($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&self, args: ($($ty),*))
                 -> Ret
@@ -134,7 +135,7 @@ mod tests {
         lua.set("add", add);
 
         match lua.execute("return add(3, \"hello\")") {
-            Ok(x) => { let a: int = x; fail!() },
+            Ok(x) => { let _: int = x; fail!() },
             Err(_) => ()        // TODO: check for execerror
         }
     }

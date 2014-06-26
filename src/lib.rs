@@ -86,18 +86,6 @@ pub trait Index: Pushable + CopyReadable {
 }
 
 /**
- * Object which can store variables
- */
-pub trait Table<I, LV> {
-    /// Loads the given index at the top of the stack
-    fn get<V: CopyReadable>(&mut self, &I) -> Option<V>;
-    /// Stores the value in the table
-    fn set<V: Pushable>(&mut self, &I, V) -> Result<(), &'static str>;
-    ///
-    fn access(self, index: &I) -> LV;
-}
-
-/**
  * Error that can happen when executing Lua code
  */
 #[deriving(Show)]
@@ -182,14 +170,14 @@ impl Drop for Lua {
     }
 }*/
 
-impl<'a> LoadedVariable<'a> {
+/*impl<'a> LoadedVariable<'a> {
     fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a> {
         assert!(nb <= self.size);
         unsafe { liblua::lua_pop(self.lua.lua, nb as libc::c_int); }
         self.size -= nb;
         self
     }
-}
+}*/
 
 #[cfg(test)]
 mod tests {
