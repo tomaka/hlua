@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn readwrite() {
         let mut lua = super::super::Lua::new();
-        let d = super::UserData::new(2);
+        let d = super::UserData::new(2i);
 
         lua.set("a", d).unwrap();
         let x: super::UserData<int> = lua.get("a").unwrap();

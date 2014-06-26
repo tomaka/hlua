@@ -241,7 +241,7 @@ mod tests {
     fn globals_readwrite() {
         let mut lua = super::Lua::new();
 
-        lua.set("a", 2).unwrap();
+        lua.set("a", 2i).unwrap();
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2)
     }

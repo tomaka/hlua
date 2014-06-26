@@ -87,10 +87,10 @@ pub static LUA_HOOKLINE: c_int = 2;
 pub static LUA_HOOKCOUNT: c_int = 3;
 pub static LUA_HOOKTAILRET: c_int = 4;
 
-pub static LUA_MASKCALL: c_int = 1 << LUA_HOOKCALL;
-pub static LUA_MASKRET: c_int = 1 << LUA_HOOKRET;
-pub static LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE;
-pub static LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT;
+pub static LUA_MASKCALL: c_int = 1 << LUA_HOOKCALL as uint;
+pub static LUA_MASKRET: c_int = 1 << LUA_HOOKRET as uint;
+pub static LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE as uint;
+pub static LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
 
 pub struct lua_Debug {
     pub event: c_int,

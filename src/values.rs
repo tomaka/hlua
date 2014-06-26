@@ -215,7 +215,7 @@ mod tests {
     fn read_ints() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2).unwrap();
+        lua.set("a", 2i).unwrap();
 
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2);
@@ -248,7 +248,7 @@ mod tests {
 
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2).unwrap();
+        lua.set("a", 2i).unwrap();
         let x: int = lua.get("a").unwrap();
         assert_eq!(x, 2);
     }
@@ -305,7 +305,7 @@ mod tests {
     fn int_to_string() {
         let mut lua = super::super::Lua::new();
 
-        lua.set("a", 2).unwrap();
+        lua.set("a", 2i).unwrap();
 
         let x: String = lua.get("a").unwrap();
         assert_eq!(x.as_slice(), "2");
