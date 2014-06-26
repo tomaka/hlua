@@ -139,6 +139,14 @@ impl Lua {
     }
 
     /**
+     * Executes some Lua code on the context
+     */
+    pub fn execute_from_reader<T: CopyReadable, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, ExecutionError> {
+        let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
+        f.call()
+    }
+
+    /**
      * Reads the value of a global variable
      */
     pub fn get<'a, I: Str, V: ConsumeReadable<'a>>(&'a mut self, index: I) -> Option<V> {

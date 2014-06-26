@@ -2,19 +2,26 @@ extern crate libc;
 extern crate std;
 
 use super::liblua;
-use super::Lua;
-use super::ConsumeReadable;
-use super::CopyReadable;
-use super::LoadedVariable;
-use super::{ ExecutionError, ExecError };
+use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, ExecutionError, ExecError };
 
 pub struct LuaFunction<'a> {
     variable: LoadedVariable<'a>
 }
 
-// TODO: decide whether to keep this or not
-extern {
-    pub fn luaL_loadstring(L: *mut liblua::lua_State, s: *libc::c_char) -> libc::c_int;
+struct ReadData {
+    reader: Box<std::io::Reader>,
+    buffer: [u8, ..128]
+}
+
+extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut libc::c_void, size: *mut libc::size_t) -> *const libc::c_char {
+    let data: &mut ReadData = unsafe { std::mem::transmute(dataRaw) };
+
+    match data.reader.read(data.buffer.as_mut_slice()) {
+        Ok(len) => unsafe { (*size) = len as libc::size_t },
+        Err(_) => unsafe { (*size) = 0 }
+    };
+
+    data.buffer.as_ptr() as *libc::c_char
 }
 
 impl<'a> LuaFunction<'a> {
@@ -44,10 +51,14 @@ impl<'a> LuaFunction<'a> {
         fail!("Unknown error code returned by lua_pcall: {}", pcallReturnValue)
     }
 
-    pub fn load<'a>(lua: &'a mut Lua, code: &str)
+    pub fn load_from_reader<'a, R: std::io::Reader + 'static>(lua: &'a mut Lua, code: R)
         -> Result<LuaFunction<'a>, super::ExecutionError>
     {
-        let loadReturnValue = unsafe { luaL_loadstring(lua.lua, code.to_c_str().unwrap()) };
+        let readdata = ReadData { reader: box code, buffer: unsafe { std::mem::uninitialized() } };
+
+        let loadReturnValue = "chunk".with_c_str(|chunk|
+            unsafe { liblua::lua_load(lua.lua, reader, std::mem::transmute(&readdata), chunk, std::ptr::null()) }
+        );
 
         if loadReturnValue == 0 {
             return Ok(LuaFunction{
@@ -69,6 +80,13 @@ impl<'a> LuaFunction<'a> {
         }
 
         fail!("Unknown error while calling lua_load");
+    }
+
+    pub fn load<'a>(lua: &'a mut Lua, code: &str)
+        -> Result<LuaFunction<'a>, super::ExecutionError>
+    {
+        let reader = std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
+        LuaFunction::load_from_reader(lua, reader)
     }
 }
 

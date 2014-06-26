@@ -46,7 +46,12 @@ If you wish so, you can also add other types by implementing the `Pushable` and 
 
     let x: uint = lua.execute("return 6 * 2;").unwrap();    // equals 12
 
-The `execute` function returns a `Result<Readable, ExecutionError>`.
+The `execute` function takes a `&str` and returns a `Result<Readable, ExecutionError>`.
+
+You can also call `execute_from_reader` which takes a `std::io::Reader` as parameter.
+For example you can easily execute the content of a file like this:
+
+    lua.execute_from_reader(File::open(&Path::new("script.lua")).unwrap())
 
 #### Writing functions
 
