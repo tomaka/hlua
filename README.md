@@ -110,6 +110,9 @@ It is not possible to store the function for the moment, but it may be in the fu
    - [x] Functions with parameters
    - [ ] Static closures
  - [ ] Reading or loading a function and calling it later
+   - [x] Basic support
+   - [ ] Passing parameters
  - [ ] Access to the metatables of tables and user data
  - [ ] Access to the registry
  - [ ] Better user data
+ - [ ] Allow writing Lua binary modules in Rust
