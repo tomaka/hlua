@@ -126,6 +126,25 @@ This can be useful to create APIs:
 
     lua.execute("mylib.foo()");
 
+#### Creating a Lua module
+
+This library also includes a second library named `rust_hl_lua_module` which allows you to create Lua modules in Rust.
+
+Cargo doesn't support multiple libraries per project for the moment, so you will have to compile it manually:
+
+    rustc -L target --out-dir target src/module.rs
+
+Then you can use it like this:
+
+    #![crate_type = "lib"]
+    #![feature(phase)]
+
+    #[phase(plugin)]
+    extern crate rust_hl_lua_module;
+    extern crate libc;  // required :(
+
+    lua_module!("mylib")
+
 ### Roadmap
 
  - [ ] Reading/writing inside Lua tables

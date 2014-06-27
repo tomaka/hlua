@@ -3,10 +3,12 @@
 #![comment = "Lua bindings for Rust"]
 #![license = "MIT"]
 #![allow(visible_private_types)]
-#![feature(macro_rules)]
+#![feature(macro_rules, plugin_registrar, quote)]
 
 extern crate libc;
+extern crate rustc;
 extern crate std;
+extern crate syntax;
 
 pub use lua_tables::LuaTable;
 
