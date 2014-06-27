@@ -12,12 +12,13 @@ pub use lua_tables::LuaTable;
 pub use userdata::UserData;
 
 pub mod functions_read;
+pub mod lua_tables;
+pub mod userdata;
+
 mod functions_write;
 mod liblua;
-pub mod lua_tables;
-mod tables;
+mod rust_tables;
 mod tuples;
-pub mod userdata;
 mod values;
 
 /**

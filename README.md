@@ -98,6 +98,30 @@ You can call Lua functions by reading a `functions_read::LuaFunction`.
 This object holds a mutable reference of `Lua`, so you can't read or modify anything in the Lua context while the `get_five` variable exists.
 It is not possible to store the function for the moment, but it may be in the future.
 
+#### Reading and writing Rust containers
+
+*(note: not yet possible to read containers)*
+
+It is possible to read and write whole Rust containers at once:
+
+    lua.set("a", [ 12, 13, 14, 15 ]);
+
+If the container has single elements, then the indices will be numerical. For example in the code above, the `12` will be at index `1`, the `13` at index `2`, etc.
+
+If the container has tuples of two elements, then the first one will be considered as the key and the second one as the value.
+
+This can be useful to create APIs:
+
+    fn foo() { }
+    fn bar() { }
+
+    lua.set("mylib", [
+        ("foo", foo),
+        ("bar", bar)
+    ]);
+
+    lua.execute("mylib.foo()");
+
 ### Roadmap
 
  - [ ] Reading/writing inside Lua tables
@@ -105,6 +129,8 @@ It is not possible to store the function for the moment, but it may be in the fu
    - [x] Reading elements by value
    - [ ] Reading functions and sub-tables
  - [ ] Reading/writing containers
+   - [x] Vectors and slices
+   - [ ] HashMaps and HashSets
  - [ ] Writing functions
    - [x] Basic support
    - [x] Functions with parameters
