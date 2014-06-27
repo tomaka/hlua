@@ -41,8 +41,7 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
         -> libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
-        // this is actually pretty dangerous (even if we forget it at the end) because in case of unwinding lua_close will be called
-        let mut tmpLua = Lua{lua:lua};
+        let mut tmpLua = Lua { lua: lua, must_be_closed: false } ;
 
         // trying to read the arguments
         let argumentsCount = unsafe { liblua::lua_gettop(lua) } as int;
@@ -60,9 +59,6 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
 
         // pushing back the result of the function on the stack
         let nb = retValue.push_to_lua(&mut tmpLua);
-
-        // do not call lua_close on this temporary context
-        unsafe { std::mem::forget(tmpLua) };
 
         nb as libc::c_int
     }

@@ -24,7 +24,8 @@ mod values;
  * Main object of the library
  */
 pub struct Lua {
-    lua: *mut liblua::lua_State
+    lua: *mut liblua::lua_State,
+    must_be_closed: bool
 }
 
 /**
@@ -127,7 +128,16 @@ impl Lua {
 
         unsafe { liblua::lua_atpanic(lua, panic) };
 
-        Lua { lua: lua }
+        Lua { lua: lua, must_be_closed: true }
+    }
+
+    /**
+     * Takes an existing lua_State and build a Lua object from it
+     * # Arguments
+     *  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
+     */
+    pub unsafe fn from_existing_state<T>(lua: *T, close_at_the_end: bool) -> Lua {
+        Lua { lua: std::mem::transmute(lua), must_be_closed: close_at_the_end }
     }
 
     /**
@@ -165,7 +175,9 @@ impl Lua {
 
 impl Drop for Lua {
     fn drop(&mut self) {
-        unsafe { liblua::lua_close(self.lua) }
+        if self.must_be_closed {
+            unsafe { liblua::lua_close(self.lua) }
+        }
     }
 }
 
