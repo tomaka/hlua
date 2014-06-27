@@ -11,7 +11,7 @@ The library should be working but things pushed on the Lua stack are not popped.
 
 Add this to the `Cargo.toml` file of your project
 
-    [dependencies.rust-hl-lua]
+    [dependencies.rust_hl_lua]
     git = "https://github.com/Tomaka17/rust-hl-lua"
 
 If you don't use cargo yet, just compile with `rustc src/lib.rs`. You can also generate the docs with `rustdoc src/lib.rs`.
@@ -20,8 +20,8 @@ In the future, this library will directly include the Lua C library if cargo all
 
 ### How to use it?
 
-    extern crate rust-hl-lua;
-    use rust-hl-lua::Lua;
+    extern crate rust_hl_lua;
+    use rust_hl_lua::Lua;
 
 The `Lua` struct is the main element of this library. It represents a context in which you can execute Lua code.
 
