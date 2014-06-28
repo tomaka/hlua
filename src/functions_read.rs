@@ -1,8 +1,8 @@
 extern crate libc;
 extern crate std;
 
-use super::liblua;
-use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, ExecutionError, ExecError };
+use liblua;
+use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
 pub struct LuaFunction<'a> {
     variable: LoadedVariable<'a>
@@ -25,14 +25,14 @@ extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut libc::c_void, size: *m
 }
 
 impl<'a> LuaFunction<'a> {
-    pub fn call<V: CopyReadable>(&mut self) -> Result<V, ExecutionError> {
+    pub fn call<V: CopyReadable>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { liblua::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
 
         // if pcall succeeded, returning
         if pcallReturnValue == 0 {
             return match CopyReadable::read_from_lua(self.variable.lua, -1) {
-                None => fail!("Wrong type"),       // TODO: add to executionerror
+                None => Err(WrongType),
                 Some(x) => Ok(x)
             };
         }
@@ -45,14 +45,14 @@ impl<'a> LuaFunction<'a> {
         if pcallReturnValue == liblua::LUA_ERRRUN {
             let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
             unsafe { liblua::lua_pop(self.variable.lua.lua, 1) };
-            return Err(ExecError(errorMsg));
+            return Err(ExecutionError(errorMsg));
         }
 
         fail!("Unknown error code returned by lua_pcall: {}", pcallReturnValue)
     }
 
     pub fn load_from_reader<'a, R: std::io::Reader + 'static>(lua: &'a mut Lua, code: R)
-        -> Result<LuaFunction<'a>, super::ExecutionError>
+        -> Result<LuaFunction<'a>, LuaError>
     {
         let readdata = ReadData { reader: box code, buffer: unsafe { std::mem::uninitialized() } };
 
@@ -76,14 +76,14 @@ impl<'a> LuaFunction<'a> {
             fail!("LUA_ERRMEM");
         }
         if loadReturnValue == liblua::LUA_ERRSYNTAX {
-            return Err(super::SyntaxError(errorMsg));
+            return Err(SyntaxError(errorMsg));
         }
 
         fail!("Unknown error while calling lua_load");
     }
 
     pub fn load<'a>(lua: &'a mut Lua, code: &str)
-        -> Result<LuaFunction<'a>, super::ExecutionError>
+        -> Result<LuaFunction<'a>, LuaError>
     {
         let reader = std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
         LuaFunction::load_from_reader(lua, reader)
@@ -111,9 +111,11 @@ impl<'a> ConsumeReadable<'a> for LuaFunction<'a> {
 
 #[cfg(test)]
 mod tests {
+    use { Lua, LuaError };
+
     #[test]
     fn basic() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         let mut f = super::LuaFunction::load(&mut lua, "return 5;").unwrap();
 
@@ -123,18 +125,18 @@ mod tests {
 
     #[test]
     fn syntax_error() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         assert!(super::LuaFunction::load(&mut lua, "azerazer").is_err());
     }
 
     #[test]
     fn execution_error() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         let mut f = super::LuaFunction::load(&mut lua, "return a:hello()").unwrap();
 
-        let val: Result<int, super::super::ExecutionError> = f.call();
+        let val: Result<int, LuaError> = f.call();
         assert!(val.is_err());
     }
 }

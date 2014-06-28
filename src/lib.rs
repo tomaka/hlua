@@ -91,9 +91,21 @@ pub trait Index: Pushable + CopyReadable {
  * Error that can happen when executing Lua code
  */
 #[deriving(Show)]
-pub enum ExecutionError {
+pub enum LuaError {
+    /**
+     * There was a syntax error when parsing the Lua code
+     */
     SyntaxError(String),
-    ExecError(String)
+
+    /**
+     * There was an error during execution of the Lua code (for example not enough parameters for a function call)
+     */
+    ExecutionError(String),
+
+    /**
+     * The call to `execute` has requested the wrong type of data
+     */
+    WrongType
 }
 
 
@@ -144,7 +156,7 @@ impl Lua {
     /**
      * Executes some Lua code on the context
      */
-    pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, ExecutionError> {
+    pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
@@ -152,7 +164,7 @@ impl Lua {
     /**
      * Executes some Lua code on the context
      */
-    pub fn execute_from_reader<T: CopyReadable, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, ExecutionError> {
+    pub fn execute_from_reader<T: CopyReadable, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
