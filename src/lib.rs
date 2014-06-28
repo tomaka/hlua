@@ -154,6 +154,14 @@ impl Lua {
     }
 
     /**
+     * Opens all standard Lua libraries
+     * This is done by calling `luaL_openlibs`
+     */
+    pub fn openlibs(&mut self) {
+        unsafe { liblua::luaL_openlibs(self.lua) }
+    }
+
+    /**
      * Executes some Lua code on the context
      */
     pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, LuaError> {

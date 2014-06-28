@@ -220,6 +220,8 @@ extern "C" {
     pub fn lua_gethook(L: *mut lua_State) -> lua_Hook;
     pub fn lua_gethookmask(L: *mut lua_State) -> c_int;
     pub fn lua_gethookcount(L: *mut lua_State) -> c_int;
+
+    pub fn luaL_openlibs(L: *mut lua_State);
 }
 
 #[inline(always)]
