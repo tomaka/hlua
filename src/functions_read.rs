@@ -43,7 +43,7 @@ impl<'a> LuaFunction<'a> {
         }
 
         if pcallReturnValue == liblua::LUA_ERRRUN {
-            let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).unwrap();
+            let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
             unsafe { liblua::lua_pop(self.variable.lua.lua, 1) };
             return Err(ExecError(errorMsg));
         }
@@ -69,7 +69,7 @@ impl<'a> LuaFunction<'a> {
             });
         }
 
-        let errorMsg: String = CopyReadable::read_from_lua(lua, -1).unwrap();
+        let errorMsg: String = CopyReadable::read_from_lua(lua, -1).expect("can't find error message at the top of the Lua stack");
         unsafe { liblua::lua_pop(lua.lua, 1) };
 
         if loadReturnValue == liblua::LUA_ERRMEM {
