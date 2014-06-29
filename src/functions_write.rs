@@ -41,7 +41,7 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
         -> libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
-        let mut tmpLua = Lua { lua: lua, must_be_closed: false } ;
+        let mut tmpLua = Lua { lua: lua, must_be_closed: false, inside_callback: true } ;
 
         // trying to read the arguments
         let argumentsCount = unsafe { liblua::lua_gettop(lua) } as int;
@@ -103,11 +103,32 @@ pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2
 
 
 
+impl<T: Pushable, E: ::std::fmt::Show> Pushable for Result<T,E> {
+    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+        if !lua.inside_callback {
+            fail!("cannot push a Result object except as a function return type")
+        }
+
+        match self {
+            &Ok(ref val) => val.push_to_lua(lua),
+            &Err(ref val) => {
+                let msg = format!("{}", val);
+                msg.push_to_lua(lua);
+                unsafe { liblua::lua_error(lua.lua); }
+                unreachable!()
+            }
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
+    use Lua;
+
     #[test]
     fn simple_function() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         fn ret5() -> int { 5 };
         lua.set("ret5", ret5);
@@ -118,7 +139,7 @@ mod tests {
 
     #[test]
     fn one_argument() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         fn plus_one(val: int) -> int { val + 1 };
         lua.set("plus_one", plus_one);
@@ -129,7 +150,7 @@ mod tests {
 
     #[test]
     fn two_arguments() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         fn add(val1: int, val2: int) -> int { val1 + val2 };
         lua.set("add", add);
@@ -140,14 +161,27 @@ mod tests {
 
     #[test]
     fn wrong_arguments_types() {
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
         fn add(val1: int, val2: int) -> int { val1 + val2 };
         lua.set("add", add);
 
-        match lua.execute("return add(3, \"hello\")") {
-            Ok(x) => { let _: int = x; fail!() },
-            Err(_) => ()        // TODO: check for execerror
+        match lua.execute::<int>("return add(3, \"hello\")") {
+            Err(::ExecutionError(_)) => (),
+            _ => fail!()
+        }
+    }
+
+    #[test]
+    fn return_result() {
+        let mut lua = Lua::new();
+
+        fn always_fails() -> Result<int, &'static str> { Err("oops, problem") };
+        lua.set("always_fails", always_fails);
+
+        match lua.execute::<()>("always_fails()") {
+            Err(::ExecutionError(_)) => (),
+            _ => fail!()
         }
     }
 }

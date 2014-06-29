@@ -65,6 +65,10 @@ For example you can easily execute the content of a file like this:
     
 In Lua, functions are exactly like regular variables.
 
+##### Error handling
+
+If your Rust function returns a `Result` object which contains an error, then a Lua error will be triggered.
+
 #### Manipulating Lua tables
 
 Manipulating a Lua table can be done by reading a `LuaTable` object.
