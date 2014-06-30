@@ -2,9 +2,7 @@
 #![allow(uppercase_variables)]
 #![allow(dead_code)]
 
-extern crate libc;
-extern crate std;
-
+use libc;
 use libc::c_int;
 use std::{ default, ptr };
 
