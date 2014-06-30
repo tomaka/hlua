@@ -1,6 +1,3 @@
-extern crate libc;
-extern crate std;
-
 use super::liblua;
 use super::Index;
 use super::Lua;
@@ -19,7 +16,7 @@ macro_rules! integer_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { liblua::lua_tointegerx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -56,7 +53,7 @@ macro_rules! unsigned_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { liblua::lua_tounsignedx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -93,7 +90,7 @@ macro_rules! numeric_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { liblua::lua_tonumberx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -117,7 +114,7 @@ macro_rules! numeric_impl(
 numeric_impl!(f32)
 numeric_impl!(f64)
 
-impl Pushable for std::string::String {
+impl Pushable for String {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
         unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
         1
@@ -125,14 +122,14 @@ impl Pushable for std::string::String {
 }
 
 impl CopyReadable for String {
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<std::string::String> {
-        let mut size: libc::size_t = unsafe { std::mem::uninitialized() };
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<String> {
+        let mut size: ::libc::size_t = unsafe { ::std::mem::uninitialized() };
         let cStrRaw = unsafe { liblua::lua_tolstring(lua.lua, index, &mut size) };
         if cStrRaw.is_null() {
             return None;
         }
 
-        unsafe { std::c_str::CString::new(cStrRaw, false) }.as_str().map(|s| s.to_string())
+        unsafe { ::std::c_str::CString::new(cStrRaw, false) }.as_str().map(|s| s.to_string())
     }
 }
 
@@ -157,7 +154,7 @@ impl<'a> Pushable for &'a str {
 
 impl Pushable for bool {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as libc::c_int) };
+        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
         1
     }
 }

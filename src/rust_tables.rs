@@ -1,6 +1,3 @@
-extern crate libc;
-extern crate std;
-
 use super::liblua;
 use super::Lua;
 use super::Pushable;
@@ -10,7 +7,7 @@ fn push_iter<'a, V: Pushable, I: Iterator<&'a V>>(lua: &mut Lua, iterator: I) ->
     // creating empty table
     unsafe { liblua::lua_newtable(lua.lua) };
 
-    for (elem, index) in iterator.zip(std::iter::count(1u, 1u)) {
+    for (elem, index) in iterator.zip(::std::iter::count(1u, 1u)) {
         let pushedCnt = elem.push_to_lua(lua);
 
         match pushedCnt {

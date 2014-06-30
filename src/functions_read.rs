@@ -1,6 +1,3 @@
-extern crate libc;
-extern crate std;
-
 use liblua;
 use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
@@ -9,19 +6,19 @@ pub struct LuaFunction<'a> {
 }
 
 struct ReadData {
-    reader: Box<std::io::Reader>,
+    reader: Box<::std::io::Reader>,
     buffer: [u8, ..128]
 }
 
-extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut libc::c_void, size: *mut libc::size_t) -> *const libc::c_char {
-    let data: &mut ReadData = unsafe { std::mem::transmute(dataRaw) };
+extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut ::libc::c_void, size: *mut ::libc::size_t) -> *const ::libc::c_char {
+    let data: &mut ReadData = unsafe { ::std::mem::transmute(dataRaw) };
 
     match data.reader.read(data.buffer.as_mut_slice()) {
-        Ok(len) => unsafe { (*size) = len as libc::size_t },
+        Ok(len) => unsafe { (*size) = len as ::libc::size_t },
         Err(_) => unsafe { (*size) = 0 }
     };
 
-    data.buffer.as_ptr() as *const libc::c_char
+    data.buffer.as_ptr() as *const ::libc::c_char
 }
 
 impl<'a> LuaFunction<'a> {
@@ -51,13 +48,13 @@ impl<'a> LuaFunction<'a> {
         fail!("Unknown error code returned by lua_pcall: {}", pcallReturnValue)
     }
 
-    pub fn load_from_reader<'a, R: std::io::Reader + 'static>(lua: &'a mut Lua, code: R)
+    pub fn load_from_reader<'a, R: ::std::io::Reader + 'static>(lua: &'a mut Lua, code: R)
         -> Result<LuaFunction<'a>, LuaError>
     {
-        let readdata = ReadData { reader: box code, buffer: unsafe { std::mem::uninitialized() } };
+        let readdata = ReadData { reader: box code, buffer: unsafe { ::std::mem::uninitialized() } };
 
         let loadReturnValue = "chunk".with_c_str(|chunk|
-            unsafe { liblua::lua_load(lua.lua, reader, std::mem::transmute(&readdata), chunk, std::ptr::null()) }
+            unsafe { liblua::lua_load(lua.lua, reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
         );
 
         if loadReturnValue == 0 {
@@ -85,13 +82,13 @@ impl<'a> LuaFunction<'a> {
     pub fn load<'a>(lua: &'a mut Lua, code: &str)
         -> Result<LuaFunction<'a>, LuaError>
     {
-        let reader = std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
+        let reader = ::std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
         LuaFunction::load_from_reader(lua, reader)
     }
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-impl<'a, Ret: CopyReadable> std::ops::FnMut<(), Ret> for LuaFunction<'a> {
+impl<'a, Ret: CopyReadable> ::std::ops::FnMut<(), Ret> for LuaFunction<'a> {
     fn call_mut(&mut self, _: ()) -> Ret {
         self.call().unwrap()
     }
