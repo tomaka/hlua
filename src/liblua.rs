@@ -27,8 +27,8 @@ pub struct lua_State;
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
 
-pub type lua_Reader = extern "C" fn(L: *mut lua_State, ud: *mut libc::c_void, sz: *mut libc::size_t) -> *libc::c_char;
-pub type lua_Writer = extern "C" fn(L: *mut lua_State, p: *libc::c_void, sz: libc::size_t, ud: *mut libc::c_void) -> libc::c_int;
+pub type lua_Reader = extern "C" fn(L: *mut lua_State, ud: *mut libc::c_void, sz: *mut libc::size_t) -> *const libc::c_char;
+pub type lua_Writer = extern "C" fn(L: *mut lua_State, p: *const libc::c_void, sz: libc::size_t, ud: *mut libc::c_void) -> libc::c_int;
 
 pub type lua_Alloc = extern "C" fn(ud: *mut libc::c_void, ptr: *mut libc::c_void, osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void;
 
@@ -94,10 +94,10 @@ pub static LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
 
 pub struct lua_Debug {
     pub event: c_int,
-    pub name: *libc::c_char,
-    pub namewhat: *libc::c_char,
-    pub what: *libc::c_char,
-    pub source: *libc::c_char,
+    pub name: *const libc::c_char,
+    pub namewhat: *const libc::c_char,
+    pub what: *const libc::c_char,
+    pub source: *const libc::c_char,
     pub currentline: c_int,
     pub linedefined: c_int,
     pub lastlinedefined: c_int,
@@ -117,7 +117,7 @@ extern "C" {
 
     pub fn lua_atpanic(L: *mut lua_State, panicf: lua_CFunction) -> lua_CFunction;
 
-    pub fn lua_version(L: *mut lua_State) -> *lua_Number;
+    pub fn lua_version(L: *mut lua_State) -> *const lua_Number;
 
     pub fn lua_absindex(L: *mut lua_State, idx: c_int) -> c_int;
     pub fn lua_gettop(L: *mut lua_State) -> c_int;
@@ -136,18 +136,18 @@ extern "C" {
     pub fn lua_iscfunction(L: *mut lua_State, idx: c_int) -> c_int;
     pub fn lua_isuserdata(L: *mut lua_State, idx: c_int) -> c_int;
     pub fn lua_type(L: *mut lua_State, idx: c_int) -> c_int;
-    pub fn lua_typename(L: *mut lua_State, tp: c_int) -> *libc::c_char;
+    pub fn lua_typename(L: *mut lua_State, tp: c_int) -> *const libc::c_char;
 
-    pub fn lua_tonumberx(L: *mut lua_State, idx: c_int, isnum: *c_int) -> lua_Number;
-    pub fn lua_tointegerx(L: *mut lua_State, idx: c_int, isnum: *c_int) -> lua_Integer;
-    pub fn lua_tounsignedx(L: *mut lua_State, idx: c_int, isnum: *c_int) -> lua_Unsigned;
+    pub fn lua_tonumberx(L: *mut lua_State, idx: c_int, isnum: *mut c_int) -> lua_Number;
+    pub fn lua_tointegerx(L: *mut lua_State, idx: c_int, isnum: *mut c_int) -> lua_Integer;
+    pub fn lua_tounsignedx(L: *mut lua_State, idx: c_int, isnum: *mut c_int) -> lua_Unsigned;
     pub fn lua_toboolean(L: *mut lua_State, idx: c_int) -> c_int;
-    pub fn lua_tolstring(L: *mut lua_State, idx: c_int, len: *mut libc::size_t) -> *libc::c_char;
+    pub fn lua_tolstring(L: *mut lua_State, idx: c_int, len: *mut libc::size_t) -> *const libc::c_char;
     pub fn lua_rawlen(L: *mut lua_State, idx: c_int) -> libc::size_t;
     pub fn lua_tocfunction(L: *mut lua_State, idx: c_int) -> Option<lua_CFunction>;
     pub fn lua_touserdata(L: *mut lua_State, idx: c_int) -> *mut libc::c_void;
     pub fn lua_tothread(L: *mut lua_State, idx: c_int) -> *mut lua_State;
-    pub fn lua_topointer(L: *mut lua_State, idx: c_int) -> *libc::c_void;
+    pub fn lua_topointer(L: *mut lua_State, idx: c_int) -> *const libc::c_void;
 
     pub fn lua_arith(L: *mut lua_State, op: c_int);
     pub fn lua_rawequal(L: *mut lua_State, idx1: c_int, idx2: c_int) -> c_int;
@@ -157,39 +157,39 @@ extern "C" {
     pub fn lua_pushnumber(L: *mut lua_State, n: lua_Number);
     pub fn lua_pushinteger(L: *mut lua_State, n: lua_Integer);
     pub fn lua_pushunsigned(L: *mut lua_State, n: lua_Unsigned);
-    pub fn lua_pushlstring(L: *mut lua_State, s: *libc::c_char, l: libc::size_t);
-    pub fn lua_pushstring(L: *mut lua_State, s: *libc::c_char);
+    pub fn lua_pushlstring(L: *mut lua_State, s: *const libc::c_char, l: libc::size_t);
+    pub fn lua_pushstring(L: *mut lua_State, s: *const libc::c_char);
     // TODO: lua_pushvfstring()
-    pub fn lua_pushfstring(L: *mut lua_State, fmt: *libc::c_char, ...) -> *libc::c_char;
+    pub fn lua_pushfstring(L: *mut lua_State, fmt: *const libc::c_char, ...) -> *const libc::c_char;
     pub fn lua_pushcclosure(L: *mut lua_State, f: lua_CFunction, n: c_int);
     pub fn lua_pushboolean(L: *mut lua_State, b: c_int);
     pub fn lua_pushlightuserdata(L: *mut lua_State, p: *mut libc::c_void);
     pub fn lua_pushthread(L: *mut lua_State) -> c_int;
 
-    pub fn lua_getglobal(L: *mut lua_State, var: *libc::c_char);
+    pub fn lua_getglobal(L: *mut lua_State, var: *const libc::c_char);
     pub fn lua_gettable(L: *mut lua_State, idx: c_int);
-    pub fn lua_getfield(L: *mut lua_State, idx: c_int, k: *libc::c_char);
+    pub fn lua_getfield(L: *mut lua_State, idx: c_int, k: *const libc::c_char);
     pub fn lua_rawget(L: *mut lua_State, idx: c_int);
     pub fn lua_rawgeti(L: *mut lua_State, idx: c_int, n: c_int);
-    pub fn lua_rawgetp(L: *mut lua_State, idx: c_int, p: *libc::c_char);
+    pub fn lua_rawgetp(L: *mut lua_State, idx: c_int, p: *const libc::c_char);
     pub fn lua_createtable(L: *mut lua_State, narr: c_int, nrec: c_int);
     pub fn lua_newuserdata(L: *mut lua_State, sz: libc::size_t) -> *mut libc::c_void;
     pub fn lua_getmetatable(L: *mut lua_State, objindex: c_int) -> c_int;
     pub fn lua_getfenv(L: *mut lua_State, idx: c_int);
 
-    pub fn lua_setglobal(L: *mut lua_State, var: *libc::c_char);
+    pub fn lua_setglobal(L: *mut lua_State, var: *const libc::c_char);
     pub fn lua_settable(L: *mut lua_State, idx: c_int);
-    pub fn lua_setfield(L: *mut lua_State, idx: c_int, k: *libc::c_char);
+    pub fn lua_setfield(L: *mut lua_State, idx: c_int, k: *const libc::c_char);
     pub fn lua_rawset(L: *mut lua_State, idx: c_int);
     pub fn lua_rawseti(L: *mut lua_State, idx: c_int, n: c_int);
-    pub fn lua_rawsetp(L: *mut lua_State, idx: c_int, p: *libc::c_char);
+    pub fn lua_rawsetp(L: *mut lua_State, idx: c_int, p: *const libc::c_char);
     pub fn lua_setmetatable(L: *mut lua_State, objindex: c_int) -> c_int;
     pub fn lua_setfenv(L: *mut lua_State, idx: c_int) -> c_int;
 
     pub fn lua_callk(L: *mut lua_State, nargs: c_int, nresults: c_int, ctx: c_int, k: Option<lua_CFunction>);
     pub fn lua_getctx(L: *mut lua_State, ctx: c_int) -> c_int;
     pub fn lua_pcallk(L: *mut lua_State, nargs: c_int, nresults: c_int, errfunc: c_int, ctx: c_int, k: Option<lua_CFunction>) -> c_int;
-    pub fn lua_load(L: *mut lua_State, reader: lua_Reader, dt: *mut libc::c_void, chunkname: *libc::c_char, mode: *libc::c_char) -> c_int;
+    pub fn lua_load(L: *mut lua_State, reader: lua_Reader, dt: *mut libc::c_void, chunkname: *const libc::c_char, mode: *const libc::c_char) -> c_int;
     pub fn lua_dump(L: *mut lua_State, writer: lua_Writer, data: *mut libc::c_void) -> c_int;
 
     pub fn lua_yieldk(L: *mut lua_State, nresults: c_int, ctx: c_int, k: Option<lua_CFunction>) -> c_int;
@@ -207,13 +207,13 @@ extern "C" {
     pub fn lua_setallocf(L: *mut lua_State, f: lua_Alloc, ud: *mut libc::c_void);
 
     pub fn lua_getstack(L: *mut lua_State, level: c_int, ar: *mut lua_Debug) -> c_int;
-    pub fn lua_getinfo(L: *mut lua_State, what: *libc::c_char, ar: *mut lua_Debug) -> c_int;
-    pub fn lua_getlocal(L: *mut lua_State, ar: *lua_Debug, n: c_int) -> *libc::c_char;
-    pub fn lua_setlocal(L: *mut lua_State, ar: *mut lua_Debug, n: c_int) -> *libc::c_char;
-    pub fn lua_getupvalue(L: *mut lua_State, funcindex: c_int, n: c_int) -> *libc::c_char;
-    pub fn lua_setupvalue(L: *mut lua_State, funcindex: c_int, n: c_int) -> *libc::c_char;
+    pub fn lua_getinfo(L: *mut lua_State, what: *const libc::c_char, ar: *mut lua_Debug) -> c_int;
+    pub fn lua_getlocal(L: *mut lua_State, ar: *const lua_Debug, n: c_int) -> *const libc::c_char;
+    pub fn lua_setlocal(L: *mut lua_State, ar: *mut lua_Debug, n: c_int) -> *const libc::c_char;
+    pub fn lua_getupvalue(L: *mut lua_State, funcindex: c_int, n: c_int) -> *const libc::c_char;
+    pub fn lua_setupvalue(L: *mut lua_State, funcindex: c_int, n: c_int) -> *const libc::c_char;
 
-    pub fn lua_upvalueid(L: *mut lua_State, fidx: c_int, n: c_int) -> *libc::c_void;
+    pub fn lua_upvalueid(L: *mut lua_State, fidx: c_int, n: c_int) -> *const libc::c_void;
     pub fn lua_upvaluejoin(L: *mut lua_State, fidx1: c_int, n1: c_int, fidx2: c_int, n2: c_int);
 
     pub fn lua_sethook(L: *mut lua_State, func: lua_Hook, mask: c_int, count: c_int) -> c_int;
@@ -255,7 +255,7 @@ pub unsafe fn lua_newtable(L: *mut lua_State) {
 }
 
 #[inline(always)]
-pub unsafe fn lua_register(L: *mut lua_State, name: *libc::c_char, f: lua_CFunction) {
+pub unsafe fn lua_register(L: *mut lua_State, name: *const libc::c_char, f: lua_CFunction) {
     lua_pushcfunction(L, f);
     lua_setglobal(L, name)
 }
@@ -313,7 +313,7 @@ pub unsafe fn lua_pushglobaltable(L: *mut lua_State) {
 }
 
 #[inline(always)]
-pub unsafe fn lua_tostring(L: *mut lua_State, i: c_int) -> *libc::c_char {
+pub unsafe fn lua_tostring(L: *mut lua_State, i: c_int) -> *const libc::c_char {
     lua_tolstring(L, i, ptr::mut_null())
 }
 

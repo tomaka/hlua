@@ -21,7 +21,7 @@ extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut libc::c_void, size: *m
         Err(_) => unsafe { (*size) = 0 }
     };
 
-    data.buffer.as_ptr() as *libc::c_char
+    data.buffer.as_ptr() as *const libc::c_char
 }
 
 impl<'a> LuaFunction<'a> {

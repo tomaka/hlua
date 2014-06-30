@@ -19,8 +19,8 @@ macro_rules! integer_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let success: libc::c_int = unsafe { std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tointegerx(lua.lua, index, &success) };
+                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tointegerx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -56,8 +56,8 @@ macro_rules! unsigned_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let success: libc::c_int = unsafe { std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tounsignedx(lua.lua, index, &success) };
+                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tounsignedx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -93,8 +93,8 @@ macro_rules! numeric_impl(
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
-                let success: libc::c_int = unsafe { std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tonumberx(lua.lua, index, &success) };
+                let mut success: libc::c_int = unsafe { std::mem::uninitialized() };
+                let val = unsafe { liblua::lua_tonumberx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)

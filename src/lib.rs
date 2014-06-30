@@ -150,7 +150,7 @@ impl Lua {
      * # Arguments
      *  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
      */
-    pub unsafe fn from_existing_state<T>(lua: *T, close_at_the_end: bool) -> Lua {
+    pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua {
         Lua { lua: std::mem::transmute(lua), must_be_closed: close_at_the_end, inside_callback: false }
     }
 
