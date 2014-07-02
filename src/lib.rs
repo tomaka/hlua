@@ -15,8 +15,8 @@ pub mod functions_read;
 pub mod lua_tables;
 pub mod userdata;
 
+mod ffi;
 mod functions_write;
-mod liblua;
 mod rust_tables;
 mod tuples;
 mod values;
@@ -25,7 +25,7 @@ mod values;
  * Main object of the library
  */
 pub struct Lua {
-    lua: *mut liblua::lua_State,
+    lua: *mut ffi::lua_State,
     must_be_closed: bool,
     inside_callback: bool           // if true, we are inside a callback
 }
@@ -123,8 +123,8 @@ extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc
 }
 
 // called whenever lua encounters an unexpected error
-extern "C" fn panic(lua: *mut liblua::lua_State) -> libc::c_int {
-    let err = unsafe { liblua::lua_tostring(lua, -1) };
+extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
+    let err = unsafe { ffi::lua_tostring(lua, -1) };
     fail!("PANIC: unprotected error in call to Lua API ({})\n", err);
 }
 
@@ -135,12 +135,12 @@ impl Lua {
      * The function fails if lua_newstate fails (which indicates lack of memory)
      */
     pub fn new() -> Lua {
-        let lua = unsafe { liblua::lua_newstate(alloc, std::ptr::mut_null()) };
+        let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::mut_null()) };
         if lua.is_null() {
             fail!("lua_newstate failed");
         }
 
-        unsafe { liblua::lua_atpanic(lua, panic) };
+        unsafe { ffi::lua_atpanic(lua, panic) };
 
         Lua { lua: lua, must_be_closed: true, inside_callback: false }
     }
@@ -159,7 +159,7 @@ impl Lua {
      * This is done by calling `luaL_openlibs`
      */
     pub fn openlibs(&mut self) {
-        unsafe { liblua::luaL_openlibs(self.lua) }
+        unsafe { ffi::luaL_openlibs(self.lua) }
     }
 
     /**
@@ -182,7 +182,7 @@ impl Lua {
      * Reads the value of a global variable
      */
     pub fn get<'a, I: Str, V: ConsumeReadable<'a>>(&'a mut self, index: I) -> Option<V> {
-        unsafe { liblua::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
@@ -191,14 +191,14 @@ impl Lua {
      */
     pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
-        unsafe { liblua::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }
 }
 
 impl Drop for Lua {
     fn drop(&mut self) {
         if self.must_be_closed {
-            unsafe { liblua::lua_close(self.lua) }
+            unsafe { ffi::lua_close(self.lua) }
         }
     }
 }
@@ -208,14 +208,14 @@ impl Drop for Lua {
 // https://github.com/mozilla/rust/issues/14377
 /*impl<'a> Drop for LoadedVariable<'a> {
     fn drop(&mut self) {
-        unsafe { liblua::lua_pop(self.lua.lua, self.size as libc::c_int) }
+        unsafe { ffi::lua_pop(self.lua.lua, self.size as libc::c_int) }
     }
 }*/
 
 /*impl<'a> LoadedVariable<'a> {
     fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a> {
         assert!(nb <= self.size);
-        unsafe { liblua::lua_pop(self.lua.lua, nb as libc::c_int); }
+        unsafe { ffi::lua_pop(self.lua.lua, nb as libc::c_int); }
         self.size -= nb;
         self
     }

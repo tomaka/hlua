@@ -1,4 +1,4 @@
-use super::liblua;
+use super::ffi;
 use super::Index;
 use super::Lua;
 use super::Pushable;
@@ -10,14 +10,14 @@ macro_rules! integer_impl(
     ($t:ident) => (
         impl Pushable for $t {
             fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { liblua::lua_pushinteger(lua.lua, *self as liblua::lua_Integer) };
+                unsafe { ffi::lua_pushinteger(lua.lua, *self as ffi::lua_Integer) };
                 1
             }
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tointegerx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tointegerx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -47,14 +47,14 @@ macro_rules! unsigned_impl(
     ($t:ident) => (
         impl Pushable for $t {
             fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { liblua::lua_pushunsigned(lua.lua, *self as liblua::lua_Unsigned) };
+                unsafe { ffi::lua_pushunsigned(lua.lua, *self as ffi::lua_Unsigned) };
                 1
             }
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tounsignedx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tounsignedx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -84,14 +84,14 @@ macro_rules! numeric_impl(
     ($t:ident) => (
         impl Pushable for $t {
             fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { liblua::lua_pushnumber(lua.lua, *self as f64) };
+                unsafe { ffi::lua_pushnumber(lua.lua, *self as f64) };
                 1
             }
         }
         impl CopyReadable for $t {
             fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { liblua::lua_tonumberx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tonumberx(lua.lua, index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -116,7 +116,7 @@ numeric_impl!(f64)
 
 impl Pushable for String {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
+        unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
         1
     }
 }
@@ -124,7 +124,7 @@ impl Pushable for String {
 impl CopyReadable for String {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<String> {
         let mut size: ::libc::size_t = unsafe { ::std::mem::uninitialized() };
-        let cStrRaw = unsafe { liblua::lua_tolstring(lua.lua, index, &mut size) };
+        let cStrRaw = unsafe { ffi::lua_tolstring(lua.lua, index, &mut size) };
         if cStrRaw.is_null() {
             return None;
         }
@@ -147,25 +147,25 @@ impl Index for String {
 
 impl<'a> Pushable for &'a str {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        unsafe { liblua::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
+        unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
         1
     }
 }
 
 impl Pushable for bool {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        unsafe { liblua::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
+        unsafe { ffi::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
         1
     }
 }
 
 impl CopyReadable for bool {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<bool> {
-        if unsafe { liblua::lua_isboolean(lua.lua, index) } != true {
+        if unsafe { ffi::lua_isboolean(lua.lua, index) } != true {
             return None;
         }
 
-        Some(unsafe { liblua::lua_toboolean(lua.lua, index) != 0 })
+        Some(unsafe { ffi::lua_toboolean(lua.lua, index) != 0 })
     }
 }
 

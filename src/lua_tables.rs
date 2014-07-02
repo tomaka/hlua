@@ -1,5 +1,5 @@
 use { CopyReadable, ConsumeReadable, LoadedVariable, Pushable, Index };
-use liblua;
+use ffi;
 
 pub struct LuaTable<'lua> {
     variable: LoadedVariable<'lua>
@@ -14,7 +14,7 @@ impl<'lua> ConsumeReadable<'lua> for LuaTable<'lua> {
     fn read_from_variable(var: LoadedVariable<'lua>)
         -> Result<LuaTable<'lua>, LoadedVariable<'lua>>
     {
-        if unsafe { liblua::lua_istable(var.lua.lua, -1) } {
+        if unsafe { ffi::lua_istable(var.lua.lua, -1) } {
             Ok(LuaTable{ variable: var })
         } else {
             Err(var)
@@ -26,33 +26,33 @@ impl<'lua> LuaTable<'lua> {
     pub fn iter<'me>(&'me mut self)
         -> LuaTableIterator<'lua, 'me>
     {
-        unsafe { liblua::lua_pushnil(self.variable.lua.lua) };
+        unsafe { ffi::lua_pushnil(self.variable.lua.lua) };
         LuaTableIterator { table: self }
     }
 
     pub fn get<R: CopyReadable, I: Index>(&mut self, index: I) -> Option<R> {
         index.push_to_lua(self.variable.lua);
-        unsafe { liblua::lua_gettable(self.variable.lua.lua, -2); }
+        unsafe { ffi::lua_gettable(self.variable.lua.lua, -2); }
         let value = CopyReadable::read_from_lua(self.variable.lua, -1);
-        unsafe { liblua::lua_pop(self.variable.lua.lua, 1); }
+        unsafe { ffi::lua_pop(self.variable.lua.lua, 1); }
         value
     }
 
     pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) {
         index.push_to_lua(self.variable.lua);
         value.push_to_lua(self.variable.lua);
-        unsafe { liblua::lua_settable(self.variable.lua.lua, -3); }
+        unsafe { ffi::lua_settable(self.variable.lua.lua, -3); }
     }
 
     // Obtains or create the metatable of the table
     pub fn get_or_create_metatable(self) -> LuaTable<'lua> {
-        let result = unsafe { liblua::lua_getmetatable(self.variable.lua.lua, -1) };
+        let result = unsafe { ffi::lua_getmetatable(self.variable.lua.lua, -1) };
 
         if result == 0 {
             unsafe {
-                liblua::lua_newtable(self.variable.lua.lua);
-                liblua::lua_setmetatable(self.variable.lua.lua, -2);
-                let r = liblua::lua_getmetatable(self.variable.lua.lua, -1);
+                ffi::lua_newtable(self.variable.lua.lua);
+                ffi::lua_setmetatable(self.variable.lua.lua, -2);
+                let r = ffi::lua_getmetatable(self.variable.lua.lua, -1);
                 assert!(r != 0);
             }
         }
@@ -66,7 +66,7 @@ impl<'a, 'b, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTa
         -> Option<Option<(K,V)>>
     {
         // this call pushes the next key and value on the stack
-        if unsafe { liblua::lua_next(self.table.variable.lua.lua, -2) } == 0 {
+        if unsafe { ffi::lua_next(self.table.variable.lua.lua, -2) } == 0 {
             return None
         }
 
@@ -74,7 +74,7 @@ impl<'a, 'b, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTa
         let value = CopyReadable::read_from_lua(self.table.variable.lua, -1);
 
         // removing the value, leaving only the key on the top of the stack
-        unsafe { liblua::lua_pop(self.table.variable.lua.lua, 1) };
+        unsafe { ffi::lua_pop(self.table.variable.lua.lua, 1) };
 
         //
         if key.is_none() || value.is_none() {
@@ -88,7 +88,7 @@ impl<'a, 'b, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTa
 // TODO: this destructor crashes the compiler
 /*impl<'a, 'b> Drop for LuaTableIterator<'a, 'b> {
     fn drop(&mut self) {
-        unsafe { liblua::lua_pop(self.table.variable.lua.lua, 1) }
+        unsafe { ffi::lua_pop(self.table.variable.lua.lua, 1) }
     }
 }*/
 

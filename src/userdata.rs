@@ -1,4 +1,4 @@
-use super::liblua;
+use super::ffi;
 use super::Lua;
 use super::Pushable;
 use super::{ ConsumeReadable, CopyReadable, LoadedVariable };
@@ -33,7 +33,7 @@ impl<T> DerefMut<T> for UserData<T> {
 
 impl<T:Clone> Pushable for UserData<T> {
     fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        let dataRaw = unsafe { liblua::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self.value) as ::libc::size_t) };
+        let dataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self.value) as ::libc::size_t) };
         let data: &mut T = unsafe { ::std::mem::transmute(dataRaw) };
         (*data) = self.value.clone();
         1
@@ -43,7 +43,7 @@ impl<T:Clone> Pushable for UserData<T> {
 impl<T:Clone> CopyReadable for UserData<T> {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<UserData<T>> {
         // TODO: check type
-        let dataPtr = unsafe { liblua::lua_touserdata(lua.lua, index) };
+        let dataPtr = unsafe { ffi::lua_touserdata(lua.lua, index) };
         let data: &T = unsafe { ::std::mem::transmute(dataPtr) };
         Some(UserData{value: data.clone()})
     }

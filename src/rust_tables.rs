@@ -1,11 +1,11 @@
-use super::liblua;
+use super::ffi;
 use super::Lua;
 use super::Pushable;
 
 fn push_iter<'a, V: Pushable, I: Iterator<&'a V>>(lua: &mut Lua, iterator: I) -> uint
 {
     // creating empty table
-    unsafe { liblua::lua_newtable(lua.lua) };
+    unsafe { ffi::lua_newtable(lua.lua) };
 
     for (elem, index) in iterator.zip(::std::iter::count(1u, 1u)) {
         let pushedCnt = elem.push_to_lua(lua);
@@ -14,10 +14,10 @@ fn push_iter<'a, V: Pushable, I: Iterator<&'a V>>(lua: &mut Lua, iterator: I) ->
             0 => continue,
             1 => {
                 index.push_to_lua(lua);
-                unsafe { liblua::lua_insert(lua.lua, -2) }
-                unsafe { liblua::lua_settable(lua.lua, -3) }
+                unsafe { ffi::lua_insert(lua.lua, -2) }
+                unsafe { ffi::lua_settable(lua.lua, -3) }
             },
-            2 => unsafe { liblua::lua_settable(lua.lua, -3) },
+            2 => unsafe { ffi::lua_settable(lua.lua, -3) },
             _ => fail!()
         }
     }

@@ -1,4 +1,4 @@
-use liblua;
+use ffi;
 use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
 pub struct LuaFunction<'a> {
@@ -10,7 +10,7 @@ struct ReadData {
     buffer: [u8, ..128]
 }
 
-extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut ::libc::c_void, size: *mut ::libc::size_t) -> *const ::libc::c_char {
+extern fn reader(_: *mut ffi::lua_State, dataRaw: *mut ::libc::c_void, size: *mut ::libc::size_t) -> *const ::libc::c_char {
     let data: &mut ReadData = unsafe { ::std::mem::transmute(dataRaw) };
 
     match data.reader.read(data.buffer.as_mut_slice()) {
@@ -24,7 +24,7 @@ extern fn reader(_: *mut liblua::lua_State, dataRaw: *mut ::libc::c_void, size: 
 impl<'a> LuaFunction<'a> {
     pub fn call<V: CopyReadable>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
-        let pcallReturnValue = unsafe { liblua::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
+        let pcallReturnValue = unsafe { ffi::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
 
         // if pcall succeeded, returning
         if pcallReturnValue == 0 {
@@ -35,13 +35,13 @@ impl<'a> LuaFunction<'a> {
         }
 
         // an error occured during execution
-        if pcallReturnValue == liblua::LUA_ERRMEM {
+        if pcallReturnValue == ffi::LUA_ERRMEM {
             fail!("lua_pcall returned LUA_ERRMEM");
         }
 
-        if pcallReturnValue == liblua::LUA_ERRRUN {
+        if pcallReturnValue == ffi::LUA_ERRRUN {
             let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
-            unsafe { liblua::lua_pop(self.variable.lua.lua, 1) };
+            unsafe { ffi::lua_pop(self.variable.lua.lua, 1) };
             return Err(ExecutionError(errorMsg));
         }
 
@@ -54,7 +54,7 @@ impl<'a> LuaFunction<'a> {
         let readdata = ReadData { reader: box code, buffer: unsafe { ::std::mem::uninitialized() } };
 
         let loadReturnValue = "chunk".with_c_str(|chunk|
-            unsafe { liblua::lua_load(lua.lua, reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
+            unsafe { ffi::lua_load(lua.lua, reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
         );
 
         if loadReturnValue == 0 {
@@ -67,12 +67,12 @@ impl<'a> LuaFunction<'a> {
         }
 
         let errorMsg: String = CopyReadable::read_from_lua(lua, -1).expect("can't find error message at the top of the Lua stack");
-        unsafe { liblua::lua_pop(lua.lua, 1) };
+        unsafe { ffi::lua_pop(lua.lua, 1) };
 
-        if loadReturnValue == liblua::LUA_ERRMEM {
+        if loadReturnValue == ffi::LUA_ERRMEM {
             fail!("LUA_ERRMEM");
         }
-        if loadReturnValue == liblua::LUA_ERRSYNTAX {
+        if loadReturnValue == ffi::LUA_ERRSYNTAX {
             return Err(SyntaxError(errorMsg));
         }
 
@@ -98,7 +98,7 @@ impl<'a> ConsumeReadable<'a> for LuaFunction<'a> {
     fn read_from_variable(var: LoadedVariable<'a>)
         -> Result<LuaFunction<'a>, LoadedVariable<'a>>
     {
-        if unsafe { liblua::lua_isfunction(var.lua.lua, -1) } {
+        if unsafe { ffi::lua_isfunction(var.lua.lua, -1) } {
             Ok(LuaFunction{ variable: var })
         } else {
             Err(var)
