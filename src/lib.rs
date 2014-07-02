@@ -83,13 +83,15 @@ pub trait ConsumeReadable<'a> {
 /**
  * Should be implemented by whatever type can be read by copy from the Lua stack
  */
-pub trait CopyReadable {
+pub trait CopyReadable : Clone + ::std::any::Any {
     /**
      * # Arguments
      *  * `lua` - The Lua object to read from
      *  * `index` - The index on the stack to read from
      */
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<Self>;
+    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<Self> {
+        userdata::read_copy_userdata(lua, index)
+    }
 }
 
 /**

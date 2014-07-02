@@ -1,6 +1,9 @@
 use ffi;
 use Lua;
+use LoadedVariable;
+use CopyReadable;
 use Pushable;
+use std::any::Any;
 
 /*fn destructor<T>(_: T) {
 
@@ -35,32 +38,32 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
     1
 }
 
-/*impl<T: Clone + 'static> CopyReadable for UserData<T> {
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<UserData<T>> {
-        unsafe {
-            let expectedTypeid = format!("{}", TypeId::of::<T>());
+// TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
+pub fn read_copy_userdata<T: Clone + ::std::any::Any>(lua: &mut Lua, index: ::libc::c_int) -> Option<T> {
+    unsafe {
+        let dummyMe: &T = ::std::mem::uninitialized();      // TODO: this is very very hacky, I don't even know if it works
+        let expectedTypeid = format!("{}", dummyMe.get_type_id());
 
-            let dataPtr = ffi::lua_touserdata(lua.lua, index);
-            if dataPtr.is_null() {
-                return None;
-            }
-
-            if ffi::lua_getmetatable(lua.lua, -1) == 0 {
-                return None;
-            }
-
-            "__typeid".push_to_lua(lua);
-            ffi::lua_gettable(lua.lua, -2);
-            if CopyReadable::read_from_lua(lua, -1) != Some(expectedTypeid) {
-                return None;
-            }
-            ffi::lua_pop(lua.lua, -2);
-
-            let data: &T = ::std::mem::transmute(dataPtr);
-            Some(UserData{value: data.clone()})
+        let dataPtr = ffi::lua_touserdata(lua.lua, index);
+        if dataPtr.is_null() {
+            return None;
         }
+
+        if ffi::lua_getmetatable(lua.lua, -1) == 0 {
+            return None;
+        }
+
+        "__typeid".push_to_lua(lua);
+        ffi::lua_gettable(lua.lua, -2);
+        if CopyReadable::read_from_lua(lua, -1) != Some(expectedTypeid) {
+            return None;
+        }
+        ffi::lua_pop(lua.lua, -2);
+
+        let data: &T = ::std::mem::transmute(dataPtr);
+        Some(data.clone())
     }
-}*/
+}
 
 #[cfg(test)]
 mod tests {
@@ -71,11 +74,12 @@ mod tests {
         #[deriving(Clone)]
         struct Foo;
         impl ::Pushable for Foo {}
+        impl ::CopyReadable for Foo {}
 
         let mut lua = Lua::new();
 
         lua.set("a", Foo);
-        //let x: Foo = lua.get("a").unwrap();       // TODO: 
+       // let x: Foo = lua.get("a").unwrap();
     }
 
     #[test]
@@ -88,15 +92,16 @@ mod tests {
         #[deriving(Clone)]
         struct Foo;
         impl ::Pushable for Foo {}
+        impl ::CopyReadable for Foo {}
         #[deriving(Clone)]
         struct Bar;
         impl ::Pushable for Bar {}
+        impl ::CopyReadable for Bar {}
 
         let mut lua = Lua::new();
 
         lua.set("a", Foo);
         
-        // TODO: 
         /*let x: Option<Bar> = lua.get("a");
         assert!(x.is_none())*/
     }
