@@ -9,7 +9,6 @@ extern crate libc;
 extern crate std;
 
 pub use lua_tables::LuaTable;
-pub use userdata::UserData;
 
 pub mod functions_read;
 pub mod lua_tables;
@@ -41,12 +40,23 @@ pub struct LoadedVariable<'a> {
 /**
  * Should be implemented by whatever type is pushable on the Lua stack
  */
-pub trait Pushable {
+pub trait Pushable: ::std::any::Any {
     /**
      * Pushes the value on the top of the stack
      * Must return the number of elements pushed
      */
-    fn push_to_lua(self, lua: &mut Lua) -> uint;
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
+        self.push_as_userdata(lua)
+    }
+
+    /**
+     * Pushes the value on the top of the stack as a user data
+     * This means that the value will only be readable as itself and not convertible to anything
+     * Also, objects pushed as userdata will not be cloned by Lua
+     */
+    fn push_as_userdata(self, lua: &mut Lua) -> uint {
+        userdata::push_userdata(self, lua)
+    }
 
     /**
      * Pushes over another element
@@ -67,7 +77,7 @@ pub trait ConsumeReadable<'a> {
     /**
      * Returns the LoadedVariable in case of failure
      */
-    fn read_from_variable(LoadedVariable<'a>) -> Result<Self, LoadedVariable<'a>>;
+    fn read_from_variable(var: LoadedVariable<'a>) -> Result<Self, LoadedVariable<'a>>;
 }
 
 /**

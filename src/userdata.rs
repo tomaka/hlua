@@ -1,74 +1,41 @@
-use super::ffi;
-use super::Lua;
-use super::Pushable;
-use super::{ ConsumeReadable, CopyReadable, LoadedVariable };
-use std::intrinsics::TypeId;
+use ffi;
+use Lua;
+use Pushable;
 
-pub struct UserData<T> {
-    value: T
-}
+/*fn destructor<T>(_: T) {
 
-impl<T: Clone> UserData<T> {
-    pub fn new(val: T) -> UserData<T> {
-        UserData{value: val}
+}*/
+
+// TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
+pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
+    let typeid = format!("{}", data.get_type_id());
+
+    let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&data) as ::libc::size_t) };
+    let luaData: &mut T = unsafe { ::std::mem::transmute(luaDataRaw) };
+    (*luaData) = data;
+
+    // creating a metatable
+    unsafe {
+        ffi::lua_newtable(lua.lua);
+
+        // index "__typeid" corresponds to the hash of the TypeId of T
+        "__typeid".push_to_lua(lua);
+        typeid.push_to_lua(lua);
+        ffi::lua_settable(lua.lua, -3);
+
+        // index "__gc" call the object's destructor
+        // TODO: 
+        /*"__gc".push_to_lua(lua);
+        destructor::<T>.push_to_lua(lua);
+        ffi::lua_settable(lua.lua, -3);*/
+
+        ffi::lua_setmetatable(lua.lua, -2);
     }
+
+    1
 }
 
-impl<T> Deref<T> for UserData<T> {
-    fn deref<'a>(&'a self)
-        -> &'a T
-    {
-        &self.value
-    }
-}
-
-impl<T> DerefMut<T> for UserData<T> {
-    fn deref_mut<'a>(&'a mut self)
-        -> &'a mut T
-    {
-        &mut self.value
-    }
-}
-
-impl<T: Clone> Clone for UserData<T> {
-    fn clone(&self) -> UserData<T> {
-        UserData { value: self.value.clone() }
-    }
-}
-
-fn destructor<T>(_: UserData<T>) {
-
-}
-
-impl<T: Clone + 'static> Pushable for UserData<T> {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
-        let dataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self.value) as ::libc::size_t) };
-        let data: &mut T = unsafe { ::std::mem::transmute(dataRaw) };
-        (*data) = self.value.clone();
-
-        // creating a metatable
-        let typeid = format!("{}", TypeId::of::<T>());
-        unsafe {
-            ffi::lua_newtable(lua.lua);
-
-            // index "__typeid" corresponds to the hash of the TypeId of T
-            "__typeid".push_to_lua(lua);
-            typeid.push_to_lua(lua);
-            ffi::lua_settable(lua.lua, -3);
-
-            // index "__gc" call the object's destructor
-            "__gc".push_to_lua(lua);
-            destructor::<T>.push_to_lua(lua);
-            ffi::lua_settable(lua.lua, -3);
-
-            ffi::lua_setmetatable(lua.lua, -2);
-        }
-
-        1
-    }
-}
-
-impl<T: Clone + 'static> CopyReadable for UserData<T> {
+/*impl<T: Clone + 'static> CopyReadable for UserData<T> {
     fn read_from_lua(lua: &mut Lua, index: i32) -> Option<UserData<T>> {
         unsafe {
             let expectedTypeid = format!("{}", TypeId::of::<T>());
@@ -93,41 +60,44 @@ impl<T: Clone + 'static> CopyReadable for UserData<T> {
             Some(UserData{value: data.clone()})
         }
     }
-}
-
-impl<'a, T:Clone> ConsumeReadable<'a> for UserData<T> {
-    fn read_from_variable(var: LoadedVariable<'a>) -> Result<UserData<T>, LoadedVariable<'a>> {
-        match CopyReadable::read_from_lua(var.lua, -1) {
-            None => Err(var),
-            Some(a) => Ok(a)
-        }
-    }
-}
+}*/
 
 #[cfg(test)]
 mod tests {
+    use Lua;
+
     #[test]
     fn readwrite() {
-        let mut lua = super::super::Lua::new();
-        let d = super::UserData::new(2i);
+        #[deriving(Clone)]
+        struct Foo;
+        impl ::Pushable for Foo {}
 
-        lua.set("a", d);
-        let x: super::UserData<int> = lua.get("a").unwrap();
-        assert_eq!(x.value, 2)
+        let mut lua = Lua::new();
+
+        lua.set("a", Foo);
+        //let x: Foo = lua.get("a").unwrap();       // TODO: 
+    }
+
+    #[test]
+    fn destructor_called() {
+        // TODO: how to test this?
     }
 
     #[test]
     fn type_check() {
         #[deriving(Clone)]
         struct Foo;
+        impl ::Pushable for Foo {}
         #[deriving(Clone)]
         struct Bar;
+        impl ::Pushable for Bar {}
 
-        let mut lua = super::super::Lua::new();
+        let mut lua = Lua::new();
 
-        lua.set("a", super::UserData::new(Foo));
-
-        let x: Option<super::UserData<Bar>> = lua.get("a");
-        assert!(x.is_none())
+        lua.set("a", Foo);
+        
+        // TODO: 
+        /*let x: Option<Bar> = lua.get("a");
+        assert!(x.is_none())*/
     }
 }
