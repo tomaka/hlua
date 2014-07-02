@@ -43,6 +43,22 @@ impl<'lua> LuaTable<'lua> {
         value.push_to_lua(self.variable.lua);
         unsafe { liblua::lua_settable(self.variable.lua.lua, -3); }
     }
+
+    // Obtains or create the metatable of the table
+    pub fn get_or_create_metatable(self) -> LuaTable<'lua> {
+        let result = unsafe { liblua::lua_getmetatable(self.variable.lua.lua, -1) };
+
+        if result == 0 {
+            unsafe {
+                liblua::lua_newtable(self.variable.lua.lua);
+                liblua::lua_setmetatable(self.variable.lua.lua, -2);
+                let r = liblua::lua_getmetatable(self.variable.lua.lua, -1);
+                assert!(r != 0);
+            }
+        }
+
+        LuaTable { variable: LoadedVariable { lua: self.variable.lua, size: self.variable.size + 1 } }
+    }
 }
 
 impl<'a, 'b, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTableIterator<'a, 'b> {
@@ -130,5 +146,23 @@ mod tests {
 
         let z: int = table.get(1i).unwrap();
         assert_eq!(z, 9);
+    }
+
+    #[test]
+    fn metatable() {
+        let mut lua = Lua::new();
+
+        let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+
+        {
+            let table: LuaTable = lua.get("a").unwrap();
+
+            let mut metatable = table.get_or_create_metatable();
+            fn handler() -> int { 5 };
+            metatable.set("__add".to_string(), handler);
+        }
+
+        let r: int = lua.execute("return a + a").unwrap();
+        assert_eq!(r, 5);
     }
 }
