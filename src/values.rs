@@ -9,8 +9,8 @@ use super::LoadedVariable;
 macro_rules! integer_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushinteger(lua.lua, *self as ffi::lua_Integer) };
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
+                unsafe { ffi::lua_pushinteger(lua.lua, self as ffi::lua_Integer) };
                 1
             }
         }
@@ -46,8 +46,8 @@ integer_impl!(i32)
 macro_rules! unsigned_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushunsigned(lua.lua, *self as ffi::lua_Unsigned) };
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
+                unsafe { ffi::lua_pushunsigned(lua.lua, self as ffi::lua_Unsigned) };
                 1
             }
         }
@@ -83,8 +83,8 @@ unsigned_impl!(u32)
 macro_rules! numeric_impl(
     ($t:ident) => (
         impl Pushable for $t {
-            fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushnumber(lua.lua, *self as f64) };
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
+                unsafe { ffi::lua_pushnumber(lua.lua, self as f64) };
                 1
             }
         }
@@ -115,7 +115,7 @@ numeric_impl!(f32)
 numeric_impl!(f64)
 
 impl Pushable for String {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
         unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
         1
     }
@@ -146,14 +146,14 @@ impl Index for String {
 }
 
 impl<'a> Pushable for &'a str {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
         unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
         1
     }
 }
 
 impl Pushable for bool {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
         unsafe { ffi::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
         1
     }
@@ -182,7 +182,7 @@ impl Index for bool {
 }
 
 impl Pushable for () {
-    fn push_to_lua(&self, _: &mut Lua) -> uint {
+    fn push_to_lua(self, _: &mut Lua) -> uint {
         0
     }
 }

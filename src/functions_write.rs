@@ -64,10 +64,10 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
 macro_rules! pushable_function(
     ($b:block | $($ty:ident),*) => (
         impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Pushable for fn($($ty),*)->Ret {
-            fn push_to_lua(&self, lua: &mut Lua) -> uint {
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a lightuserdata
                 // TODO: should be pushed as a real user data instead, for compatibility with non-functions
-                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(*self)) };
+                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(self)) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
@@ -100,14 +100,14 @@ pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2
 
 
 impl<T: Pushable, E: ::std::fmt::Show> Pushable for Result<T,E> {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
         if !lua.inside_callback {
             fail!("cannot push a Result object except as a function return type")
         }
 
         match self {
-            &Ok(ref val) => val.push_to_lua(lua),
-            &Err(ref val) => {
+            Ok(val) => val.push_to_lua(lua),
+            Err(val) => {
                 let msg = format!("{}", val);
                 msg.push_to_lua(lua);
                 unsafe { ffi::lua_error(lua.lua); }

@@ -2,7 +2,7 @@ use super::ffi;
 use super::Lua;
 use super::Pushable;
 
-fn push_iter<'a, V: Pushable, I: Iterator<&'a V>>(lua: &mut Lua, iterator: I) -> uint
+fn push_iter<V: Pushable, I: Iterator<V>>(lua: &mut Lua, iterator: I) -> uint
 {
     // creating empty table
     unsafe { ffi::lua_newtable(lua.lua) };
@@ -26,14 +26,14 @@ fn push_iter<'a, V: Pushable, I: Iterator<&'a V>>(lua: &mut Lua, iterator: I) ->
 }
 
 impl<T: Pushable> Pushable for Vec<T> {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        push_iter(lua, self.iter())
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
+        push_iter(lua, self.move_iter())
     }
 }
 
-impl<'a, T: Pushable> Pushable for &'a [T] {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
-        push_iter(lua, self.iter())
+impl<'a, T: Pushable + Clone> Pushable for &'a [T] {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
+        push_iter(lua, self.iter().map(|e| e.clone()))
     }
 }
 

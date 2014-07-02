@@ -3,10 +3,14 @@ use { Lua, Pushable, CopyReadable };
 macro_rules! tuple_impl(
     ($($ty:ident | $nb:ident),+) => (
         impl<$($ty: Pushable),+> Pushable for ($($ty),+) {
-            fn push_to_lua(&self, lua: &mut Lua) -> uint {
-                let mut total = 0;
-                $(total += self.$nb().push_to_lua(lua);)+
-                total
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
+                match self {
+                    ($($nb),+) => {
+                        let mut total = 0;
+                        $(total += $nb.push_to_lua(lua);)+
+                        total
+                    }
+                }
             }
         }
 

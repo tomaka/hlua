@@ -41,7 +41,7 @@ fn destructor<T>(_: UserData<T>) {
 }
 
 impl<T: Clone + 'static> Pushable for UserData<T> {
-    fn push_to_lua(&self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua) -> uint {
         let dataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self.value) as ::libc::size_t) };
         let data: &mut T = unsafe { ::std::mem::transmute(dataRaw) };
         (*data) = self.value.clone();

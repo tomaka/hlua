@@ -46,12 +46,12 @@ pub trait Pushable {
      * Pushes the value on the top of the stack
      * Must return the number of elements pushed
      */
-    fn push_to_lua(&self, lua: &mut Lua) -> uint;
+    fn push_to_lua(self, lua: &mut Lua) -> uint;
 
     /**
      * Pushes over another element
      */
-    fn push_over<'a>(&self, mut over: LoadedVariable<'a>)
+    fn push_over<'a>(self, mut over: LoadedVariable<'a>)
         -> (LoadedVariable<'a>, uint)
     {
         let val = self.push_to_lua(over.lua);
