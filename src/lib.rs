@@ -3,7 +3,8 @@
 #![comment = "Lua bindings for Rust"]
 #![license = "MIT"]
 #![allow(visible_private_types)]
-#![feature(macro_rules, plugin_registrar, quote)]
+#![feature(macro_rules)]
+#![feature(plugin_registrar)]
 
 extern crate libc;
 extern crate rustc;
@@ -14,6 +15,7 @@ pub use lua_tables::LuaTable;
 
 pub mod functions_read;
 pub mod lua_tables;
+pub mod module;
 pub mod userdata;
 
 mod ffi;
@@ -21,6 +23,7 @@ mod functions_write;
 mod rust_tables;
 mod tuples;
 mod values;
+
 
 /**
  * Main object of the library
