@@ -65,6 +65,25 @@ For example you can easily execute the content of a file like this:
     
 In Lua, functions are exactly like regular variables.
 
+You can write regular functions as well as closures:
+
+    lua.set("mul", |a:int,b:int| a*b);
+
+Note that the lifetime of the Lua context must be equal to or shorter than the lifetime of closures. This is enforced at compile-time.
+
+    let mut a = 5i;
+
+    {
+        let mut lua = Lua::new();
+
+        lua.set("inc", || a += 1);
+        for i in range(0i, 15) {
+            lua.execute::<()>("inc()").unwrap();
+        }
+    } // unborrows `a`
+
+    assert_eq!(a, 20)
+
 ##### Error handling
 
 If your Rust function returns a `Result` object which contains an error, then a Lua error will be triggered.
@@ -174,10 +193,10 @@ This module will then be usable by Lua:
  - [ ] Reading/writing containers
    - [x] Vectors and slices
    - [ ] HashMaps and HashSets
- - [ ] Writing functions
+ - [x] Writing functions
    - [x] Basic support
    - [x] Functions with parameters
-   - [ ] Static closures
+   - [x] Closures
  - [ ] Reading or loading a function and calling it later
    - [x] Basic support
    - [ ] Passing parameters

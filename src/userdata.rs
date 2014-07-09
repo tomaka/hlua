@@ -1,6 +1,5 @@
 use ffi;
 use Lua;
-use LoadedVariable;
 use CopyReadable;
 use Pushable;
 use std::any::Any;

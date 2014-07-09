@@ -14,25 +14,25 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 fn wrapper2<T: AnyCallable>(lua: *mut ffi::lua_State) -> ::libc::c_int {
     // loading the object that we want to call from the Lua context
     let dataRaw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
-    let data: &T = unsafe { ::std::mem::transmute(dataRaw) };
+    let data: &mut T = unsafe { ::std::mem::transmute(dataRaw) };
 
     data.load_args_and_call(lua)
 }
 
 // this trait should be implemented on objects that are pushed to be callbacks
 trait AnyCallable {
-    fn load_args_and_call(&self, lua: *mut ffi::lua_State) -> ::libc::c_int;
+    fn load_args_and_call(&mut self, lua: *mut ffi::lua_State) -> ::libc::c_int;
 }
 
 // should be implemented by objects that can be called
 // this will be removed in favor of std::ops::Fn when it is widely supported
 // "Args" should be a tuple containing the parameters
 trait Callable<'lua, Args: CopyReadable, Ret: Pushable<'lua>> {
-    fn do_call(&self, args: Args) -> Ret;
+    fn do_call(&mut self, args: Args) -> Ret;
 }
 
 impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
-    fn load_args_and_call(&self, lua: *mut ffi::lua_State)
+    fn load_args_and_call(&mut self, lua: *mut ffi::lua_State)
         -> ::libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
@@ -82,7 +82,32 @@ macro_rules! pushable_function(
 
         #[allow(unused_variable)]
         impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
-            fn do_call(&self, args: ($($ty),*)) -> Ret {
+            fn do_call(&mut self, args: ($($ty),*)) -> Ret {
+                $b
+            }
+        }
+
+        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for |$($ty),*|:'lua->Ret {
+            fn push_to_lua(self, lua: &mut Lua) -> uint {
+                // pushing the function pointer as a userdata
+                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let luaData: &mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
+                (*luaData) = self;
+
+                // pushing wrapper2 as a lightuserdata
+                let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<|$($ty),*|:'lua->Ret>;
+                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(wrapper2)) };
+
+                // pushing wrapper1 as a closure
+                unsafe { ffi::lua_pushcclosure(lua.lua, ::std::mem::transmute(wrapper1), 2) };
+
+                1
+            }
+        }
+
+        #[allow(unused_variable)]
+        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
+            fn do_call(&mut self, args: ($($ty),*)) -> Ret {
                 $b
             }
         }
@@ -179,5 +204,49 @@ mod tests {
             Err(::ExecutionError(_)) => (),
             _ => fail!()
         }
+    }
+
+    #[test]
+    fn closures() {
+        let mut lua = Lua::new();
+
+        lua.set("add", |a:int, b:int| a + b);
+        lua.set("sub", |a:int, b:int| a - b);
+
+        let val1: int = lua.execute("return add(3, 7)").unwrap();
+        assert_eq!(val1, 10);
+
+        let val2: int = lua.execute("return sub(5, 2)").unwrap();
+        assert_eq!(val2, 3);
+    }
+
+    #[test]
+    fn closures_lifetime() {
+        fn t(f: |int,int|->int) {
+            let mut lua = Lua::new();
+
+            lua.set("add", f);
+
+            let val1: int = lua.execute("return add(3, 7)").unwrap();
+            assert_eq!(val1, 10);
+        }
+
+        t(|a,b| a+b);
+    }
+
+    #[test]
+    fn closures_extern_access() {
+        let mut a = 5i;
+
+        {
+            let mut lua = Lua::new();
+
+            lua.set("inc", || a += 1);
+            for i in range(0i, 15) {
+                lua.execute::<()>("inc()").unwrap();
+            }
+        }
+
+        assert_eq!(a, 20)
     }
 }
