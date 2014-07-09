@@ -49,31 +49,12 @@ struct LoadedVariable<'var, 'lua> {
 #[unstable]
 pub trait Pushable<'lua>: ::std::any::Any {
     /**
-     * Pushes the value on the top of the stack
-     * Must return the number of elements pushed
+     * Pushes the value on the top of the stack.
+     * **This is the function that is called when you send this value to Lua**.
+     * Must return the number of elements pushed.
      */
     fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
-        self.push_as_userdata(lua)
-    }
-
-    /**
-     * Pushes the value on the top of the stack as a user data
-     * This means that the value will only be readable as itself and not convertible to anything
-     * Also, objects pushed as userdata will not be cloned by Lua
-     */
-    fn push_as_userdata(self, lua: &mut Lua<'lua>) -> uint {
-        userdata::push_userdata(self, lua)
-    }
-
-    /**
-     * Pushes over another element
-     */
-    fn push_over<'var>(self, mut over: LoadedVariable<'var, 'lua>)
-        -> (LoadedVariable<'var, 'lua>, uint)
-    {
-        let val = self.push_to_lua(over.lua);
-        over.size += val;
-        (over, val)
+        userdata::push_userdata(self, lua, |_|{})
     }
 }
 

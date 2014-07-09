@@ -1,7 +1,9 @@
 use ffi;
 use Lua;
 use CopyReadable;
+use ConsumeReadable;
 use Pushable;
+use LuaTable;
 use std::any::Any;
 
 /*fn destructor<T>(_: T) {
@@ -10,7 +12,7 @@ use std::any::Any;
 
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
+pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mut LuaTable|) -> uint {
     let typeid = format!("{}", data.get_type_id());
 
     let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&data) as ::libc::size_t) };
@@ -31,6 +33,12 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
         /*"__gc".push_to_lua(lua);
         destructor::<T>.push_to_lua(lua);
         ffi::lua_settable(lua.lua, -3);*/
+
+        {
+            let mut table = ConsumeReadable::read_from_variable(::LoadedVariable { lua: lua, size: 1 }).ok().unwrap();
+            metatable(&mut table);
+            ::std::mem::forget(table);
+        }
 
         ffi::lua_setmetatable(lua.lua, -2);
     }
@@ -105,5 +113,27 @@ mod tests {
         
         /*let x: Option<Bar> = lua.get("a");
         assert!(x.is_none())*/
+    }
+
+    #[test]
+    fn metatables() {
+        #[deriving(Clone)]
+        struct Foo;
+        impl<'a> ::Pushable<'a> for Foo {
+            fn push_to_lua(self, lua: &mut Lua<'a>) -> uint {
+                ::userdata::push_userdata(self, lua, |table| {
+                    table.set("__index".to_string(), vec!(
+                        ("test".to_string(), || 5i)
+                    ));
+                })
+            }
+        }
+
+        let mut lua = Lua::new();
+
+        lua.set("a", Foo);
+
+        let x: int = lua.execute("return a.test()").unwrap();
+        assert_eq!(x, 5);
     }
 }
