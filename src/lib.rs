@@ -209,8 +209,9 @@ impl Lua {
     /**
      *
      */
-    pub unsafe fn load_already_pushed<'a, V: ConsumeReadable<'a>>(&'a mut self) -> Option<V> {
-        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
+    pub fn load_new_table<'a>(&'a mut self) -> LuaTable<'a> {
+        unsafe { ffi::lua_newtable(self.lua) };
+        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
     }
 }
 

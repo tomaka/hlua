@@ -102,14 +102,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
             #[no_mangle]
             pub extern "C" fn luaopen_{0}(lua: *mut self::libc::c_void) -> self::libc::c_int {{
                 unsafe {{
-                    use self::rust_hl_lua::Pushable;
-
                     let mut lua = self::rust_hl_lua::Lua::from_existing_state(lua, false);
-
-                    let dummyVec: Vec<int> = Vec::new();
-                    dummyVec.push_to_lua(&mut lua);
-
-                    let mut table: self::rust_hl_lua::LuaTable = lua.load_already_pushed().unwrap();
+                    let mut table = lua.load_new_table();
 
                     {1}
 
