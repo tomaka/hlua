@@ -1,90 +1,144 @@
 #![feature(plugin_registrar)]
 
-extern crate libc;
 extern crate rustc;
 extern crate syntax;
 
+use std::gc::{GC, Gc};
 use syntax::parse::token;
-use syntax::ast::{ Expr, Item, TokenTree };
-use syntax::ext::base::{expr_to_str, get_exprs_from_tts, DummyResult, ExtCtxt, MacResult};
-use syntax::codemap::Span;
+use syntax::ast;
+use syntax::ext::base;
+use syntax::ext::quote::rt::ToSource;
+use syntax::codemap;
 
 #[plugin_registrar]
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut ::rustc::plugin::Registry) {
-    reg.register_macro("lua_module", macro_handler);
+    reg.register_syntax_extension(token::intern("export_lua_module"), base::ItemModifier(expand_lua_module));
 }
 
-// this is the object that we will return from the macro expansion
-struct MacroResult {
-    content: Vec<::std::gc::Gc<Item>>
-}
-impl MacResult for MacroResult {
-    fn make_def(&self) -> Option<::syntax::ext::base::MacroDef> { None }
-    fn make_expr(&self) -> Option<::std::gc::Gc<::syntax::ast::Expr>> { None }
-    fn make_pat(&self) -> Option<::std::gc::Gc<::syntax::ast::Pat>> { None }
-    fn make_stmt(&self) -> Option<::std::gc::Gc<::syntax::ast::Stmt>> { None }
-
-    fn make_items(&self) -> Option<::syntax::util::small_vector::SmallVector<::std::gc::Gc<Item>>> {
-        Some(::syntax::util::small_vector::SmallVector::many(self.content.clone()))
-    }
-}
-
-// handler for generate_gl_bindings!
-pub fn macro_handler(ecx: &mut ExtCtxt, span: Span, token_tree: &[TokenTree]) -> Box<MacResult> {
-    // getting the arguments from the macro
-    let (moduleName, _) = match parse_macro_arguments(ecx, span.clone(), token_tree) {
-        Some(t) => t,
-        None => return DummyResult::any(span)
+// handler for export_lua_module
+pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
+    -> Gc<ast::Item>
+{
+    // checking that the input item is a module
+    let module = match input_item.node {
+        ast::ItemMod(ref module) => module,
+        _ => {
+            ecx.span_err(input_item.span, "export_lua_module extension is only allowed on modules");
+            return input_item
+        }
     };
 
-    // generating the source code
-    let content = format!(r#"
-        mod ffi {{
-            pub struct lua_State;
-            #[link(name = "lua5.2")]
-            extern {{
-                pub fn lua_createtable(L: *mut lua_State, narr: ::libc::c_int, nrec: ::libc::c_int);
+    // creating the new item that will be returned by the function
+    // it is just a clone of the input with more elements added to it
+    let mut newItem = input_item.deref().clone();
+    newItem.vis = ast::Public;
+    if input_item.vis != ast::Public {
+        ecx.span_warn(input_item.span, "export_lua_module will turn the module into a public module");
+    }
+
+    // creating an array of the lines of code to add to the main Lua entry point
+    let moduleHandlerBody: Vec<String> = {
+        let mut moduleHandlerBody = Vec::new();
+
+        for moditem in module.items.iter() {
+            let moditem_name = moditem.ident.to_source();
+
+            match moditem.node {
+                ast::ItemFn(..) => (),
+                _ => {
+                    ecx.span_warn(moditem.span, format!("item `{}` is not a function and will thus be ignored by `export_lua_module`", moditem_name).as_slice());
+                    continue
+                }
+            };
+
+            // adding a line to the content 
+            moduleHandlerBody.push(format!(r#"
+                table.set("{0}".to_string(), {0});
+            "#, moditem_name));
+        }
+
+        moduleHandlerBody
+    };
+
+    // adding extern crate declarations
+    {
+        let generatedCodeContent = format!(r#"
+            mod x {{
+                extern crate rust_hl_lua;
+                extern crate libc;
             }}
-        }}
+        "#);
 
-        #[no_mangle]
-        pub extern "C" fn luaopen_{}(lua: *mut ffi::lua_State) -> ::libc::c_int {{
-            unsafe {{ ffi::lua_createtable(lua, 0, 0); }}
-            1
-        }}
-    "#, moduleName);
+        // creating a new Rust parser from this
+        let mut parser = ::syntax::parse::new_parser_from_source_str(ecx.parse_sess(), ecx.cfg(), "".to_string(), generatedCodeContent);
 
-    // creating a new Rust parser from this
-    let mut parser = ::syntax::parse::new_parser_from_source_str(ecx.parse_sess(), ecx.cfg(), "".to_string(), content);
-
-    // getting all the items defined by the bindings
-    let mut items = Vec::new();
-    loop {
+        // getting all the items defined inside "generateCodeContent"
         match parser.parse_item_with_outer_attributes() {
-            None => break,
-            Some(i) => items.push(i)
+            None => (),
+            Some(m) => {
+                let mut m = match m.node {
+                    ast::ItemMod(ref m) => m, _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
+                };
+
+                let ref mut mutNewItem = match &mut newItem.node {
+                    &ast::ItemMod(ref mut m) => m,
+                    _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
+                };
+
+                for i in m.view_items.iter() { mutNewItem.view_items.unshift(i.clone()) }
+            }
+        }
+
+        if !parser.eat(&token::EOF) {
+            ecx.span_err(input_item.span, "the rust parser failed to compile the module, there is an internal bug in this library");
+            return input_item;
         }
     }
-    if !parser.eat(&token::EOF) {
-        ecx.span_err(span, "the rust parser failed to compile all the generated bindings (meaning there is a bug in this library!)");
-        return DummyResult::any(span)
+
+    // generating the source code that we will add inside the module
+    {
+        let generatedCodeContent = format!(r#"
+            #[no_mangle]
+            pub extern "C" fn luaopen_{0}(lua: *mut self::libc::c_void) -> self::libc::c_int {{
+                unsafe {{
+                    use self::rust_hl_lua::Pushable;
+
+                    let mut lua = self::rust_hl_lua::Lua::from_existing_state(lua, false);
+
+                    let dummyVec: Vec<int> = Vec::new();
+                    dummyVec.push_to_lua(&mut lua);
+
+                    let mut table: self::rust_hl_lua::LuaTable = lua.load_already_pushed().unwrap();
+
+                    {1}
+
+                    ::std::mem::forget(table);
+                    1
+               }}
+            }}
+        "#, input_item.ident.to_source(), moduleHandlerBody.connect("\n"));
+
+        // creating a new Rust parser from this
+        let mut parser = ::syntax::parse::new_parser_from_source_str(ecx.parse_sess(), ecx.cfg(), "".to_string(), generatedCodeContent);
+
+        // getting all the items defined inside "generateCodeContent"
+        loop {
+            match parser.parse_item_with_outer_attributes() {
+                None => break,
+                Some(i) => match &mut newItem.node {
+                    &ast::ItemMod(ref mut m) => m.items.push(i),
+                    _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
+                }
+            }
+        }
+
+        if !parser.eat(&token::EOF) {
+            ecx.span_err(input_item.span, "the rust parser failed to compile the module, there is an internal bug in this library");
+            return input_item;
+        }
     }
-    box MacroResult { content: items } as Box<MacResult>
-}
 
-fn parse_macro_arguments(ecx: &mut ExtCtxt, span: Span, tts: &[TokenTree]) -> Option<(String, Vec<(String, Expr)>)> {
-    let values = match get_exprs_from_tts(ecx, span, tts) {
-        Some(v) => v,
-        None => return None
-    };
-
-    if values.len() != 2 {
-        ecx.span_err(span, format!("expected 2 arguments but got {}", values.len()).as_slice());
-        return None;
-    }
-
-    let name = expr_to_str(ecx, values.get(0).clone(), "expected string literal").map(|e| match e { (s, _) => s.get().to_string() }).unwrap();
-
-    Some((name, Vec::new()))
+    // returning
+    box(GC) newItem
 }

@@ -205,6 +205,13 @@ impl Lua {
         value.push_to_lua(self);
         unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }
+
+    /**
+     *
+     */
+    pub unsafe fn load_already_pushed<'a, V: ConsumeReadable<'a>>(&'a mut self) -> Option<V> {
+        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
+    }
 }
 
 impl Drop for Lua {

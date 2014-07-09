@@ -130,26 +130,38 @@ This can be useful to create APIs:
 
 This library also includes a second library named `rust_hl_lua_module` which allows you to create Lua modules in Rust.
 
-Cargo doesn't support multiple libraries per project for the moment, so you will have to compile it manually:
+Cargo doesn't support multiple libraries per project for the moment, so you will have to compile a separate `Cargo.toml` manually:
 
-    rustc -L target --out-dir target src/module.rs
+    cd modules && cargo build
 
 Then you can use it like this:
 
-    #![crate_type = "lib"]
+    #![crate_type = "dylib"]
     #![feature(phase)]
 
     #[phase(plugin)]
     extern crate rust_hl_lua_module;
+    extern crate rust_hl_lua;
     extern crate libc;  // required :(
 
-    fn function1(a: int, b: int) -> int { a + b }
-    fn function2(a: int) -> int { a + 5 }
+    #[export_lua_module]
+    pub mod mylib {
+        fn function1(a: int, b: int) -> int {
+            a + b
+        }
 
-    lua_module!("mylib",
-        "function1" => function1,
-        "function2" => function2
-    )
+        fn function2(a: int) -> int {
+            a + 5
+        }
+    }
+
+This module will then be usable by Lua:
+
+```lua
+> mylib = require("mylib")
+> return mylib.function1(2, 4)
+6
+```
 
 ### Roadmap
 
