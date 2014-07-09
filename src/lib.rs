@@ -53,9 +53,7 @@ pub trait Pushable<'lua>: ::std::any::Any {
      * **This is the function that is called when you send this value to Lua**.
      * Must return the number of elements pushed.
      */
-    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
-        userdata::push_userdata(self, lua, |_|{})
-    }
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint;
 }
 
 /**

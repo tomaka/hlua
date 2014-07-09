@@ -82,7 +82,11 @@ mod tests {
     fn readwrite() {
         #[deriving(Clone)]
         struct Foo;
-        impl<'a> ::Pushable<'a> for Foo {}
+        impl<'a> ::Pushable<'a> for Foo {
+            fn push_to_lua(self, lua: &mut Lua<'a>) -> uint {
+                ::userdata::push_userdata(self, lua, |_|{})
+            }
+        }
         impl ::CopyReadable for Foo {}
 
         let mut lua = Lua::new();
@@ -122,11 +126,20 @@ mod tests {
     fn type_check() {
         #[deriving(Clone)]
         struct Foo;
-        impl<'a> ::Pushable<'a> for Foo {}
+        impl<'a> ::Pushable<'a> for Foo {
+            fn push_to_lua(self, lua: &mut Lua<'a>) -> uint {
+                ::userdata::push_userdata(self, lua, |_|{})
+            }
+        }
         impl ::CopyReadable for Foo {}
+
         #[deriving(Clone)]
         struct Bar;
-        impl<'a> ::Pushable<'a> for Bar {}
+        impl<'a> ::Pushable<'a> for Bar {
+            fn push_to_lua(self, lua: &mut Lua<'a>) -> uint {
+                ::userdata::push_userdata(self, lua, |_|{})
+            }
+        }
         impl ::CopyReadable for Bar {}
 
         let mut lua = Lua::new();
