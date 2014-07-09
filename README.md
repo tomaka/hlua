@@ -36,7 +36,7 @@ The `Lua` struct is the main element of this library. It represents a context in
     let x: int = lua.get("x").unwrap();  // x is equal to 3
 
 Reading and writing global variables of the Lua context can be done with `set` and `get`.
-The `get` function returns an `Option<T>` 
+The `get` function returns an `Option<T>` and does a copy of the value.
 
 The base types that can be read and written are: `int`, `i8`, `i16`, `i32`, `uint`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`.
 
@@ -92,7 +92,9 @@ If your Rust function returns a `Result` object which contains an error, then a 
 
 Manipulating a Lua table can be done by reading a `LuaTable` object.
 
-    let mut table: rust-hl-lua::LuaTable = lua.get("a").unwrap();
+    let mut table: rust-hl-lua::LuaTable = lua.load("a").unwrap();
+
+Note that we use the `load` function instead of `get` function, because reading a `LuaTable` mutably borrows the Lua context.
 
 You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<(Key, Value)>`, the `Option` being empty when either the key or the value is not convertible to the requested type. The `filter_map` function (provided by the standard `Iterator` trait) is very useful when dealing with this.
 
@@ -102,7 +104,7 @@ You can then iterate through the table with the `.iter()` function. Note that th
 
 You can also retreive and modify individual indices:
 
-    let x = table.get("a").unwrap();
+    let x = table.load("a").unwrap();
     table.set("b", "hello");
 
 #### Calling Lua functions
@@ -114,7 +116,7 @@ You can call Lua functions by reading a `functions_read::LuaFunction`.
             return 5
         end");
 
-    let get_five: functions_read::LuaFunction = lua.get("get_five").unwrap();
+    let get_five: functions_read::LuaFunction = lua.load("get_five").unwrap();
     let value: int = get_five().unwrap();
     assert_eq!(value, 5);
 

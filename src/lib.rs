@@ -198,12 +198,21 @@ impl<'lua> Lua<'lua> {
     }
 
     /**
-     * Reads the value of a global variable
+     * Loads the value of a global variable
      */
     #[unstable]
-    pub fn get<'a, I: Str, V: ConsumeReadable<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
+    pub fn load<'a, I: Str, V: ConsumeReadable<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
+    }
+
+    /**
+     * Reads the value of a global variable by copying it
+     */
+    #[unstable]
+    pub fn get<I: Str, V: CopyReadable>(&mut self, index: I) -> Option<V> {
+        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        CopyReadable::read_from_lua(self, -1)
     }
 
     /**

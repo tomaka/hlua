@@ -107,7 +107,7 @@ mod tests {
 
         let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-        let mut table: LuaTable = lua.get("a").unwrap();
+        let mut table: LuaTable = lua.load("a").unwrap();
         let mut counter = 0u;
 
         for (key, value) in table.iter().filter_map(|e| e) {
@@ -126,7 +126,7 @@ mod tests {
 
         let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-        let mut table: LuaTable = lua.get("a").unwrap();
+        let mut table: LuaTable = lua.load("a").unwrap();
 
         for _ in range(0u, 10) {
             let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
@@ -139,7 +139,7 @@ mod tests {
         let mut lua = Lua::new();
 
         let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
-        let mut table: LuaTable = lua.get("a").unwrap();
+        let mut table: LuaTable = lua.load("a").unwrap();
 
         let x: int = table.get(2i).unwrap();
         assert_eq!(x, 8);
@@ -159,7 +159,7 @@ mod tests {
         let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
         {
-            let table: LuaTable = lua.get("a").unwrap();
+            let table: LuaTable = lua.load("a").unwrap();
 
             let mut metatable = table.get_or_create_metatable();
             fn handler() -> int { 5 };
