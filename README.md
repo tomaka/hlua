@@ -104,7 +104,7 @@ You can then iterate through the table with the `.iter()` function. Note that th
 
 You can also retreive and modify individual indices:
 
-    let x = table.load("a").unwrap();
+    let x = table.get("a").unwrap();
     table.set("b", "hello");
 
 #### Calling Lua functions
