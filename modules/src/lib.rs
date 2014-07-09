@@ -24,7 +24,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
     let module = match input_item.node {
         ast::ItemMod(ref module) => module,
         _ => {
-            ecx.span_err(input_item.span, "export_lua_module extension is only allowed on modules");
+            ecx.span_err(input_item.span, "`export_lua_module` extension is only allowed on modules");
             return input_item
         }
     };
@@ -34,7 +34,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
     let mut newItem = input_item.deref().clone();
     newItem.vis = ast::Public;
     if input_item.vis != ast::Public {
-        ecx.span_warn(input_item.span, "export_lua_module will turn the module into a public module");
+        ecx.span_warn(input_item.span, "`export_lua_module` will turn the module into a public module");
     }
 
     // creating an array of the lines of code to add to the main Lua entry point
@@ -51,12 +51,12 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
                     "#, moditem_name)),
 
                 _ => {
-                    ecx.span_warn(moditem.span, format!("item `{}` is neiter a function nor a static and will thus be ignored by `export_lua_module`", moditem_name).as_slice());
+                    ecx.span_warn(moditem.span,
+                        format!("item `{}` is neiter a function nor a static and will thus be ignored by `export_lua_module`",
+                            moditem_name).as_slice());
                     continue
                 }
             };
-
-            // adding a line to the content 
         }
 
         moduleHandlerBody
@@ -87,12 +87,14 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
                     _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
                 };
 
-                for i in m.view_items.iter() { mutNewItem.view_items.unshift(i.clone()) }
+                for i in m.view_items.iter() {
+                    mutNewItem.view_items.unshift(i.clone())
+                }
             }
         }
 
         if !parser.eat(&token::EOF) {
-            ecx.span_err(input_item.span, "the rust parser failed to compile the module, there is an internal bug in this library");
+            ecx.span_err(input_item.span, "internal error in the library");
             return input_item;
         }
     }
@@ -122,6 +124,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
             match parser.parse_item_with_outer_attributes() {
                 None => break,
                 Some(i) => match &mut newItem.node {
+                    // moving them into "newItem"
                     &ast::ItemMod(ref mut m) => m.items.push(i),
                     _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
                 }
@@ -129,7 +132,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
         }
 
         if !parser.eat(&token::EOF) {
-            ecx.span_err(input_item.span, "the rust parser failed to compile the module, there is an internal bug in this library");
+            ecx.span_err(input_item.span, "internal error in the library");
             return input_item;
         }
     }
