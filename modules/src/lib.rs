@@ -1,3 +1,9 @@
+#![feature(plugin_registrar)]
+
+extern crate libc;
+extern crate rustc;
+extern crate syntax;
+
 use syntax::parse::token;
 use syntax::ast::{ Expr, Item, TokenTree };
 use syntax::ext::base::{expr_to_str, get_exprs_from_tts, DummyResult, ExtCtxt, MacResult};

@@ -1,0 +1,12 @@
+[package]
+
+name = "rust_hl_lua_modules"
+version = "0.1.0"
+authors = [ "pierre.krieger1708@gmail.com" ]
+
+[[lib]]
+name = "rust_hl_lua_modules"
+crate_type = ["dylib"]
+
+[dependencies.rust_hl_lua]
+path = ".."

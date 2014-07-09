@@ -4,18 +4,13 @@
 #![license = "MIT"]
 #![allow(visible_private_types)]
 #![feature(macro_rules)]
-#![feature(plugin_registrar)]
 
 extern crate libc;
-extern crate rustc;
-extern crate std;
-extern crate syntax;
 
 pub use lua_tables::LuaTable;
 
 pub mod functions_read;
 pub mod lua_tables;
-pub mod module;
 pub mod userdata;
 
 mod ffi;
