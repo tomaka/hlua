@@ -8,14 +8,14 @@ use super::LoadedVariable;
 
 macro_rules! integer_impl(
     ($t:ident) => (
-        impl Pushable for $t {
+        impl<'lua> Pushable<'lua> for $t {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 unsafe { ffi::lua_pushinteger(lua.lua, self as ffi::lua_Integer) };
                 1
             }
         }
         impl CopyReadable for $t {
-            fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
+            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { ffi::lua_tointegerx(lua.lua, index, &mut success) };
                 match success {
@@ -24,15 +24,15 @@ macro_rules! integer_impl(
                 }
             }
         }
-        impl<'a> ConsumeReadable<'a> for $t {
-            fn read_from_variable(var: LoadedVariable<'a>) -> Result<$t, LoadedVariable<'a>> {
+        impl<'a,'lua> ConsumeReadable<'a,'lua> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
                 match CopyReadable::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
                 }
             }
         }
-        impl Index for $t {
+        impl<'lua> Index<'lua> for $t {
         }
     );
 )
@@ -45,14 +45,14 @@ integer_impl!(i32)
 
 macro_rules! unsigned_impl(
     ($t:ident) => (
-        impl Pushable for $t {
+        impl<'lua> Pushable<'lua> for $t {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 unsafe { ffi::lua_pushunsigned(lua.lua, self as ffi::lua_Unsigned) };
                 1
             }
         }
         impl CopyReadable for $t {
-            fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
+            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { ffi::lua_tounsignedx(lua.lua, index, &mut success) };
                 match success {
@@ -61,15 +61,15 @@ macro_rules! unsigned_impl(
                 }
             }
         }
-        impl<'a> ConsumeReadable<'a> for $t {
-            fn read_from_variable(var: LoadedVariable<'a>) -> Result<$t, LoadedVariable<'a>> {
+        impl<'a,'lua> ConsumeReadable<'a,'lua> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
                 match CopyReadable::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
                 }
             }
         }
-        impl Index for $t {
+        impl<'lua> Index<'lua> for $t {
         }
     );
 )
@@ -82,14 +82,14 @@ unsigned_impl!(u32)
 
 macro_rules! numeric_impl(
     ($t:ident) => (
-        impl Pushable for $t {
+        impl<'lua> Pushable<'lua> for $t {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 unsafe { ffi::lua_pushnumber(lua.lua, self as f64) };
                 1
             }
         }
         impl CopyReadable for $t {
-            fn read_from_lua(lua: &mut Lua, index: i32) -> Option<$t> {
+            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
                 let val = unsafe { ffi::lua_tonumberx(lua.lua, index, &mut success) };
                 match success {
@@ -98,15 +98,15 @@ macro_rules! numeric_impl(
                 }
             }
         }
-        impl<'a> ConsumeReadable<'a> for $t {
-            fn read_from_variable(var: LoadedVariable<'a>) -> Result<$t, LoadedVariable<'a>> {
+        impl<'a,'lua> ConsumeReadable<'a,'lua> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
                 match CopyReadable::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
                 }
             }
         }
-        impl Index for $t {
+        impl<'lua> Index<'lua> for $t {
         }
     );
 )
@@ -114,7 +114,7 @@ macro_rules! numeric_impl(
 numeric_impl!(f32)
 numeric_impl!(f64)
 
-impl Pushable for String {
+impl<'lua> Pushable<'lua> for String {
     fn push_to_lua(self, lua: &mut Lua) -> uint {
         unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
         1
@@ -122,7 +122,7 @@ impl Pushable for String {
 }
 
 impl CopyReadable for String {
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<String> {
+    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<String> {
         let mut size: ::libc::size_t = unsafe { ::std::mem::uninitialized() };
         let cStrRaw = unsafe { ffi::lua_tolstring(lua.lua, index, &mut size) };
         if cStrRaw.is_null() {
@@ -133,8 +133,8 @@ impl CopyReadable for String {
     }
 }
 
-impl<'a> ConsumeReadable<'a> for String {
-    fn read_from_variable(var: LoadedVariable<'a>) -> Result<String, LoadedVariable<'a>> {
+impl<'a,'lua> ConsumeReadable<'a,'lua> for String {
+    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<String, LoadedVariable<'a, 'lua>> {
         match CopyReadable::read_from_lua(var.lua, -1) {
             None => Err(var),
             Some(a) => Ok(a)
@@ -142,25 +142,25 @@ impl<'a> ConsumeReadable<'a> for String {
     }
 }
 
-impl Index for String {
+impl<'lua> Index<'lua> for String {
 }
 
-impl<'a> Pushable for &'a str {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
+impl<'str, 'lua> Pushable<'lua> for &'str str {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
         1
     }
 }
 
-impl Pushable for bool {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
+impl<'lua> Pushable<'lua> for bool {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         unsafe { ffi::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
         1
     }
 }
 
 impl CopyReadable for bool {
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<bool> {
+    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<bool> {
         if unsafe { ffi::lua_isboolean(lua.lua, index) } != true {
             return None;
         }
@@ -169,8 +169,8 @@ impl CopyReadable for bool {
     }
 }
 
-impl<'a> ConsumeReadable<'a> for bool {
-    fn read_from_variable(var: LoadedVariable<'a>) -> Result<bool, LoadedVariable<'a>> {
+impl<'a,'lua> ConsumeReadable<'a,'lua> for bool {
+    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<bool, LoadedVariable<'a, 'lua>> {
         match CopyReadable::read_from_lua(var.lua, -1) {
             None => Err(var),
             Some(a) => Ok(a)
@@ -178,10 +178,10 @@ impl<'a> ConsumeReadable<'a> for bool {
     }
 }
 
-impl Index for bool {
+impl<'lua> Index<'lua> for bool {
 }
 
-impl Pushable for () {
+impl<'lua> Pushable<'lua> for () {
     fn push_to_lua(self, _: &mut Lua) -> uint {
         0
     }
@@ -193,8 +193,8 @@ impl CopyReadable for () {
     }
 }
 
-impl<'a> ConsumeReadable<'a> for () {
-    fn read_from_variable(_: LoadedVariable<'a>) -> Result<(), LoadedVariable<'a>> {
+impl<'a,'lua> ConsumeReadable<'a,'lua> for () {
+    fn read_from_variable(_: LoadedVariable<'a, 'lua>) -> Result<(), LoadedVariable<'a, 'lua>> {
         Ok(())
     }
 }

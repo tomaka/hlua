@@ -28,16 +28,16 @@ trait AnyCallable {
 // should be implemented by objects that can be called
 // this will be removed in favor of std::ops::Fn when it is widely supported
 // "Args" should be a tuple containing the parameters
-trait Callable<Args: CopyReadable, Ret: Pushable> {
+trait Callable<'lua, Args: CopyReadable, Ret: Pushable<'lua>> {
     fn do_call(&self, args: Args) -> Ret;
 }
 
-impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for T {
+impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
     fn load_args_and_call(&self, lua: *mut ffi::lua_State)
         -> ::libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
-        let mut tmpLua = Lua { lua: lua, must_be_closed: false, inside_callback: true } ;
+        let mut tmpLua = Lua { lua: lua, marker: ::std::kinds::marker::ContravariantLifetime, must_be_closed: false, inside_callback: true } ;
 
         // trying to read the arguments
         let argumentsCount = unsafe { ffi::lua_gettop(lua) } as int;
@@ -63,7 +63,7 @@ impl<Args: CopyReadable, Ret: Pushable, T: Callable<Args, Ret>> AnyCallable for 
 // this macro will allow us to handle multiple parameters count
 macro_rules! pushable_function(
     ($b:block | $($ty:ident),*) => (
-        impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Pushable for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a lightuserdata
                 // TODO: should be pushed as a real user data instead, for compatibility with non-functions
@@ -81,7 +81,7 @@ macro_rules! pushable_function(
         }
 
         #[allow(unused_variable)]
-        impl<Ret: Pushable $(, $ty : CopyReadable+Clone)*> Callable<($($ty),*),Ret> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&self, args: ($($ty),*)) -> Ret {
                 $b
             }
@@ -99,8 +99,8 @@ pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2
 
 
 
-impl<T: Pushable, E: ::std::fmt::Show> Pushable for Result<T,E> {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
+impl<'lua, T: Pushable<'lua>, E: ::std::fmt::Show> Pushable<'lua> for Result<T,E> {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         if !lua.inside_callback {
             fail!("cannot push a Result object except as a function return type")
         }

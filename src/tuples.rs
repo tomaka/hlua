@@ -2,8 +2,8 @@ use { Lua, Pushable, CopyReadable };
 
 macro_rules! tuple_impl(
     ($($ty:ident | $nb:ident),+) => (
-        impl<$($ty: Pushable),+> Pushable for ($($ty),+) {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
+        impl<'lua, $($ty: Pushable<'lua>),+> Pushable<'lua> for ($($ty),+) {
+            fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
                 match self {
                     ($($nb),+) => {
                         let mut total = 0;
@@ -17,7 +17,7 @@ macro_rules! tuple_impl(
         // TODO: what if T or U are also tuples? indices won't match
         #[allow(dead_assignment)]
         impl<$($ty: CopyReadable),+> CopyReadable for ($($ty),+) {
-            fn read_from_lua(lua: &mut Lua, index: i32) -> Option<($($ty),+)> {
+            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<($($ty),+)> {
 
                 let mut i = index;
                 $(

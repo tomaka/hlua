@@ -1,18 +1,18 @@
 use { CopyReadable, ConsumeReadable, LoadedVariable, Pushable, Index };
 use ffi;
 
-pub struct LuaTable<'lua> {
-    variable: LoadedVariable<'lua>
+pub struct LuaTable<'var, 'lua> {
+    variable: LoadedVariable<'var, 'lua>
 }
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
-pub struct LuaTableIterator<'lua, 'table> {
-    table: &'table mut LuaTable<'lua>
+pub struct LuaTableIterator<'var, 'lua, 'table> {
+    table: &'table mut LuaTable<'var, 'lua>
 }
 
-impl<'lua> ConsumeReadable<'lua> for LuaTable<'lua> {
-    fn read_from_variable(var: LoadedVariable<'lua>)
-        -> Result<LuaTable<'lua>, LoadedVariable<'lua>>
+impl<'var, 'lua> ConsumeReadable<'var, 'lua> for LuaTable<'var, 'lua> {
+    fn read_from_variable(var: LoadedVariable<'var, 'lua>)
+        -> Result<LuaTable<'var, 'lua>, LoadedVariable<'var, 'lua>>
     {
         if unsafe { ffi::lua_istable(var.lua.lua, -1) } {
             Ok(LuaTable{ variable: var })
@@ -22,15 +22,15 @@ impl<'lua> ConsumeReadable<'lua> for LuaTable<'lua> {
     }
 }
 
-impl<'lua> LuaTable<'lua> {
+impl<'var, 'lua> LuaTable<'var, 'lua> {
     pub fn iter<'me>(&'me mut self)
-        -> LuaTableIterator<'lua, 'me>
+        -> LuaTableIterator<'var, 'lua, 'me>
     {
         unsafe { ffi::lua_pushnil(self.variable.lua.lua) };
         LuaTableIterator { table: self }
     }
 
-    pub fn get<R: CopyReadable, I: Index>(&mut self, index: I) -> Option<R> {
+    pub fn get<R: CopyReadable, I: Index<'lua>>(&mut self, index: I) -> Option<R> {
         index.push_to_lua(self.variable.lua);
         unsafe { ffi::lua_gettable(self.variable.lua.lua, -2); }
         let value = CopyReadable::read_from_lua(self.variable.lua, -1);
@@ -38,14 +38,14 @@ impl<'lua> LuaTable<'lua> {
         value
     }
 
-    pub fn set<I: Index, V: Pushable>(&mut self, index: I, value: V) {
+    pub fn set<I: Index<'lua>, V: Pushable<'lua>>(&mut self, index: I, value: V) {
         index.push_to_lua(self.variable.lua);
         value.push_to_lua(self.variable.lua);
         unsafe { ffi::lua_settable(self.variable.lua.lua, -3); }
     }
 
     // Obtains or create the metatable of the table
-    pub fn get_or_create_metatable(self) -> LuaTable<'lua> {
+    pub fn get_or_create_metatable(mut self) -> LuaTable<'var, 'lua> {
         let result = unsafe { ffi::lua_getmetatable(self.variable.lua.lua, -1) };
 
         if result == 0 {
@@ -57,11 +57,13 @@ impl<'lua> LuaTable<'lua> {
             }
         }
 
-        LuaTable { variable: LoadedVariable { lua: self.variable.lua, size: self.variable.size + 1 } }
+        // note: it would be cleaner to create another table, but cannot manage to make it compile
+        self.variable.size += 1;
+        self
     }
 }
 
-impl<'a, 'b, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTableIterator<'a, 'b> {
+impl<'a, 'b, 'c, K: CopyReadable, V: CopyReadable> Iterator<Option<(K,V)>> for LuaTableIterator<'a, 'b, 'c> {
     fn next(&mut self)
         -> Option<Option<(K,V)>>
     {

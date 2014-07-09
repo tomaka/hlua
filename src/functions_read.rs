@@ -1,8 +1,8 @@
 use ffi;
 use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
-pub struct LuaFunction<'a> {
-    variable: LoadedVariable<'a>
+pub struct LuaFunction<'a,'lua> {
+    variable: LoadedVariable<'a,'lua>
 }
 
 struct ReadData {
@@ -21,7 +21,7 @@ extern fn reader(_: *mut ffi::lua_State, dataRaw: *mut ::libc::c_void, size: *mu
     data.buffer.as_ptr() as *const ::libc::c_char
 }
 
-impl<'a> LuaFunction<'a> {
+impl<'a,'lua> LuaFunction<'a,'lua> {
     pub fn call<V: CopyReadable>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { ffi::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
@@ -48,8 +48,8 @@ impl<'a> LuaFunction<'a> {
         fail!("Unknown error code returned by lua_pcall: {}", pcallReturnValue)
     }
 
-    pub fn load_from_reader<'a, R: ::std::io::Reader + 'static>(lua: &'a mut Lua, code: R)
-        -> Result<LuaFunction<'a>, LuaError>
+    pub fn load_from_reader<R: ::std::io::Reader + 'static>(lua: &'a mut Lua<'lua>, code: R)
+        -> Result<LuaFunction<'a,'lua>, LuaError>
     {
         let readdata = ReadData { reader: box code, buffer: unsafe { ::std::mem::uninitialized() } };
 
@@ -79,8 +79,8 @@ impl<'a> LuaFunction<'a> {
         fail!("Unknown error while calling lua_load");
     }
 
-    pub fn load<'a>(lua: &'a mut Lua, code: &str)
-        -> Result<LuaFunction<'a>, LuaError>
+    pub fn load(lua: &'a mut Lua<'lua>, code: &str)
+        -> Result<LuaFunction<'a,'lua>, LuaError>
     {
         let reader = ::std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
         LuaFunction::load_from_reader(lua, reader)
@@ -88,15 +88,15 @@ impl<'a> LuaFunction<'a> {
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-impl<'a, Ret: CopyReadable> ::std::ops::FnMut<(), Ret> for LuaFunction<'a> {
+impl<'a, 'lua, Ret: CopyReadable> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
     fn call_mut(&mut self, _: ()) -> Ret {
         self.call().unwrap()
     }
 }
 
-impl<'a> ConsumeReadable<'a> for LuaFunction<'a> {
-    fn read_from_variable(var: LoadedVariable<'a>)
-        -> Result<LuaFunction<'a>, LoadedVariable<'a>>
+impl<'a,'lua> ConsumeReadable<'a,'lua> for LuaFunction<'a,'lua> {
+    fn read_from_variable(var: LoadedVariable<'a, 'lua>)
+        -> Result<LuaFunction<'a, 'lua>, LoadedVariable<'a, 'lua>>
     {
         if unsafe { ffi::lua_isfunction(var.lua.lua, -1) } {
             Ok(LuaFunction{ variable: var })

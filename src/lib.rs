@@ -7,6 +7,8 @@
 
 extern crate libc;
 
+use std::kinds::marker::ContravariantLifetime;
+
 pub use lua_tables::LuaTable;
 
 pub mod functions_read;
@@ -22,9 +24,11 @@ mod values;
 
 /**
  * Main object of the library
+ * The lifetime parameter corresponds to the lifetime of the Lua object itself
  */
-pub struct Lua {
+pub struct Lua<'lua> {
     lua: *mut ffi::lua_State,
+    marker: ContravariantLifetime<'lua>,
     must_be_closed: bool,
     inside_callback: bool           // if true, we are inside a callback
 }
@@ -32,20 +36,20 @@ pub struct Lua {
 /**
  * Object which allows access to a Lua variable
  */
-pub struct LoadedVariable<'a> {
-    lua: &'a mut Lua,
+pub struct LoadedVariable<'var, 'lua> {
+    lua: &'var mut Lua<'lua>,
     size: uint       // number of elements at the top of the stack
 }
 
 /**
  * Should be implemented by whatever type is pushable on the Lua stack
  */
-pub trait Pushable: ::std::any::Any {
+pub trait Pushable<'lua>: ::std::any::Any {
     /**
      * Pushes the value on the top of the stack
      * Must return the number of elements pushed
      */
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         self.push_as_userdata(lua)
     }
 
@@ -54,15 +58,15 @@ pub trait Pushable: ::std::any::Any {
      * This means that the value will only be readable as itself and not convertible to anything
      * Also, objects pushed as userdata will not be cloned by Lua
      */
-    fn push_as_userdata(self, lua: &mut Lua) -> uint {
+    fn push_as_userdata(self, lua: &mut Lua<'lua>) -> uint {
         userdata::push_userdata(self, lua)
     }
 
     /**
      * Pushes over another element
      */
-    fn push_over<'a>(self, mut over: LoadedVariable<'a>)
-        -> (LoadedVariable<'a>, uint)
+    fn push_over<'var>(self, mut over: LoadedVariable<'var, 'lua>)
+        -> (LoadedVariable<'var, 'lua>, uint)
     {
         let val = self.push_to_lua(over.lua);
         over.size += val;
@@ -73,11 +77,11 @@ pub trait Pushable: ::std::any::Any {
 /**
  * Should be implemented by types that can be read by consomming a LoadedVariable
  */
-pub trait ConsumeReadable<'a> {
+pub trait ConsumeReadable<'a, 'lua> {
     /**
      * Returns the LoadedVariable in case of failure
      */
-    fn read_from_variable(var: LoadedVariable<'a>) -> Result<Self, LoadedVariable<'a>>;
+    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<Self, LoadedVariable<'a, 'lua>>;
 }
 
 /**
@@ -89,7 +93,7 @@ pub trait CopyReadable : Clone + ::std::any::Any {
      *  * `lua` - The Lua object to read from
      *  * `index` - The index on the stack to read from
      */
-    fn read_from_lua(lua: &mut Lua, index: i32) -> Option<Self> {
+    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<Self> {
         userdata::read_copy_userdata(lua, index)
     }
 }
@@ -97,7 +101,7 @@ pub trait CopyReadable : Clone + ::std::any::Any {
 /**
  * Types that can be indices in Lua tables
  */
-pub trait Index: Pushable + CopyReadable {
+pub trait Index<'lua>: Pushable<'lua> + CopyReadable {
 }
 
 /**
@@ -140,7 +144,7 @@ extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
     fail!("PANIC: unprotected error in call to Lua API ({})\n", err);
 }
 
-impl Lua {
+impl<'lua> Lua<'lua> {
     /**
      * Builds a new Lua context
      * # Failure
@@ -154,7 +158,12 @@ impl Lua {
 
         unsafe { ffi::lua_atpanic(lua, panic) };
 
-        Lua { lua: lua, must_be_closed: true, inside_callback: false }
+        Lua {
+            lua: lua,
+            marker: ContravariantLifetime,
+            must_be_closed: true,
+            inside_callback: false
+        }
     }
 
     /**
@@ -163,7 +172,12 @@ impl Lua {
      *  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
      */
     pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua {
-        Lua { lua: std::mem::transmute(lua), must_be_closed: close_at_the_end, inside_callback: false }
+        Lua {
+            lua: std::mem::transmute(lua),
+            marker: ContravariantLifetime,
+            must_be_closed: close_at_the_end,
+            inside_callback: false
+        }
     }
 
     /**
@@ -193,7 +207,7 @@ impl Lua {
     /**
      * Reads the value of a global variable
      */
-    pub fn get<'a, I: Str, V: ConsumeReadable<'a>>(&'a mut self, index: I) -> Option<V> {
+    pub fn get<'a, I: Str, V: ConsumeReadable<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
@@ -201,7 +215,7 @@ impl Lua {
     /**
      * Modifies the value of a global variable
      */
-    pub fn set<I: Str, V: Pushable>(&mut self, index: I, value: V) {
+    pub fn set<I: Str, V: Pushable<'lua>>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
         unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }
@@ -209,13 +223,16 @@ impl Lua {
     /**
      *
      */
-    pub fn load_new_table<'a>(&'a mut self) -> LuaTable<'a> {
+    pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, 'lua> {
         unsafe { ffi::lua_newtable(self.lua) };
         ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
     }
 }
 
-impl Drop for Lua {
+// TODO: these destructors crash the compiler
+// https://github.com/mozilla/rust/issues/13853
+// https://github.com/mozilla/rust/issues/14377
+/*impl<'lua> Drop for Lua<'lua> {
     fn drop(&mut self) {
         if self.must_be_closed {
             unsafe { ffi::lua_close(self.lua) }
@@ -223,17 +240,14 @@ impl Drop for Lua {
     }
 }
 
-// TODO: this destructor crashes the compiler
-// https://github.com/mozilla/rust/issues/13853
-// https://github.com/mozilla/rust/issues/14377
-/*impl<'a> Drop for LoadedVariable<'a> {
+impl<'a> Drop for LoadedVariable<'a, 'lua> {
     fn drop(&mut self) {
         unsafe { ffi::lua_pop(self.lua.lua, self.size as libc::c_int) }
     }
-}*/
+}
 
-/*impl<'a> LoadedVariable<'a> {
-    fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a> {
+impl<'a> LoadedVariable<'a, 'lua> {
+    fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a, 'lua> {
         assert!(nb <= self.size);
         unsafe { ffi::lua_pop(self.lua.lua, nb as libc::c_int); }
         self.size -= nb;

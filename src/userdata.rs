@@ -73,7 +73,7 @@ mod tests {
     fn readwrite() {
         #[deriving(Clone)]
         struct Foo;
-        impl ::Pushable for Foo {}
+        impl<'a> ::Pushable<'a> for Foo {}
         impl ::CopyReadable for Foo {}
 
         let mut lua = Lua::new();
@@ -91,11 +91,11 @@ mod tests {
     fn type_check() {
         #[deriving(Clone)]
         struct Foo;
-        impl ::Pushable for Foo {}
+        impl<'a> ::Pushable<'a> for Foo {}
         impl ::CopyReadable for Foo {}
         #[deriving(Clone)]
         struct Bar;
-        impl ::Pushable for Bar {}
+        impl<'a> ::Pushable<'a> for Bar {}
         impl ::CopyReadable for Bar {}
 
         let mut lua = Lua::new();
