@@ -93,7 +93,29 @@ mod tests {
 
     #[test]
     fn destructor_called() {
-        // TODO: how to test this?
+        // TODO: 
+        /*let called = ::std::sync::Arc::new(::std::sync::Mutex::new(false));
+
+        struct Foo {
+            called: ::std::sync::Arc<::std::sync::Mutex<bool>>
+        }
+
+        impl Drop for Foo {
+            fn drop(&mut self) {
+                let mut called = self.called.lock();
+                (*called) = true;
+            }
+        }
+
+        impl<'a> ::Pushable<'a> for Foo {}
+
+        {
+            let mut lua = Lua::new();
+            lua.set("a", Foo{called: called.clone()});
+        }
+
+        let locked = called.lock();
+        assert!(*locked);*/
     }
 
     #[test]
