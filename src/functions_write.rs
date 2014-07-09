@@ -66,8 +66,8 @@ macro_rules! pushable_function(
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
-                let luaData: &mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
-                (*luaData) = self;
+                let luaData: *mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
+                unsafe { ::std::ptr::write(luaData, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
@@ -91,8 +91,8 @@ macro_rules! pushable_function(
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
-                let luaData: &mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
-                (*luaData) = self;
+                let luaData: *mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
+                unsafe { ::std::ptr::write(luaData, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<|$($ty),*|:'lua->Ret>;

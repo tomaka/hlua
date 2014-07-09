@@ -16,8 +16,8 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mu
     let typeid = format!("{}", data.get_type_id());
 
     let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&data) as ::libc::size_t) };
-    let luaData: &mut T = unsafe { ::std::mem::transmute(luaDataRaw) };
-    (*luaData) = data;
+    let luaData: *mut T = unsafe { ::std::mem::transmute(luaDataRaw) };
+    unsafe { ::std::ptr::write(luaData, data) };
 
     // creating a metatable
     unsafe {
