@@ -1,6 +1,7 @@
 use ffi;
 use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
+#[unstable]
 pub struct LuaFunction<'a,'lua> {
     variable: LoadedVariable<'a,'lua>
 }

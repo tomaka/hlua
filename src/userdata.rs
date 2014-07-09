@@ -9,6 +9,7 @@ use std::any::Any;
 }*/
 
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
+#[experimental]
 pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
     let typeid = format!("{}", data.get_type_id());
 
@@ -38,6 +39,7 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua) -> uint {
 }
 
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
+#[experimental]
 pub fn read_copy_userdata<T: Clone + ::std::any::Any>(lua: &mut Lua, index: ::libc::c_int) -> Option<T> {
     unsafe {
         let dummyMe: &T = ::std::mem::uninitialized();      // TODO: this is very very hacky, I don't even know if it works

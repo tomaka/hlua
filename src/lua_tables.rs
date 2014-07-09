@@ -1,11 +1,13 @@
 use { CopyReadable, ConsumeReadable, LoadedVariable, Pushable, Index };
 use ffi;
 
+#[unstable]
 pub struct LuaTable<'var, 'lua> {
     variable: LoadedVariable<'var, 'lua>
 }
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
+#[unstable]
 pub struct LuaTableIterator<'var, 'lua, 'table> {
     table: &'table mut LuaTable<'var, 'lua>
 }
