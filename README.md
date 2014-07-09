@@ -141,11 +141,9 @@ Then you can use it like this:
 
     #[phase(plugin)]
     extern crate rust_hl_lua_module;
-    extern crate rust_hl_lua;
-    extern crate libc;  // required :(
 
     #[export_lua_module]
-    pub mod mylib {
+    pub mod mylib {         // <-- must be the name of the Lua module
         fn function1(a: int, b: int) -> int {
             a + b
         }
