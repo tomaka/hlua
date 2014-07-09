@@ -180,4 +180,4 @@ This module will then be usable by Lua:
  - [ ] Access to the metatables of tables and user data
  - [ ] Access to the registry
  - [ ] Better user data
- - [ ] Allow writing Lua binary modules in Rust
+ - [x] Allow writing Lua binary modules in Rust
