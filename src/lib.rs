@@ -4,6 +4,7 @@
 #![license = "MIT"]
 #![allow(visible_private_types)]
 #![feature(macro_rules)]
+#![feature(unsafe_destructor)]
 
 extern crate libc;
 
@@ -229,10 +230,8 @@ impl<'lua> Lua<'lua> {
     }
 }
 
-// TODO: these destructors crash the compiler
-// https://github.com/mozilla/rust/issues/13853
-// https://github.com/mozilla/rust/issues/14377
-/*impl<'lua> Drop for Lua<'lua> {
+#[unsafe_destructor]
+impl<'lua> Drop for Lua<'lua> {
     fn drop(&mut self) {
         if self.must_be_closed {
             unsafe { ffi::lua_close(self.lua) }
@@ -240,20 +239,12 @@ impl<'lua> Lua<'lua> {
     }
 }
 
-impl<'a> Drop for LoadedVariable<'a, 'lua> {
+#[unsafe_destructor]
+impl<'a, 'lua> Drop for LoadedVariable<'a, 'lua> {
     fn drop(&mut self) {
         unsafe { ffi::lua_pop(self.lua.lua, self.size as libc::c_int) }
     }
 }
-
-impl<'a> LoadedVariable<'a, 'lua> {
-    fn pop_nb(mut self, nb: uint) -> LoadedVariable<'a, 'lua> {
-        assert!(nb <= self.size);
-        unsafe { ffi::lua_pop(self.lua.lua, nb as libc::c_int); }
-        self.size -= nb;
-        self
-    }
-}*/
 
 #[cfg(test)]
 mod tests {
