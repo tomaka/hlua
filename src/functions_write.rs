@@ -242,7 +242,7 @@ mod tests {
             let mut lua = Lua::new();
 
             lua.set("inc", || a += 1);
-            for i in range(0i, 15) {
+            for _ in range(0i, 15) {
                 lua.execute::<()>("inc()").unwrap();
             }
         }
