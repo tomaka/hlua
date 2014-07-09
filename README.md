@@ -144,6 +144,8 @@ Then you can use it like this:
 
     #[export_lua_module]
     pub mod mylib {         // <-- must be the name of the Lua module
+        static PI: f32 = 3.141592;
+
         fn function1(a: int, b: int) -> int {
             a + b
         }
@@ -159,6 +161,8 @@ This module will then be usable by Lua:
 > mylib = require("mylib")
 > return mylib.function1(2, 4)
 6
+> return mylib.PI
+3.141592
 ```
 
 ### Roadmap

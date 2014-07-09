@@ -45,17 +45,18 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
             let moditem_name = moditem.ident.to_source();
 
             match moditem.node {
-                ast::ItemFn(..) => (),
+                ast::ItemFn(..) | ast::ItemStatic(..) => 
+                    moduleHandlerBody.push(format!(r#"
+                        table.set("{0}".to_string(), {0});
+                    "#, moditem_name)),
+
                 _ => {
-                    ecx.span_warn(moditem.span, format!("item `{}` is not a function and will thus be ignored by `export_lua_module`", moditem_name).as_slice());
+                    ecx.span_warn(moditem.span, format!("item `{}` is neiter a function nor a static and will thus be ignored by `export_lua_module`", moditem_name).as_slice());
                     continue
                 }
             };
 
             // adding a line to the content 
-            moduleHandlerBody.push(format!(r#"
-                table.set("{0}".to_string(), {0});
-            "#, moditem_name));
         }
 
         moduleHandlerBody
