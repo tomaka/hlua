@@ -13,9 +13,8 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 // this function is called when Lua wants to call one of our functions
 fn wrapper2<T: AnyCallable>(lua: *mut ffi::lua_State) -> ::libc::c_int {
     // loading the object that we want to call from the Lua context
-    // TODO: in the future the value to load will not be the upvalue itself, but the value pointed by the upvalue
     let dataRaw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
-    let data: &T = unsafe { ::std::mem::transmute(&dataRaw) };
+    let data: &T = unsafe { ::std::mem::transmute(dataRaw) };
 
     data.load_args_and_call(lua)
 }
@@ -65,9 +64,10 @@ macro_rules! pushable_function(
     ($b:block | $($ty:ident),*) => (
         impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
-                // pushing the function pointer as a lightuserdata
-                // TODO: should be pushed as a real user data instead, for compatibility with non-functions
-                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(self)) };
+                // pushing the function pointer as a userdata
+                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let luaData: &mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
+                (*luaData) = self;
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
