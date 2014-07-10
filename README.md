@@ -187,11 +187,10 @@ git = "https://github.com/Tomaka17/rust-hl-lua"
 Then you can use it like this:
 
 ```rust
-#![crate_type = "dylib"]
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lua_mod = "rust-hl-lua-module";
+extern crate lua_mod = "rust-hl-lua-modules";
 
 #[export_lua_module]
 pub mod mylib {         // <-- must be the name of the Lua module
