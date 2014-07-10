@@ -9,10 +9,11 @@ install:
   - curl -O http://static.rust-lang.org/cargo-dist/cargo-nightly-linux.tar.gz
   - tar xf cargo-nightly-linux.tar.gz
 script:
-  - cd lib
+  - cd rust-hl-lua
   - ./cargo-nightly/bin/cargo test
-  - cd ../modules
+  - cd ../rust-hl-lua-modules
   - ./cargo-nightly/bin/cargo test
-  - rustdoc src/lib.rs
+  - cd ..
+  - rustdoc rust-hl-lua/src/lib.rs
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
