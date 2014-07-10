@@ -1,19 +1,24 @@
 env:
   global:
     - secure: Dr8zLzyRCYquYoKp9Yc8c8LZabfHJue94YSI3A7lGXuZF0w1IKwhyX3QldeJv+K2jHr1akgNnFtobK6dp4Nud9qsp5gLZkwJmtJ+U9vgdGXaByKH7VmVu7SZhi4b+omC6/V+NR4N29lUfg6G7u/XSKvqyog485SOguY0BiKARJ4=
+
 before_install:
   - yes | sudo add-apt-repository ppa:hansjorg/rust
   - sudo apt-get update
+
 install:
   - sudo apt-get install rust-nightly liblua5.2-dev
   - curl -O http://static.rust-lang.org/cargo-dist/cargo-nightly-linux.tar.gz
   - tar xf cargo-nightly-linux.tar.gz
+  - export PATH=$PATH:$(pwd)/cargo-nightly/bin
+
 script:
   - cd rust-hl-lua
-  - ./cargo-nightly/bin/cargo test
+  - cargo test
   - cd ../rust-hl-lua-modules
-  - ./cargo-nightly/bin/cargo test
+  - cargo test
   - cd ..
   - rustdoc rust-hl-lua/src/lib.rs
+
 after_script:
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
