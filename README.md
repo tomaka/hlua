@@ -4,9 +4,6 @@ This library is a high-level binding for Lua 5.2. You don't have access to the L
 
 [![Build Status](https://travis-ci.org/Tomaka17/rust-hl-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-hl-lua)
 
-*Important*: the library is a bit broken for the moment because of a bug in the rust compiler (see https://github.com/mozilla/rust/issues/13853 and https://github.com/mozilla/rust/issues/14889).
-The library should be working but things pushed on the Lua stack are not popped. I don't really know whether this is simply a memory leak or if it can cause crashes.
-
 ### How to install it?
 
 Add this to the `Cargo.toml` file of your project
