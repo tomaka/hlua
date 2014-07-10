@@ -9,6 +9,9 @@ install:
   - curl -O http://static.rust-lang.org/cargo-dist/cargo-nightly-linux.tar.gz
   - tar xf cargo-nightly-linux.tar.gz
 script:
+  - cd lib
+  - ./cargo-nightly/bin/cargo test
+  - cd ../modules
   - ./cargo-nightly/bin/cargo test
   - rustdoc src/lib.rs
 after_script:

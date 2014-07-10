@@ -9,5 +9,5 @@ name = "mylib"
 crate_type = ["dylib"]
 path = "module_test.rs"
 
-[dependencies.rust_hl_lua_modules]
+[dependencies.rust-hl-lua-modules]
 path = ".."

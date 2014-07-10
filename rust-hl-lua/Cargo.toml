@@ -1,5 +1,5 @@
 [package]
 
-name = "rust_hl_lua"
+name = "rust-hl-lua"
 version = "0.1.0"
 authors = [ "pierre.krieger1708@gmail.com" ]

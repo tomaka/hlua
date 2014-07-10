@@ -11,17 +11,15 @@ The library should be working but things pushed on the Lua stack are not popped.
 
 Add this to the `Cargo.toml` file of your project
 
-    [dependencies.rust_hl_lua]
+    [dependencies.rust-hl-lua]
     git = "https://github.com/Tomaka17/rust-hl-lua"
-
-If you don't use cargo yet, just compile with `rustc src/lib.rs`. You can also generate the docs with `rustdoc src/lib.rs`.
 
 In the future, this library will directly include the Lua C library if cargo allows this.
 
 ### How to use it?
 
-    extern crate rust_hl_lua;
-    use rust_hl_lua::Lua;
+    extern crate lua = "rust-hl-lua";
+    use lua::Lua;
 
 The `Lua` struct is the main element of this library. It represents a context in which you can execute Lua code.
 
@@ -147,13 +145,14 @@ This can be useful to create APIs:
 
     lua.execute("mylib.foo()");
 
-#### Creating a Lua module
+### Creating a Lua module
 
-This library also includes a second library named `rust_hl_lua_module` which allows you to create Lua modules in Rust.
+This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
 
-Cargo doesn't support multiple libraries per project for the moment, so you will have to compile a separate `Cargo.toml` manually:
+To use it, add this to `Cargo.toml`:
 
-    cd modules && cargo build
+    [dependencies.rust-hl-lua-modules]
+    git = "https://github.com/Tomaka17/rust-hl-lua"
 
 Then you can use it like this:
 
@@ -161,7 +160,7 @@ Then you can use it like this:
     #![feature(phase)]
 
     #[phase(plugin)]
-    extern crate rust_hl_lua_module;
+    extern crate lua_mod = "rust-hl-lua-module";
 
     #[export_lua_module]
     pub mod mylib {         // <-- must be the name of the Lua module

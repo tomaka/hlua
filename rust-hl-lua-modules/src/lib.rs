@@ -66,7 +66,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
     {
         let generatedCodeContent = format!(r#"
             mod x {{
-                extern crate rust_hl_lua;
+                extern crate lua = "rust-hl-lua";
                 extern crate libc;
             }}
         "#);
@@ -105,7 +105,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
             #[no_mangle]
             pub extern "C" fn luaopen_{0}(lua: *mut self::libc::c_void) -> self::libc::c_int {{
                 unsafe {{
-                    let mut lua = self::rust_hl_lua::Lua::from_existing_state(lua, false);
+                    let mut lua = self::lua::Lua::from_existing_state(lua, false);
                     let mut table = lua.load_new_table();
 
                     {1}
