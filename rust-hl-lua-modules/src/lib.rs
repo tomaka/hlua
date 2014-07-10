@@ -17,7 +17,7 @@ pub fn plugin_registrar(reg: &mut ::rustc::plugin::Registry) {
 }
 
 // handler for export_lua_module
-pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
+pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, _: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
     -> Gc<ast::Item>
 {
     // checking that the input item is a module
@@ -78,8 +78,9 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, meta_item
         match parser.parse_item_with_outer_attributes() {
             None => (),
             Some(m) => {
-                let mut m = match m.node {
-                    ast::ItemMod(ref m) => m, _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
+                let m = match m.node {
+                    ast::ItemMod(ref m) => m,
+                    _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
                 };
 
                 let ref mut mutNewItem = match &mut newItem.node {
