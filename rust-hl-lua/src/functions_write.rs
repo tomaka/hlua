@@ -61,7 +61,7 @@ impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>
 
 // this macro will allow us to handle multiple parameters count
 macro_rules! pushable_function(
-    ($b:block | $($ty:ident),*) => (
+    ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
         impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
@@ -82,7 +82,7 @@ macro_rules! pushable_function(
 
         #[allow(unused_variable)]
         impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
-            fn do_call(&mut self, args: ($($ty),*)) -> Ret {
+            fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
         }
@@ -107,19 +107,19 @@ macro_rules! pushable_function(
 
         #[allow(unused_variable)]
         impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
-            fn do_call(&mut self, args: ($($ty),*)) -> Ret {
+            fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
         }
     );
 )
 
-pushable_function!({ (*self)() } | )
-pushable_function!({ (*self)(args) } | Arg1 )
-pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 )
-pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 )
-pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
-pushable_function!({ (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
+pushable_function!(self, args, { (*self)() } | )
+pushable_function!(self, args, { (*self)(args) } | Arg1 )
+pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 )
+pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 )
+pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
+pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
 // TODO: finish
 
 

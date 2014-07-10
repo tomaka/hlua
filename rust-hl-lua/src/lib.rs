@@ -1,4 +1,3 @@
-#![crate_name = "rust_hl_lua"]
 #![crate_type = "lib"]
 #![comment = "Lua bindings for Rust"]
 #![license = "MIT"]
