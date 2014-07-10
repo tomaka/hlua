@@ -10,6 +10,10 @@ use std::any::Any;
 
 }*/
 
+/// Pushes an object as a user data.
+/// 
+/// # Arguments
+///  * metatable: Function that fills the metatable of the object.
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
 pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mut LuaTable|) -> uint {

@@ -24,10 +24,8 @@ mod tuples;
 mod values;
 
 
-/**
- * Main object of the library.
- * The lifetime parameter corresponds to the lifetime of the Lua object itself.
- */
+/// Main object of the library.
+/// The lifetime parameter corresponds to the lifetime of the Lua object itself.
 #[unstable]
 pub struct Lua<'lua> {
     lua: *mut ffi::lua_State,
@@ -36,79 +34,62 @@ pub struct Lua<'lua> {
     inside_callback: bool           // if true, we are inside a callback
 }
 
-/**
- * Object which allows access to a Lua variable.
- */
+/// Object which allows access to a Lua variable.
 struct LoadedVariable<'var, 'lua> {
     lua: &'var mut Lua<'lua>,
     size: uint       // number of elements at the top of the stack
 }
 
-/**
- * Should be implemented by whatever type is pushable on the Lua stack
- */
+/// Should be implemented by whatever type is pushable on the Lua stack
 #[unstable]
 pub trait Pushable<'lua>: ::std::any::Any {
-    /**
-     * Pushes the value on the top of the stack.
-     * **This is the function that is called when you send this value to Lua**.
-     * Must return the number of elements pushed.
-     */
+    /// Pushes the value on the top of the stack.
+    /// Must return the number of elements pushed.
+    ///
+    /// You can implement this for any type you want by redirecting to call to
+    /// another implementation (for example 5.push_to_lua) or by calling userdata::push_userdata
     fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint;
 }
 
-/**
- * Should be implemented by types that can be read by consomming a LoadedVariable
- */
+/// Should be implemented by types that can be read by consomming a LoadedVariable
 #[unstable]
 pub trait ConsumeReadable<'a, 'lua> {
-    /**
-     * Returns the LoadedVariable in case of failure
-     */
+    /// Returns the LoadedVariable in case of failure.
     fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<Self, LoadedVariable<'a, 'lua>>;
 }
 
-/**
- * Should be implemented by whatever type can be read by copy from the Lua stack
- */
+/// Should be implemented by whatever type can be read by copy from the Lua stack
 #[unstable]
 pub trait CopyReadable : Clone + ::std::any::Any {
-    /**
-     * # Arguments
-     *  * `lua` - The Lua object to read from
-     *  * `index` - The index on the stack to read from
-     */
+    /// Reads an object from the Lua stack.
+    ///
+    /// Similar to Pushable, you can implement this trait for your own types either by
+    /// redirecting the calls to another implementation or by calling userdata::read_copy_userdata
+    ///
+    /// # Arguments
+    ///  * `lua` - The Lua object to read from
+    ///  * `index` - The index on the stack to read from
     fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<Self> {
         userdata::read_copy_userdata(lua, index)
     }
 }
 
-/**
- * Types that can be indices in Lua tables
- */
+/// Types that can be indices in Lua tables
 #[unstable]
 pub trait Index<'lua>: Pushable<'lua> + CopyReadable {
 }
 
-/**
- * Error that can happen when executing Lua code
- */
+/// Error that can happen when executing Lua code
 #[deriving(Show)]
 #[unstable]
 pub enum LuaError {
-    /**
-     * There was a syntax error when parsing the Lua code
-     */
+    /// There was a syntax error when parsing the Lua code
     SyntaxError(String),
 
-    /**
-     * There was an error during execution of the Lua code (for example not enough parameters for a function call)
-     */
+    /// There was an error during execution of the Lua code (for example not enough parameters for a function call)
     ExecutionError(String),
 
-    /**
-     * The call to `execute` has requested the wrong type of data
-     */
+    /// The call to `execute` has requested the wrong type of data
     WrongType
 }
 
@@ -132,11 +113,9 @@ extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
 }
 
 impl<'lua> Lua<'lua> {
-    /**
-     * Builds a new Lua context
-     * # Failure
-     * The function fails if lua_newstate fails (which indicates lack of memory)
-     */
+    /// Builds a new Lua context
+    /// # Failure
+    /// The function fails if lua_newstate fails (which indicates lack of memory)
     #[stable]
     pub fn new() -> Lua {
         let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::mut_null()) };
@@ -154,11 +133,9 @@ impl<'lua> Lua<'lua> {
         }
     }
 
-    /**
-     * Takes an existing lua_State and build a Lua object from it
-     * # Arguments
-     *  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
-     */
+    /// Takes an existing lua_State and build a Lua object from it
+    /// # Arguments
+    ///  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
     #[unstable]
     pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua {
         Lua {
@@ -169,63 +146,48 @@ impl<'lua> Lua<'lua> {
         }
     }
 
-    /**
-     * Opens all standard Lua libraries
-     * This is done by calling `luaL_openlibs`
-     */
+    /// Opens all standard Lua libraries
+    /// This is done by calling `luaL_openlibs`
     #[unstable]
     pub fn openlibs(&mut self) {
         unsafe { ffi::luaL_openlibs(self.lua) }
     }
 
-    /**
-     * Executes some Lua code on the context
-     */
+    /// Executes some Lua code on the context
     #[unstable]
     pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
-    /**
-     * Executes some Lua code on the context
-     */
+    /// Executes some Lua code on the context
     #[unstable]
     pub fn execute_from_reader<T: CopyReadable, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
 
-    /**
-     * Loads the value of a global variable
-     */
+    /// Loads the value of a global variable
     #[unstable]
     pub fn load<'a, I: Str, V: ConsumeReadable<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
-    /**
-     * Reads the value of a global variable by copying it
-     */
+    /// Reads the value of a global variable by copying it
     #[unstable]
     pub fn get<I: Str, V: CopyReadable>(&mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         CopyReadable::read_from_lua(self, -1)
     }
 
-    /**
-     * Modifies the value of a global variable
-     */
+    /// Modifies the value of a global variable
     #[unstable]
     pub fn set<I: Str, V: Pushable<'lua>>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
         unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }
 
-    /**
-     *
-     */
     #[unstable]
     pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, 'lua> {
         unsafe { ffi::lua_newtable(self.lua) };
