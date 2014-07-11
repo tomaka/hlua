@@ -2,12 +2,15 @@ env:
   global:
     - secure: Dr8zLzyRCYquYoKp9Yc8c8LZabfHJue94YSI3A7lGXuZF0w1IKwhyX3QldeJv+K2jHr1akgNnFtobK6dp4Nud9qsp5gLZkwJmtJ+U9vgdGXaByKH7VmVu7SZhi4b+omC6/V+NR4N29lUfg6G7u/XSKvqyog485SOguY0BiKARJ4=
 
-before_install:
-  - yes | sudo add-apt-repository ppa:hansjorg/rust
-  - sudo apt-get update
-
 install:
-  - sudo apt-get install rust-nightly liblua5.2-dev
+  # rustc
+  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz
+  - tar xzf rust-nightly-x86_64-unknown-linux-gnu.tar.gz
+  - export PATH=$PATH:$(pwd)/rust-nightly-x86_64-unknown-linux-gnu/bin
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/rust-nightly-x86_64-unknown-linux-gnu/lib
+  # liblua
+  - sudo apt-get install liblua5.2-dev
+  # cargo
   - curl -O http://static.rust-lang.org/cargo-dist/cargo-nightly-linux.tar.gz
   - tar xf cargo-nightly-linux.tar.gz
   - export PATH=$PATH:$(pwd)/cargo-nightly/bin
