@@ -10,7 +10,7 @@ Add this to the `Cargo.toml` file of your project
 
 ```toml
 [dependencies.rust-hl-lua]
-git = "https://github.com/Tomaka17/rust-hl-lua"
+git = "https://github.com/tomaka/rust-hl-lua"
 ```
 
 In the future, this library will directly include the Lua C library if cargo allows this.
