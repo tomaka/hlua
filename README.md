@@ -28,7 +28,7 @@ The `Lua` struct is the main element of this library. It represents a context in
 let mut lua = Lua::new();     // mutable is mandatory
 ```
 
-[You can check the documentation here](http://rust-ci.org/Tomaka17/rust-hl-lua/doc/rust-hl-lua/).
+[You can check the documentation here](http://rust-ci.org/tomaka/rust-hl-lua/doc/rust-hl-lua/).
 
 #### Reading and writing variables
 
