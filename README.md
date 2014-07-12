@@ -2,7 +2,7 @@
 
 This library is a high-level binding for Lua 5.2. You don't have access to the Lua stack, all you can do is read/write variables (including callbacks) and execute Lua code.
 
-[![Build Status](https://travis-ci.org/Tomaka17/rust-hl-lua.svg?branch=master)](https://travis-ci.org/Tomaka17/rust-hl-lua)
+[![Build Status](https://travis-ci.org/tomaka/rust-hl-lua.svg?branch=master)](https://travis-ci.org/tomaka/rust-hl-lua)
 
 ### How to install it?
 
@@ -178,7 +178,7 @@ To use it, add this to `Cargo.toml`:
 
 ```toml
 [dependencies.rust-hl-lua-modules]
-git = "https://github.com/Tomaka17/rust-hl-lua"
+git = "https://github.com/tomaka/rust-hl-lua"
 ```
 
 Then you can use it like this:
