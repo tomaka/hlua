@@ -1,3 +1,4 @@
+#![crate_name = "rust-hl-lua-modules"]
 #![feature(plugin_registrar)]
 #![feature(quote)]
 
