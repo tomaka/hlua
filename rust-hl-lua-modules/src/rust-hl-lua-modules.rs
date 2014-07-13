@@ -15,11 +15,13 @@ use syntax::codemap;
 #[plugin_registrar]
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut ::rustc::plugin::Registry) {
-    reg.register_syntax_extension(token::intern("export_lua_module"), base::ItemModifier(expand_lua_module));
+    reg.register_syntax_extension(token::intern("export_lua_module"),
+        base::ItemModifier(expand_lua_module));
 }
 
 // handler for export_lua_module
-pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, _: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
+pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
+                        _: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
     -> Gc<ast::Item>
 {
     let ecx: &base::ExtCtxt = &*ecx;
@@ -139,11 +141,12 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span, _: Gc<ast
         // building the function itself
         let function = quote_item!(ecx,
             #[no_mangle]
-            pub extern "C" fn $luaopen_id(lua: *mut self::libc::c_void) -> self::libc::c_int {{
-                unsafe {{
+            pub extern "C" fn $luaopen_id(lua: *mut self::libc::c_void)
+                                                    -> self::libc::c_int {
+                unsafe {
                     $function_body
-               }}
-            }}
+               }
+            }
         );
 
         let function = match function {
