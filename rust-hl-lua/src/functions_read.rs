@@ -106,35 +106,3 @@ impl<'a,'lua> ConsumeReadable<'a,'lua> for LuaFunction<'a,'lua> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use { Lua, LuaError };
-
-    #[test]
-    fn basic() {
-        let mut lua = Lua::new();
-
-        let mut f = super::LuaFunction::load(&mut lua, "return 5;").unwrap();
-
-        let val: int = f.call().unwrap();
-        assert_eq!(val, 5);
-    }
-
-    #[test]
-    fn syntax_error() {
-        let mut lua = Lua::new();
-
-        assert!(super::LuaFunction::load(&mut lua, "azerazer").is_err());
-    }
-
-    #[test]
-    fn execution_error() {
-        let mut lua = Lua::new();
-
-        let mut f = super::LuaFunction::load(&mut lua, "return a:hello()").unwrap();
-
-        let val: Result<int, LuaError> = f.call();
-        assert!(val.is_err());
-    }
-}

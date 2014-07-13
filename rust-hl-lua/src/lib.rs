@@ -11,6 +11,7 @@ extern crate libc;
 use std::kinds::marker::ContravariantLifetime;
 
 pub use lua_tables::LuaTable;
+pub use functions_read::LuaFunction;
 
 pub mod any;
 pub mod functions_read;
@@ -212,39 +213,4 @@ impl<'a, 'lua> Drop for LoadedVariable<'a, 'lua> {
     fn drop(&mut self) {
         unsafe { ffi::lua_pop(self.lua.lua, self.size as libc::c_int) }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn globals_readwrite() {
-        let mut lua = super::Lua::new();
-
-        lua.set("a", 2i);
-        let x: int = lua.get("a").unwrap();
-        assert_eq!(x, 2)
-    }
-
-    #[test]
-    fn execute() {
-        let mut lua = super::Lua::new();
-
-        let val: int = lua.execute("return 5").unwrap();
-        assert_eq!(val, 5);
-    }
-
-    // TODO: doesn't compile, have absolutely NO IDEA why
-    /*#[test]
-    fn table_readwrite() {
-        let mut lua = super::Lua::new();
-
-        lua.execute("a = { foo = 5 }");
-
-        assert_eq!(lua.access("a").get(&"foo").unwrap(), 2);
-
-        {   let access = lua.access("a");
-            access.set(5, 3);
-            assert_eq!(access.get(5), 3);
-        }
-    }*/
 }

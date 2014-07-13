@@ -36,21 +36,3 @@ impl<'a, 'lua, T: Pushable<'lua> + Clone> Pushable<'lua> for &'a [T] {
         push_iter(lua, self.iter().map(|e| e.clone()))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use Lua;
-    use LuaTable;
-
-    #[test]
-    fn write() {
-        let mut lua = Lua::new();
-
-        lua.set("a", vec!(9i, 8, 7));
-
-        let mut table: LuaTable = lua.load("a").unwrap();
-
-        let values: Vec<(int,int)> = table.iter().filter_map(|e| e).collect();
-        assert_eq!(values, vec!( (1, 9), (2, 8), (3, 7) ));
-    }
-}
