@@ -11,4 +11,9 @@ pub mod mylib {
     fn function1(a: int, b: int) -> int { a + b }
 
     fn function2(a: int) -> int { a + 5 }
+
+    #[lua_module_init]
+    fn init() {
+        println!("mylib is now loaded!")
+    }
 }

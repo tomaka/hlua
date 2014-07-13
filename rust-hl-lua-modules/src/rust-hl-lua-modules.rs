@@ -7,6 +7,7 @@ extern crate syntax;
 use std::gc::{GC, Gc};
 use syntax::parse::token;
 use syntax::ast;
+use syntax::attr::AttrMetaMethods;
 use syntax::ext::build::AstBuilder;
 use syntax::ext::base;
 use syntax::ext::quote::rt::ToSource;
@@ -49,6 +50,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
     let module_handler_body: Vec<Gc<ast::Stmt>> = {
         let mut module_handler_body = Vec::new();
 
+        // iterating over elements inside the module
         for moditem in module.items.iter() {
             let moditem_name = moditem.ident.to_source();
 
@@ -71,6 +73,14 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
                     continue
                 }
             };
+
+            // handling lua_module_init
+            if moditem.attrs.iter().find(|at| at.check_name("lua_module_init")).is_some() {
+                let moditem_name_item = ecx.ident_of(moditem.ident.to_source().as_slice());
+                module_handler_body.push(
+                    quote_stmt!(ecx, $moditem_name_item())
+                );
+            }
         }
 
         module_handler_body

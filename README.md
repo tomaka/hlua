@@ -200,6 +200,11 @@ pub mod mylib {         // <-- must be the name of the Lua module
     fn function2(a: int) -> int {
         a + 5
     }
+
+    #[lua_module_init]
+    fn init() {
+        println!("module initialized!")
+    }
 }
 ```
 
