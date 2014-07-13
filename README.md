@@ -212,6 +212,7 @@ This module will then be usable by Lua:
 
 ```lua
 > mylib = require("mylib")
+module initialized!
 > return mylib.function1(2, 4)
 6
 > return mylib.PI
