@@ -150,7 +150,9 @@ It is not possible to store the function for the moment, but it may be in the fu
 
 It is possible to read and write whole Rust containers at once:
 
-    lua.set("a", [ 12, 13, 14, 15 ]);
+```rust```
+lua.set("a", [ 12, 13, 14, 15 ]);
+```
 
 If the container has single elements, then the indices will be numerical. For example in the code above, the `12` will be at index `1`, the `13` at index `2`, etc.
 
@@ -168,6 +170,36 @@ lua.set("mylib", [
 ]);
 
 lua.execute("mylib.foo()");
+```
+
+#### User data
+
+**(note: the API here is very unstable for the moment)**
+
+When you expose functions to Lua, you may wish to read or write more elaborate objects. This is called a **user data**.
+
+To do so, you should implement the `Pushable`, `CopyReadable` and `ConsumeReadable` for your types.
+This is usually done by redirecting the call to `userdata::push_userdata`.
+
+```rust
+struct Foo;
+
+impl<'a> lua::Pushable<'a> for Foo {
+    fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+        lua::userdata::push_userdata(self, lua,
+            |metatable| {
+                // you can define all the member functions of Foo here
+                // see the official Lua documentation for metatables
+                metatable.set("__call", || println!("hello from foo"))
+            })
+    }
+}
+
+fn main() {
+    let mut lua = lua::Lua::new();
+    lua.set("foo", Foo);
+    lua.execute("foo()");       // prints "hello from foo"
+}
 ```
 
 ### Creating a Lua module
