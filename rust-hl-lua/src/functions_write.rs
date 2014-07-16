@@ -1,5 +1,5 @@
 use super::ffi;
-use { Lua, Pushable, CopyReadable };
+use { Lua, Push, CopyRead };
 
 // this function is the main entry point when Lua wants to call one of our functions
 extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
@@ -27,11 +27,11 @@ trait AnyCallable {
 // should be implemented by objects that can be called
 // this will be removed in favor of std::ops::Fn when it is widely supported
 // "Args" should be a tuple containing the parameters
-trait Callable<'lua, Args: CopyReadable, Ret: Pushable<'lua>> {
+trait Callable<'lua, Args: CopyRead, Ret: Push<'lua>> {
     fn do_call(&mut self, args: Args) -> Ret;
 }
 
-impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
+impl<'lua, Args: CopyRead, Ret: Push<'lua>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
     fn load_args_and_call(&mut self, lua: *mut ffi::lua_State)
         -> ::libc::c_int
     {
@@ -40,7 +40,7 @@ impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>
 
         // trying to read the arguments
         let argumentsCount = unsafe { ffi::lua_gettop(lua) } as int;
-        let args = match CopyReadable::read_from_lua(&mut tmpLua, -argumentsCount as ::libc::c_int) {      // TODO: what if the user has the wrong params?
+        let args = match CopyRead::read_from_lua(&mut tmpLua, -argumentsCount as ::libc::c_int) {      // TODO: what if the user has the wrong params?
             None => {
                 let errMsg = format!("wrong parameter types for callback function");
                 errMsg.push_to_lua(&mut tmpLua);
@@ -60,9 +60,9 @@ impl<'lua, Args: CopyReadable, Ret: Pushable<'lua>, T: Callable<'lua, Args, Ret>
 }
 
 // this macro will allow us to handle multiple parameters count
-macro_rules! pushable_function(
+macro_rules! Push_function(
     ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
-        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Push<'lua> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
@@ -81,13 +81,13 @@ macro_rules! pushable_function(
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
         }
 
-        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Pushable<'lua> for |$($ty),*|:'lua->Ret {
+        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Push<'lua> for |$($ty),*|:'lua->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
@@ -106,7 +106,7 @@ macro_rules! pushable_function(
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Pushable<'lua> $(, $ty : CopyReadable+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
+        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
@@ -114,17 +114,17 @@ macro_rules! pushable_function(
     );
 )
 
-pushable_function!(self, args, { (*self)() } | )
-pushable_function!(self, args, { (*self)(args) } | Arg1 )
-pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 )
-pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 )
-pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
-pushable_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
+Push_function!(self, args, { (*self)() } | )
+Push_function!(self, args, { (*self)(args) } | Arg1 )
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 )
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 )
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
 // TODO: finish
 
 
 
-impl<'lua, T: Pushable<'lua>, E: ::std::fmt::Show> Pushable<'lua> for Result<T,E> {
+impl<'lua, T: Push<'lua>, E: ::std::fmt::Show> Push<'lua> for Result<T,E> {
     fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         if !lua.inside_callback {
             fail!("cannot push a Result object except as a function return type")

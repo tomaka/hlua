@@ -1,5 +1,5 @@
 use ffi;
-use { Lua, ConsumeReadable, CopyReadable, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
+use { Lua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError };
 
 #[unstable]
 pub struct LuaFunction<'a,'lua> {
@@ -23,13 +23,13 @@ extern fn reader(_: *mut ffi::lua_State, dataRaw: *mut ::libc::c_void, size: *mu
 }
 
 impl<'a,'lua> LuaFunction<'a,'lua> {
-    pub fn call<V: CopyReadable>(&mut self) -> Result<V, LuaError> {
+    pub fn call<V: CopyRead>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { ffi::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
 
         // if pcall succeeded, returning
         if pcallReturnValue == 0 {
-            return match CopyReadable::read_from_lua(self.variable.lua, -1) {
+            return match CopyRead::read_from_lua(self.variable.lua, -1) {
                 None => Err(WrongType),
                 Some(x) => Ok(x)
             };
@@ -41,7 +41,7 @@ impl<'a,'lua> LuaFunction<'a,'lua> {
         }
 
         if pcallReturnValue == ffi::LUA_ERRRUN {
-            let errorMsg: String = CopyReadable::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
+            let errorMsg: String = CopyRead::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
             unsafe { ffi::lua_pop(self.variable.lua.lua, 1) };
             return Err(ExecutionError(errorMsg));
         }
@@ -67,7 +67,7 @@ impl<'a,'lua> LuaFunction<'a,'lua> {
             });
         }
 
-        let errorMsg: String = CopyReadable::read_from_lua(lua, -1).expect("can't find error message at the top of the Lua stack");
+        let errorMsg: String = CopyRead::read_from_lua(lua, -1).expect("can't find error message at the top of the Lua stack");
         unsafe { ffi::lua_pop(lua.lua, 1) };
 
         if loadReturnValue == ffi::LUA_ERRMEM {
@@ -89,13 +89,13 @@ impl<'a,'lua> LuaFunction<'a,'lua> {
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-impl<'a, 'lua, Ret: CopyReadable> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
+impl<'a, 'lua, Ret: CopyRead> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
     fn call_mut(&mut self, _: ()) -> Ret {
         self.call().unwrap()
     }
 }
 
-impl<'a,'lua> ConsumeReadable<'a,'lua> for LuaFunction<'a,'lua> {
+impl<'a,'lua> ConsumeRead<'a,'lua> for LuaFunction<'a,'lua> {
     fn read_from_variable(var: LoadedVariable<'a, 'lua>)
         -> Result<LuaFunction<'a, 'lua>, LoadedVariable<'a, 'lua>>
     {

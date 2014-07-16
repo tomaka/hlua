@@ -1,8 +1,8 @@
 use ffi;
 use Lua;
-use CopyReadable;
-use ConsumeReadable;
-use Pushable;
+use CopyRead;
+use ConsumeRead;
+use Push;
 use LuaTable;
 use std::any::Any;
 
@@ -39,7 +39,7 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mu
         ffi::lua_settable(lua.lua, -3);*/
 
         {
-            let mut table = ConsumeReadable::read_from_variable(::LoadedVariable { lua: lua, size: 1 }).ok().unwrap();
+            let mut table = ConsumeRead::read_from_variable(::LoadedVariable { lua: lua, size: 1 }).ok().unwrap();
             metatable(&mut table);
             ::std::mem::forget(table);
         }
@@ -68,7 +68,7 @@ pub fn read_copy_userdata<T: Clone + ::std::any::Any>(lua: &mut Lua, index: ::li
 
         "__typeid".push_to_lua(lua);
         ffi::lua_gettable(lua.lua, -2);
-        if CopyReadable::read_from_lua(lua, -1) != Some(expectedTypeid) {
+        if CopyRead::read_from_lua(lua, -1) != Some(expectedTypeid) {
             return None;
         }
         ffi::lua_pop(lua.lua, -2);

@@ -4,12 +4,12 @@ extern crate lua = "rust-hl-lua";
 fn readwrite() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Pushable<'a> for Foo {
+    impl<'a> lua::Push<'a> for Foo {
         fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyReadable for Foo {}
+    impl lua::CopyRead for Foo {}
 
     let mut lua = lua::Lua::new();
 
@@ -33,7 +33,7 @@ fn destructor_called() {
         }
     }
 
-    impl<'a> ::Pushable<'a> for Foo {}
+    impl<'a> ::Push<'a> for Foo {}
 
     {
         let mut lua = Lua::new();
@@ -48,21 +48,21 @@ fn destructor_called() {
 fn type_check() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Pushable<'a> for Foo {
+    impl<'a> lua::Push<'a> for Foo {
         fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyReadable for Foo {}
+    impl lua::CopyRead for Foo {}
 
     #[deriving(Clone)]
     struct Bar;
-    impl<'a> lua::Pushable<'a> for Bar {
+    impl<'a> lua::Push<'a> for Bar {
         fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyReadable for Bar {}
+    impl lua::CopyRead for Bar {}
 
     let mut lua = lua::Lua::new();
 
@@ -76,7 +76,7 @@ fn type_check() {
 fn metatables() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Pushable<'a> for Foo {
+    impl<'a> lua::Push<'a> for Foo {
         fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
             lua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(

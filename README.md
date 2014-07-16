@@ -43,7 +43,7 @@ The `get` function returns an `Option<T>` and does a copy of the value.
 
 The base types that can be read and written are: `int`, `i8`, `i16`, `i32`, `uint`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`.
 
-If you wish so, you can also add other types by implementing the `Pushable` and `CopyReadable`/`ConsumeReadable` traits.
+If you wish so, you can also add other types by implementing the `Push` and `CopyRead`/`ConsumeRead` traits.
 
 #### Executing Lua
 
@@ -51,7 +51,7 @@ If you wish so, you can also add other types by implementing the `Pushable` and 
 let x: uint = lua.execute("return 6 * 2;").unwrap();    // equals 12
 ```
 
-The `execute` function takes a `&str` and returns a `Result<Readable, ExecutionError>`.
+The `execute` function takes a `&str` and returns a `Result<CopyRead, ExecutionError>`.
 
 You can also call `execute_from_reader` which takes a `std::io::Reader` as parameter.
 For example you can easily execute the content of a file like this:
@@ -178,13 +178,13 @@ lua.execute("mylib.foo()");
 
 When you expose functions to Lua, you may wish to read or write more elaborate objects. This is called a **user data**.
 
-To do so, you should implement the `Pushable`, `CopyReadable` and `ConsumeReadable` for your types.
+To do so, you should implement the `Push`, `CopyRead` and `ConsumeRead` for your types.
 This is usually done by redirecting the call to `userdata::push_userdata`.
 
 ```rust
 struct Foo;
 
-impl<'a> lua::Pushable<'a> for Foo {
+impl<'a> lua::Push<'a> for Foo {
     fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
         lua::userdata::push_userdata(self, lua,
             |metatable| {

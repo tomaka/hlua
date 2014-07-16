@@ -41,9 +41,9 @@ struct LoadedVariable<'var, 'lua> {
     size: uint       // number of elements at the top of the stack
 }
 
-/// Should be implemented by whatever type is pushable on the Lua stack.
+/// Should be implemented by whatever type is Push on the Lua stack.
 #[unstable]
-pub trait Pushable<'lua>: ::std::any::Any {
+pub trait Push<'lua>: ::std::any::Any {
     /// Pushes the value on the top of the stack.
     /// Must return the number of elements pushed.
     ///
@@ -54,17 +54,17 @@ pub trait Pushable<'lua>: ::std::any::Any {
 
 /// Should be implemented by types that can be read by consomming a LoadedVariable.
 #[unstable]
-pub trait ConsumeReadable<'a, 'lua> {
+pub trait ConsumeRead<'a, 'lua> {
     /// Returns the LoadedVariable in case of failure.
     fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<Self, LoadedVariable<'a, 'lua>>;
 }
 
 /// Should be implemented by whatever type can be read by copy from the Lua stack.
 #[unstable]
-pub trait CopyReadable : Clone + ::std::any::Any {
+pub trait CopyRead : Clone + ::std::any::Any {
     /// Reads an object from the Lua stack.
     ///
-    /// Similar to Pushable, you can implement this trait for your own types either by
+    /// Similar to Push, you can implement this trait for your own types either by
     /// redirecting the calls to another implementation or by calling userdata::read_copy_userdata
     ///
     /// # Arguments
@@ -77,7 +77,7 @@ pub trait CopyReadable : Clone + ::std::any::Any {
 
 /// Types that can be indices in Lua tables.
 #[unstable]
-pub trait Index<'lua>: Pushable<'lua> + CopyReadable {
+pub trait Index<'lua>: Push<'lua> + CopyRead {
 }
 
 /// Error that can happen when executing Lua code.
@@ -159,35 +159,35 @@ impl<'lua> Lua<'lua> {
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute<T: CopyReadable>(&mut self, code: &str) -> Result<T, LuaError> {
+    pub fn execute<T: CopyRead>(&mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute_from_reader<T: CopyReadable, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
+    pub fn execute_from_reader<T: CopyRead, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
 
     /// Loads the value of a global variable.
     #[unstable]
-    pub fn load<'a, I: Str, V: ConsumeReadable<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
+    pub fn load<'a, I: Str, V: ConsumeRead<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
-        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
+        ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
     /// Reads the value of a global variable by copying it.
     #[unstable]
-    pub fn get<I: Str, V: CopyReadable>(&mut self, index: I) -> Option<V> {
+    pub fn get<I: Str, V: CopyRead>(&mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
-        CopyReadable::read_from_lua(self, -1)
+        CopyRead::read_from_lua(self, -1)
     }
 
     /// Modifies the value of a global variable.
     #[unstable]
-    pub fn set<I: Str, V: Pushable<'lua>>(&mut self, index: I, value: V) {
+    pub fn set<I: Str, V: Push<'lua>>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
         unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }
@@ -195,7 +195,7 @@ impl<'lua> Lua<'lua> {
     #[unstable]
     pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, 'lua> {
         unsafe { ffi::lua_newtable(self.lua) };
-        ConsumeReadable::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
+        ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
     }
 }
 
