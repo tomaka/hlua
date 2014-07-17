@@ -5,12 +5,13 @@ use super::Push;
 use super::CopyRead;
 use super::ConsumeRead;
 use super::LoadedVariable;
+use HasLua;
 
 macro_rules! integer_impl(
     ($t:ident) => (
-        impl<'lua> Push<'lua> for $t {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushinteger(lua.lua, self as ffi::lua_Integer) };
+        impl<L: HasLua> Push<L> for $t {
+            fn push_to_lua(self, lua: &mut L) -> uint {
+                unsafe { ffi::lua_pushinteger(lua.use_lua(), self as ffi::lua_Integer) };
                 1
             }
         }
@@ -32,7 +33,7 @@ macro_rules! integer_impl(
                 }
             }
         }
-        impl<'lua> Index<'lua> for $t {
+        impl<L: HasLua> Index<L> for $t {
         }
     );
 )
@@ -45,9 +46,9 @@ integer_impl!(i32)
 
 macro_rules! unsigned_impl(
     ($t:ident) => (
-        impl<'lua> Push<'lua> for $t {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushunsigned(lua.lua, self as ffi::lua_Unsigned) };
+        impl<L: HasLua> Push<L> for $t {
+            fn push_to_lua(self, lua: &mut L) -> uint {
+                unsafe { ffi::lua_pushunsigned(lua.use_lua(), self as ffi::lua_Unsigned) };
                 1
             }
         }
@@ -69,7 +70,7 @@ macro_rules! unsigned_impl(
                 }
             }
         }
-        impl<'lua> Index<'lua> for $t {
+        impl<L: HasLua> Index<L> for $t {
         }
     );
 )
@@ -82,9 +83,9 @@ unsigned_impl!(u32)
 
 macro_rules! numeric_impl(
     ($t:ident) => (
-        impl<'lua> Push<'lua> for $t {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
-                unsafe { ffi::lua_pushnumber(lua.lua, self as f64) };
+        impl<L: HasLua> Push<L> for $t {
+            fn push_to_lua(self, lua: &mut L) -> uint {
+                unsafe { ffi::lua_pushnumber(lua.use_lua(), self as f64) };
                 1
             }
         }
@@ -106,7 +107,7 @@ macro_rules! numeric_impl(
                 }
             }
         }
-        impl<'lua> Index<'lua> for $t {
+        impl<L: HasLua> Index<L> for $t {
         }
     );
 )
@@ -114,9 +115,9 @@ macro_rules! numeric_impl(
 numeric_impl!(f32)
 numeric_impl!(f64)
 
-impl<'lua> Push<'lua> for String {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
-        unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) };
+impl<L: HasLua> Push<L> for String {
+    fn push_to_lua(self, lua: &mut L) -> uint {
+        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().unwrap()) };
         1
     }
 }
@@ -142,19 +143,19 @@ impl<'a,'lua> ConsumeRead<'a,'lua> for String {
     }
 }
 
-impl<'lua> Index<'lua> for String {
+impl<L: HasLua> Index<L> for String {
 }
 
-impl<'str, 'lua> Push<'lua> for &'str str {
-    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
-        unsafe { ffi::lua_pushstring(lua.lua, self.to_c_str().unwrap()) }
+impl<'str, L: HasLua> Push<L> for &'str str {
+    fn push_to_lua(self, lua: &mut L) -> uint {
+        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().unwrap()) }
         1
     }
 }
 
-impl<'lua> Push<'lua> for bool {
-    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
-        unsafe { ffi::lua_pushboolean(lua.lua, self.clone() as ::libc::c_int) };
+impl<L: HasLua> Push<L> for bool {
+    fn push_to_lua(self, lua: &mut L) -> uint {
+        unsafe { ffi::lua_pushboolean(lua.use_lua(), self.clone() as ::libc::c_int) };
         1
     }
 }
@@ -178,11 +179,11 @@ impl<'a,'lua> ConsumeRead<'a,'lua> for bool {
     }
 }
 
-impl<'lua> Index<'lua> for bool {
+impl<L: HasLua> Index<L> for bool {
 }
 
-impl<'lua> Push<'lua> for () {
-    fn push_to_lua(self, _: &mut Lua) -> uint {
+impl<L: HasLua> Push<L> for () {
+    fn push_to_lua(self, _: &mut L) -> uint {
         0
     }
 }

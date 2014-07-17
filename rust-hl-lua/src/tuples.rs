@@ -1,9 +1,9 @@
-use { Lua, Push, CopyRead };
+use {HasLua, Lua, Push, CopyRead};
 
 macro_rules! tuple_impl(
     ($($ty:ident | $nb:ident),+) => (
-        impl<'lua, $($ty: Push<'lua>),+> Push<'lua> for ($($ty),+) {
-            fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
+        impl<LU: HasLua, $($ty: Push<LU>),+> Push<LU> for ($($ty),+) {
+            fn push_to_lua(self, lua: &mut LU) -> uint {
                 match self {
                     ($($nb),+) => {
                         let mut total = 0;

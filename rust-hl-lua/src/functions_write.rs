@@ -27,11 +27,11 @@ trait AnyCallable {
 // should be implemented by objects that can be called
 // this will be removed in favor of std::ops::Fn when it is widely supported
 // "Args" should be a tuple containing the parameters
-trait Callable<'lua, Args: CopyRead, Ret: Push<'lua>> {
+trait Callable<'lua, Args: CopyRead, Ret: Push<Lua<'lua>>> {
     fn do_call(&mut self, args: Args) -> Ret;
 }
 
-impl<'lua, Args: CopyRead, Ret: Push<'lua>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
+impl<'lua, Args: CopyRead, Ret: Push<Lua<'lua>>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
     fn load_args_and_call(&mut self, lua: *mut ffi::lua_State)
         -> ::libc::c_int
     {
@@ -62,7 +62,7 @@ impl<'lua, Args: CopyRead, Ret: Push<'lua>, T: Callable<'lua, Args, Ret>> AnyCal
 // this macro will allow us to handle multiple parameters count
 macro_rules! Push_function(
     ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
-        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Push<'lua> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead+Clone)*> Push<Lua<'lua>> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
@@ -81,13 +81,13 @@ macro_rules! Push_function(
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
         }
 
-        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Push<'lua> for |$($ty),*|:'lua->Ret {
+        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead+Clone)*> Push<Lua<'lua>> for |$($ty),*|:'lua->Ret {
             fn push_to_lua(self, lua: &mut Lua) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
@@ -106,7 +106,7 @@ macro_rules! Push_function(
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Push<'lua> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
+        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
@@ -124,7 +124,7 @@ Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), a
 
 
 
-impl<'lua, T: Push<'lua>, E: ::std::fmt::Show> Push<'lua> for Result<T,E> {
+impl<'lua, T: Push<Lua<'lua>>, E: ::std::fmt::Show> Push<Lua<'lua>> for Result<T,E> {
     fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         if !lua.inside_callback {
             fail!("cannot push a Result object except as a function return type")

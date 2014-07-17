@@ -35,21 +35,32 @@ pub struct Lua<'lua> {
     inside_callback: bool           // if true, we are inside a callback
 }
 
+/// Trait for objects that have access to a Lua context.
+pub trait HasLua {
+    fn use_lua(&mut self) -> *mut ffi::lua_State;
+}
+
+impl<'lua> HasLua for Lua<'lua> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.lua
+    }
+}
+
 /// Object which allows access to a Lua variable.
 struct LoadedVariable<'var, 'lua> {
     lua: &'var mut Lua<'lua>,
     size: uint       // number of elements at the top of the stack
 }
 
-/// Should be implemented by whatever type is Push on the Lua stack.
+/// Should be implemented by whatever type is pushable on the Lua stack.
 #[unstable]
-pub trait Push<'lua> {
+pub trait Push<L: HasLua> {
     /// Pushes the value on the top of the stack.
     /// Must return the number of elements pushed.
     ///
     /// You can implement this for any type you want by redirecting to call to
     /// another implementation (for example `5.push_to_lua`) or by calling `userdata::push_userdata`
-    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint;
+    fn push_to_lua(self, lua: &mut L) -> uint;
 }
 
 /// Should be implemented by types that can be read by consomming a LoadedVariable.
@@ -75,7 +86,7 @@ pub trait CopyRead : Clone {
 
 /// Types that can be indices in Lua tables.
 #[unstable]
-pub trait Index<'lua>: Push<'lua> + CopyRead {
+pub trait Index<L>: Push<L> + CopyRead {
 }
 
 /// Error that can happen when executing Lua code.
@@ -185,7 +196,7 @@ impl<'lua> Lua<'lua> {
 
     /// Modifies the value of a global variable.
     #[unstable]
-    pub fn set<I: Str, V: Push<'lua>>(&mut self, index: I, value: V) {
+    pub fn set<I: Str, V: Push<Lua<'lua>>>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
         unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
     }

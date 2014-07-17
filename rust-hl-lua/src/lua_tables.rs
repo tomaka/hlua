@@ -1,4 +1,4 @@
-use { CopyRead, ConsumeRead, LoadedVariable, Push, Index };
+use {Lua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
 use ffi;
 
 #[unstable]
@@ -32,7 +32,7 @@ impl<'var, 'lua> LuaTable<'var, 'lua> {
         LuaTableIterator { table: self }
     }
 
-    pub fn get<R: CopyRead, I: Index<'lua>>(&mut self, index: I) -> Option<R> {
+    pub fn get<R: CopyRead, I: Index<Lua<'lua>>>(&mut self, index: I) -> Option<R> {
         index.push_to_lua(self.variable.lua);
         unsafe { ffi::lua_gettable(self.variable.lua.lua, -2); }
         let value = CopyRead::read_from_lua(self.variable.lua, -1);
@@ -40,7 +40,7 @@ impl<'var, 'lua> LuaTable<'var, 'lua> {
         value
     }
 
-    pub fn set<I: Index<'lua>, V: Push<'lua>>(&mut self, index: I, value: V) {
+    pub fn set<I: Index<Lua<'lua>>, V: Push<Lua<'lua>>>(&mut self, index: I, value: V) {
         index.push_to_lua(self.variable.lua);
         value.push_to_lua(self.variable.lua);
         unsafe { ffi::lua_settable(self.variable.lua.lua, -3); }

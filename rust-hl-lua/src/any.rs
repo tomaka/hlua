@@ -1,4 +1,4 @@
-use {Lua, Push, CopyRead, ConsumeRead, LoadedVariable};
+use {Lua, HasLua, Push, CopyRead, ConsumeRead, LoadedVariable};
 
 /// Represents any value that can be stored by Lua
 #[experimental]
@@ -14,8 +14,8 @@ pub enum AnyLuaValue {
     Other
 }
 
-impl<'lua> Push<'lua> for AnyLuaValue {
-    fn push_to_lua(self, lua: &mut Lua) -> uint {
+impl<L: HasLua> Push<L> for AnyLuaValue {
+    fn push_to_lua(self, lua: &mut L) -> uint {
         match self {
             String(val) => val.push_to_lua(lua),
             Number(val) => val.push_to_lua(lua),
