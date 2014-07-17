@@ -43,7 +43,7 @@ struct LoadedVariable<'var, 'lua> {
 
 /// Should be implemented by whatever type is Push on the Lua stack.
 #[unstable]
-pub trait Push<'lua>: ::std::any::Any {
+pub trait Push<'lua> {
     /// Pushes the value on the top of the stack.
     /// Must return the number of elements pushed.
     ///
@@ -61,7 +61,7 @@ pub trait ConsumeRead<'a, 'lua> {
 
 /// Should be implemented by whatever type can be read by copy from the Lua stack.
 #[unstable]
-pub trait CopyRead : Clone + ::std::any::Any {
+pub trait CopyRead : Clone {
     /// Reads an object from the Lua stack.
     ///
     /// Similar to Push, you can implement this trait for your own types either by
@@ -70,9 +70,7 @@ pub trait CopyRead : Clone + ::std::any::Any {
     /// # Arguments
     ///  * `lua` - The Lua object to read from
     ///  * `index` - The index on the stack to read from
-    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<Self> {
-        userdata::read_copy_userdata(lua, index)
-    }
+    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<Self>;
 }
 
 /// Types that can be indices in Lua tables.
