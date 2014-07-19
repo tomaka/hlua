@@ -2,6 +2,10 @@ use super::ffi;
 use super::Lua;
 use super::Push;
 
+use std::collections::hashmap::{HashMap, HashSet};
+use std::iter::Repeat;
+use collections::hash::Hash;
+
 fn push_iter<'lua, V: Push<'lua>, I: Iterator<V>>(lua: &mut Lua<'lua>, iterator: I) -> uint
 {
     // creating empty table
@@ -34,5 +38,17 @@ impl<'lua, T: Push<'lua>> Push<'lua> for Vec<T> {
 impl<'a, 'lua, T: Push<'lua> + Clone> Push<'lua> for &'a [T] {
     fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
         push_iter(lua, self.iter().map(|e| e.clone()))
+    }
+}
+
+impl<'lua, K: Push<'lua> + Eq + Hash, V: Push<'lua>> Push<'lua> for HashMap<K, V> {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
+        push_iter(lua, self.move_iter())
+    }
+}
+
+impl<'lua, K: Push<'lua> + Eq + Hash> Push<'lua> for HashSet<K> {
+    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
+        push_iter(lua, self.move_iter().zip(Repeat::new(true)))
     }
 }
