@@ -89,11 +89,11 @@ impl<'a,'lua> LuaFunction<'a,'lua> {
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-impl<'a, 'lua, Ret: CopyRead> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
+/*impl<'a, 'lua, Ret: CopyRead> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
     fn call_mut(&mut self, _: ()) -> Ret {
         self.call().unwrap()
     }
-}
+}*/
 
 impl<'a,'lua> ConsumeRead<'a,'lua> for LuaFunction<'a,'lua> {
     fn read_from_variable(var: LoadedVariable<'a, 'lua>)
