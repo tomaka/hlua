@@ -1,7 +1,9 @@
 extern crate lua = "rust-hl-lua";
+extern crate test;
 use lua::{Lua, LuaTable};
 
 use std::collections::hashmap::{HashMap, HashSet};
+use test::Bencher;
 
 #[test]
 fn write() {
@@ -55,4 +57,32 @@ fn write_set() {
     }).collect();
 
     assert_eq!(values, set);
+}
+
+#[bench]
+fn new_map(b: &mut Bencher) {
+    let mut lua = Lua::new();
+
+    let mut map = HashMap::new();
+    map.insert(5i, 8i);
+    map.insert(13, 21);
+    map.insert(34, 55);
+
+    b.iter(|| {
+        lua.set("a", map.clone());
+    })
+}
+
+#[bench]
+fn new_large_map(b: &mut Bencher) {
+    let mut lua = Lua::new();
+
+    let mut map = HashMap::new();
+    for i in range(0i, 500) {
+        map.insert(i, i + 1);
+    }
+
+    b.iter(|| {
+        lua.set("a", map.clone());
+    })
 }
