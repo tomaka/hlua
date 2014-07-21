@@ -7,6 +7,7 @@
 #![feature(unsafe_destructor)]
 
 extern crate libc;
+extern crate collections;
 
 use std::kinds::marker::ContravariantLifetime;
 
