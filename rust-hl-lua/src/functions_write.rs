@@ -1,5 +1,6 @@
 use super::ffi;
-use { Lua, Push, CopyRead };
+use {HasLua, Lua, Push, CopyRead};
+use std::kinds::marker::ContravariantLifetime;
 
 // this function is the main entry point when Lua wants to call one of our functions
 extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
@@ -24,19 +25,31 @@ trait AnyCallable {
     fn load_args_and_call(&mut self, lua: *mut ffi::lua_State) -> ::libc::c_int;
 }
 
+// lua context used inside callbacks
+struct InsideCallback<'lua> {
+    lua: *mut ffi::lua_State,
+    marker: ContravariantLifetime<'lua>,
+}
+
+impl<'lua> HasLua<'lua> for InsideCallback<'lua> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.lua
+    }
+}
+
 // should be implemented by objects that can be called
 // this will be removed in favor of std::ops::Fn when it is widely supported
 // "Args" should be a tuple containing the parameters
-trait Callable<'lua, Args: CopyRead<Lua<'lua>>, Ret: Push<Lua<'lua>>> {
+trait Callable<'lua, Args: CopyRead<InsideCallback<'lua>>, Ret: Push<InsideCallback<'lua>>> {
     fn do_call(&mut self, args: Args) -> Ret;
 }
 
-impl<'lua, Args: CopyRead<Lua<'lua>>, Ret: Push<Lua<'lua>>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
+impl<'lua, Args: CopyRead<InsideCallback<'lua>>, Ret: Push<InsideCallback<'lua>>, T: Callable<'lua, Args, Ret>> AnyCallable for T {
     fn load_args_and_call(&mut self, lua: *mut ffi::lua_State)
         -> ::libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
-        let mut tmpLua = Lua { lua: lua, marker: ::std::kinds::marker::ContravariantLifetime, must_be_closed: false, inside_callback: true } ;
+        let mut tmpLua = InsideCallback { lua: lua, marker: ::std::kinds::marker::ContravariantLifetime } ;
 
         // trying to read the arguments
         let argumentsCount = unsafe { ffi::lua_gettop(lua) } as int;
@@ -62,51 +75,51 @@ impl<'lua, Args: CopyRead<Lua<'lua>>, Ret: Push<Lua<'lua>>, T: Callable<'lua, Ar
 // this macro will allow us to handle multiple parameters count
 macro_rules! Push_function(
     ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
-        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead<Lua<'lua>>+Clone)*> Push<Lua<'lua>> for fn($($ty),*)->Ret {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
+        impl<'lua, L: HasLua<'lua>, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
+            fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
                 let luaData: *mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
                 unsafe { ::std::ptr::write(luaData, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
-                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(wrapper2)) };
+                unsafe { ffi::lua_pushlightuserdata(lua.use_lua(), ::std::mem::transmute(wrapper2)) };
 
                 // pushing wrapper1 as a closure
-                unsafe { ffi::lua_pushcclosure(lua.lua, ::std::mem::transmute(wrapper1), 2) };
+                unsafe { ffi::lua_pushcclosure(lua.use_lua(), ::std::mem::transmute(wrapper1), 2) };
 
                 1
             }
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead<Lua<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
+        impl<'lua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
         }
 
-        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead<Lua<'lua>>+Clone)*> Push<Lua<'lua>> for |$($ty),*|:'lua->Ret {
-            fn push_to_lua(self, lua: &mut Lua) -> uint {
+        impl<'lua, L: HasLua<'lua>, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
+            fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
                 let luaData: *mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
                 unsafe { ::std::ptr::write(luaData, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<|$($ty),*|:'lua->Ret>;
-                unsafe { ffi::lua_pushlightuserdata(lua.lua, ::std::mem::transmute(wrapper2)) };
+                unsafe { ffi::lua_pushlightuserdata(lua.use_lua(), ::std::mem::transmute(wrapper2)) };
 
                 // pushing wrapper1 as a closure
-                unsafe { ffi::lua_pushcclosure(lua.lua, ::std::mem::transmute(wrapper1), 2) };
+                unsafe { ffi::lua_pushcclosure(lua.use_lua(), ::std::mem::transmute(wrapper1), 2) };
 
                 1
             }
         }
 
         #[allow(unused_variable)]
-        impl<'lua, Ret: Push<Lua<'lua>> $(, $ty : CopyRead<Lua<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
+        impl<'lua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
             }
@@ -124,18 +137,14 @@ Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), a
 
 
 
-impl<'lua, T: Push<Lua<'lua>>, E: ::std::fmt::Show> Push<Lua<'lua>> for Result<T,E> {
-    fn push_to_lua(self, lua: &mut Lua<'lua>) -> uint {
-        if !lua.inside_callback {
-            fail!("cannot push a Result object except as a function return type")
-        }
-
+impl<'lua, T: Push<InsideCallback<'lua>>, E: ::std::fmt::Show> Push<InsideCallback<'lua>> for Result<T,E> {
+    fn push_to_lua(self, lua: &mut InsideCallback<'lua>) -> uint {
         match self {
             Ok(val) => val.push_to_lua(lua),
             Err(val) => {
                 let msg = format!("{}", val);
                 msg.push_to_lua(lua);
-                unsafe { ffi::lua_error(lua.lua); }
+                unsafe { ffi::lua_error(lua.use_lua()); }
                 unreachable!()
             }
         }
