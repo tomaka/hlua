@@ -137,7 +137,7 @@ impl<'lua> Lua<'lua> {
     /// # Failure
     /// The function fails if lua_newstate fails (which indicates lack of memory).
     #[stable]
-    pub fn new() -> Lua {
+    pub fn new() -> Lua<'lua> {
         let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::mut_null()) };
         if lua.is_null() {
             fail!("lua_newstate failed");
@@ -158,7 +158,7 @@ impl<'lua> Lua<'lua> {
     /// # Arguments
     ///  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
     #[unstable]
-    pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua {
+    pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua<'lua> {
         Lua {
             lua: std::mem::transmute(lua),
             marker: ContravariantLifetime,
