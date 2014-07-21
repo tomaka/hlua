@@ -6,7 +6,7 @@ pub struct LuaTable<'var, 'lua> {
     variable: LoadedVariable<'var, 'lua>
 }
 
-impl<'var, 'lua> HasLua for LuaTable<'var, 'lua> {
+impl<'var, 'lua> HasLua<'lua> for LuaTable<'var, 'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.variable.use_lua()
     }
@@ -18,7 +18,7 @@ pub struct LuaTableIterator<'var, 'lua, 'table> {
     table: &'table mut LuaTable<'var, 'lua>
 }
 
-impl<'var, 'lua, 'table> HasLua for LuaTableIterator<'var, 'lua, 'table> {
+impl<'var, 'lua, 'table> HasLua<'lua> for LuaTableIterator<'var, 'lua, 'table> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.table.use_lua()
     }

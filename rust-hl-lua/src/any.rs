@@ -14,7 +14,7 @@ pub enum AnyLuaValue {
     Other
 }
 
-impl<L: HasLua> Push<L> for AnyLuaValue {
+impl<'lua, L: HasLua<'lua>> Push<L> for AnyLuaValue {
     fn push_to_lua(self, lua: &mut L) -> uint {
         match self {
             String(val) => val.push_to_lua(lua),
@@ -26,7 +26,7 @@ impl<L: HasLua> Push<L> for AnyLuaValue {
     }
 }
 
-impl<L: HasLua> CopyRead<L> for AnyLuaValue {
+impl<'lua, L: HasLua<'lua>> CopyRead<L> for AnyLuaValue {
     fn read_from_lua(lua: &mut L, index: i32) -> Option<AnyLuaValue> {
         None
             .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| Number(v)))

@@ -37,11 +37,12 @@ pub struct Lua<'lua> {
 }
 
 /// Trait for objects that have access to a Lua context.
-pub trait HasLua {
+/// The lifetime parameter is the lifetime of the Lua context.
+pub trait HasLua<'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State;
 }
 
-impl<'lua> HasLua for Lua<'lua> {
+impl<'lua> HasLua<'lua> for Lua<'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.lua
     }
@@ -53,7 +54,7 @@ struct LoadedVariable<'var, 'lua> {
     size: uint       // number of elements at the top of the stack
 }
 
-impl<'var, 'lua> HasLua for LoadedVariable<'var, 'lua> {
+impl<'var, 'lua> HasLua<'lua> for LoadedVariable<'var, 'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.lua.lua
     }
@@ -61,7 +62,7 @@ impl<'var, 'lua> HasLua for LoadedVariable<'var, 'lua> {
 
 /// Should be implemented by whatever type is pushable on the Lua stack.
 #[unstable]
-pub trait Push<L: HasLua> {
+pub trait Push<L> {
     /// Pushes the value on the top of the stack.
     /// Must return the number of elements pushed.
     ///
@@ -79,7 +80,7 @@ pub trait ConsumeRead<'a, 'lua> {
 
 /// Should be implemented by whatever type can be read by copy from the Lua stack.
 #[unstable]
-pub trait CopyRead<L: HasLua> {
+pub trait CopyRead<L> {
     /// Reads an object from the Lua stack.
     ///
     /// Similar to Push, you can implement this trait for your own types either by
