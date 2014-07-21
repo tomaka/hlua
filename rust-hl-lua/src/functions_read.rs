@@ -44,10 +44,9 @@ impl<'a, 'lua, L: HasLua<'lua>> LuaFunction<'a, L> {
         }
 
         if pcallReturnValue == ffi::LUA_ERRRUN {
-            unimplemented!()
-            /*let errorMsg: String = CopyRead::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
+            let errorMsg: String = CopyRead::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
             unsafe { ffi::lua_pop(self.variable.use_lua(), 1) };
-            return Err(ExecutionError(errorMsg));*/
+            return Err(ExecutionError(errorMsg));
         }
 
         fail!("Unknown error code returned by lua_pcall: {}", pcallReturnValue)

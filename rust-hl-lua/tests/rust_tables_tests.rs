@@ -11,7 +11,7 @@ fn write() {
 
     lua.set("a", vec!(9i, 8, 7));
 
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
     let values: Vec<(int,int)> = table.iter().filter_map(|e| e).collect();
     assert_eq!(values, vec!( (1, 9), (2, 8), (3, 7) ));
@@ -28,7 +28,7 @@ fn write_map() {
 
     lua.set("a", map.clone());
 
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
     let values: HashMap<int, int> = table.iter().filter_map(|e| e).collect();
     assert_eq!(values, map);
@@ -48,7 +48,7 @@ fn write_set() {
 
     lua.set("a", set.clone());
 
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
     let values: HashSet<int> = table.iter().filter_map(|e| e)
                                            .map(|(elem, set): (int, bool)| {
