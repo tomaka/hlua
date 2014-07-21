@@ -1,4 +1,4 @@
-use {Lua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
+use {HasLua, Lua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
 use ffi;
 
 #[unstable]
@@ -6,10 +6,22 @@ pub struct LuaTable<'var, 'lua> {
     variable: LoadedVariable<'var, 'lua>
 }
 
+impl<'var, 'lua> HasLua for LuaTable<'var, 'lua> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.variable.use_lua()
+    }
+}
+
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
 #[unstable]
 pub struct LuaTableIterator<'var, 'lua, 'table> {
     table: &'table mut LuaTable<'var, 'lua>
+}
+
+impl<'var, 'lua, 'table> HasLua for LuaTableIterator<'var, 'lua, 'table> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.table.use_lua()
+    }
 }
 
 impl<'var, 'lua> ConsumeRead<'var, 'lua> for LuaTable<'var, 'lua> {
@@ -32,10 +44,10 @@ impl<'var, 'lua> LuaTable<'var, 'lua> {
         LuaTableIterator { table: self }
     }
 
-    pub fn get<R: CopyRead, I: Index<Lua<'lua>>>(&mut self, index: I) -> Option<R> {
+    pub fn get<R: CopyRead<LuaTable<'var, 'lua>>, I: Index<Lua<'lua>>>(&mut self, index: I) -> Option<R> {
         index.push_to_lua(self.variable.lua);
         unsafe { ffi::lua_gettable(self.variable.lua.lua, -2); }
-        let value = CopyRead::read_from_lua(self.variable.lua, -1);
+        let value = CopyRead::read_from_lua(self, -1);
         unsafe { ffi::lua_pop(self.variable.lua.lua, 1); }
         value
     }
@@ -65,7 +77,9 @@ impl<'var, 'lua> LuaTable<'var, 'lua> {
     }
 }
 
-impl<'a, 'b, 'c, K: CopyRead, V: CopyRead> Iterator<Option<(K,V)>> for LuaTableIterator<'a, 'b, 'c> {
+impl<'a, 'b, 'c, K: CopyRead<LuaTableIterator<'a, 'b, 'c>>, V: CopyRead<LuaTableIterator<'a, 'b, 'c>>>
+    Iterator<Option<(K, V)>> for LuaTableIterator<'a, 'b, 'c>
+{
     fn next(&mut self)
         -> Option<Option<(K,V)>>
     {
@@ -74,8 +88,8 @@ impl<'a, 'b, 'c, K: CopyRead, V: CopyRead> Iterator<Option<(K,V)>> for LuaTableI
             return None
         }
 
-        let key = CopyRead::read_from_lua(self.table.variable.lua, -2);
-        let value = CopyRead::read_from_lua(self.table.variable.lua, -1);
+        let key = CopyRead::read_from_lua(self, -2);
+        let value = CopyRead::read_from_lua(self, -1);
 
         // removing the value, leaving only the key on the top of the stack
         unsafe { ffi::lua_pop(self.table.variable.lua.lua, 1) };

@@ -53,6 +53,12 @@ struct LoadedVariable<'var, 'lua> {
     size: uint       // number of elements at the top of the stack
 }
 
+impl<'var, 'lua> HasLua for LoadedVariable<'var, 'lua> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.lua.lua
+    }
+}
+
 /// Should be implemented by whatever type is pushable on the Lua stack.
 #[unstable]
 pub trait Push<L: HasLua> {
@@ -73,7 +79,7 @@ pub trait ConsumeRead<'a, 'lua> {
 
 /// Should be implemented by whatever type can be read by copy from the Lua stack.
 #[unstable]
-pub trait CopyRead : Clone {
+pub trait CopyRead<L: HasLua> {
     /// Reads an object from the Lua stack.
     ///
     /// Similar to Push, you can implement this trait for your own types either by
@@ -82,12 +88,12 @@ pub trait CopyRead : Clone {
     /// # Arguments
     ///  * `lua` - The Lua object to read from
     ///  * `index` - The index on the stack to read from
-    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<Self>;
+    fn read_from_lua(lua: &mut L, index: i32) -> Option<Self>;
 }
 
 /// Types that can be indices in Lua tables.
 #[unstable]
-pub trait Index<L>: Push<L> + CopyRead {
+pub trait Index<L>: Push<L> + CopyRead<L> {
 }
 
 /// Error that can happen when executing Lua code.
@@ -169,14 +175,14 @@ impl<'lua> Lua<'lua> {
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute<T: CopyRead>(&mut self, code: &str) -> Result<T, LuaError> {
+    pub fn execute<T: CopyRead<Lua<'lua>>>(&mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute_from_reader<T: CopyRead, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
+    pub fn execute_from_reader<T: CopyRead<Lua<'lua>>, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
@@ -190,7 +196,7 @@ impl<'lua> Lua<'lua> {
 
     /// Reads the value of a global variable by copying it.
     #[unstable]
-    pub fn get<I: Str, V: CopyRead>(&mut self, index: I) -> Option<V> {
+    pub fn get<I: Str, V: CopyRead<Lua<'lua>>>(&mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         CopyRead::read_from_lua(self, -1)
     }

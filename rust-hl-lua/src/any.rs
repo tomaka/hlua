@@ -26,8 +26,8 @@ impl<L: HasLua> Push<L> for AnyLuaValue {
     }
 }
 
-impl CopyRead for AnyLuaValue {
-    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<AnyLuaValue> {
+impl<L: HasLua> CopyRead<L> for AnyLuaValue {
+    fn read_from_lua(lua: &mut L, index: i32) -> Option<AnyLuaValue> {
         None
             .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| Number(v)))
             .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| Boolean(v)))

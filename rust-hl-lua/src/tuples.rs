@@ -16,8 +16,8 @@ macro_rules! tuple_impl(
 
         // TODO: what if T or U are also tuples? indices won't match
         #[allow(dead_assignment)]
-        impl<$($ty: CopyRead),+> CopyRead for ($($ty),+) {
-            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<($($ty),+)> {
+        impl<LU: HasLua, $($ty: CopyRead<LU>),+> CopyRead<LU> for ($($ty),+) {
+            fn read_from_lua(lua: &mut LU, index: i32) -> Option<($($ty),+)> {
 
                 let mut i = index;
                 $(

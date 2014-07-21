@@ -15,10 +15,10 @@ macro_rules! integer_impl(
                 1
             }
         }
-        impl CopyRead for $t {
-            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
+        impl<L: HasLua> CopyRead<L> for $t {
+            fn read_from_lua(lua: &mut L, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { ffi::lua_tointegerx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tointegerx(lua.use_lua(), index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -52,10 +52,10 @@ macro_rules! unsigned_impl(
                 1
             }
         }
-        impl CopyRead for $t {
-            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
+        impl<L: HasLua> CopyRead<L> for $t {
+            fn read_from_lua(lua: &mut L, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { ffi::lua_tounsignedx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tounsignedx(lua.use_lua(), index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -89,10 +89,10 @@ macro_rules! numeric_impl(
                 1
             }
         }
-        impl CopyRead for $t {
-            fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<$t> {
+        impl<L: HasLua> CopyRead<L> for $t {
+            fn read_from_lua(lua: &mut L, index: i32) -> Option<$t> {
                 let mut success: ::libc::c_int = unsafe { ::std::mem::uninitialized() };
-                let val = unsafe { ffi::lua_tonumberx(lua.lua, index, &mut success) };
+                let val = unsafe { ffi::lua_tonumberx(lua.use_lua(), index, &mut success) };
                 match success {
                     0 => None,
                     _ => Some(val as $t)
@@ -122,10 +122,10 @@ impl<L: HasLua> Push<L> for String {
     }
 }
 
-impl CopyRead for String {
-    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<String> {
+impl<L: HasLua> CopyRead<L> for String {
+    fn read_from_lua(lua: &mut L, index: i32) -> Option<String> {
         let mut size: ::libc::size_t = unsafe { ::std::mem::uninitialized() };
-        let cStrRaw = unsafe { ffi::lua_tolstring(lua.lua, index, &mut size) };
+        let cStrRaw = unsafe { ffi::lua_tolstring(lua.use_lua(), index, &mut size) };
         if cStrRaw.is_null() {
             return None;
         }
@@ -160,13 +160,13 @@ impl<L: HasLua> Push<L> for bool {
     }
 }
 
-impl CopyRead for bool {
-    fn read_from_lua<'lua>(lua: &mut Lua<'lua>, index: i32) -> Option<bool> {
-        if unsafe { ffi::lua_isboolean(lua.lua, index) } != true {
+impl<L: HasLua> CopyRead<L> for bool {
+    fn read_from_lua(lua: &mut L, index: i32) -> Option<bool> {
+        if unsafe { ffi::lua_isboolean(lua.use_lua(), index) } != true {
             return None;
         }
 
-        Some(unsafe { ffi::lua_toboolean(lua.lua, index) != 0 })
+        Some(unsafe { ffi::lua_toboolean(lua.use_lua(), index) != 0 })
     }
 }
 
@@ -188,8 +188,8 @@ impl<L: HasLua> Push<L> for () {
     }
 }
 
-impl CopyRead for () {
-    fn read_from_lua(_: &mut Lua, _: i32) -> Option<()> {
+impl<L: HasLua> CopyRead<L> for () {
+    fn read_from_lua(_: &mut L, _: i32) -> Option<()> {
         Some(())
     }
 }

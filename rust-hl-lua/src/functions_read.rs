@@ -23,7 +23,7 @@ extern fn reader(_: *mut ffi::lua_State, dataRaw: *mut ::libc::c_void, size: *mu
 }
 
 impl<'a,'lua> LuaFunction<'a,'lua> {
-    pub fn call<V: CopyRead>(&mut self) -> Result<V, LuaError> {
+    pub fn call<V: CopyRead<Lua<'lua>>>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { ffi::lua_pcall(self.variable.lua.lua, 0, 1, 0) };     // TODO: 
 
