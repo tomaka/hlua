@@ -1,5 +1,6 @@
 use ffi;
 use Lua;
+use HasLua;
 use CopyRead;
 use ConsumeRead;
 use Push;
@@ -16,12 +17,14 @@ use std::any::Any;
 ///  * metatable: Function that fills the metatable of the object.
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mut LuaTable|) -> uint {
+pub fn push_userdata<'a, 'lua, T: ::std::any::Any>(data: T, lua: &'a mut Lua<'lua>, metatable: |&mut LuaTable<'a, Lua<'lua>>|) -> uint {
     let typeid = format!("{}", data.get_type_id());
 
     let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&data) as ::libc::size_t) };
     let luaData: *mut T = unsafe { ::std::mem::transmute(luaDataRaw) };
     unsafe { ::std::ptr::write(luaData, data) };
+
+    let lua_raw = lua.use_lua();
 
     // creating a metatable
     unsafe {
@@ -44,7 +47,7 @@ pub fn push_userdata<T: ::std::any::Any>(data: T, lua: &mut Lua, metatable: |&mu
             ::std::mem::forget(table);
         }
 
-        ffi::lua_setmetatable(lua.lua, -2);
+        ffi::lua_setmetatable(lua_raw, -2);
     }
 
     1

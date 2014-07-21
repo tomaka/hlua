@@ -37,9 +37,9 @@ impl<'lua, L: HasLua<'lua>> CopyRead<L> for AnyLuaValue {
     }
 }
 
-impl<'a,'lua> ConsumeRead<'a,'lua> for AnyLuaValue {
-    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<AnyLuaValue, LoadedVariable<'a, 'lua>> {
-        match CopyRead::read_from_lua(var.lua, -1) {
+impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for AnyLuaValue {
+    fn read_from_variable(mut var: LoadedVariable<'a, L>) -> Result<AnyLuaValue, LoadedVariable<'a, L>> {
+        match CopyRead::read_from_lua(&mut var, -1) {
             None => Err(var),
             Some(a) => Ok(a)
         }

@@ -49,14 +49,14 @@ impl<'lua> HasLua<'lua> for Lua<'lua> {
 }
 
 /// Object which allows access to a Lua variable.
-struct LoadedVariable<'var, 'lua> {
-    lua: &'var mut Lua<'lua>,
-    size: uint       // number of elements at the top of the stack
+struct LoadedVariable<'var, L> {
+    lua: &'var mut L,
+    size: uint,       // number of elements over "lua"
 }
 
-impl<'var, 'lua> HasLua<'lua> for LoadedVariable<'var, 'lua> {
+impl<'var, 'lua, L: HasLua<'lua>> HasLua<'lua> for LoadedVariable<'var, L> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
-        self.lua.lua
+        self.lua.use_lua()
     }
 }
 
@@ -73,9 +73,9 @@ pub trait Push<L> {
 
 /// Should be implemented by types that can be read by consomming a LoadedVariable.
 #[unstable]
-pub trait ConsumeRead<'a, 'lua> {
+pub trait ConsumeRead<'a, L> {
     /// Returns the LoadedVariable in case of failure.
-    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<Self, LoadedVariable<'a, 'lua>>;
+    fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<Self, LoadedVariable<'a, L>>;
 }
 
 /// Should be implemented by whatever type can be read by copy from the Lua stack.
@@ -176,21 +176,21 @@ impl<'lua> Lua<'lua> {
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute<T: CopyRead<Lua<'lua>>>(&mut self, code: &str) -> Result<T, LuaError> {
+    pub fn execute<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>>(&'a mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
     #[unstable]
-    pub fn execute_from_reader<T: CopyRead<Lua<'lua>>, R: std::io::Reader + 'static>(&mut self, code: R) -> Result<T, LuaError> {
+    pub fn execute_from_reader<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>, R: std::io::Reader + 'static>(&'a mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
 
     /// Loads the value of a global variable.
     #[unstable]
-    pub fn load<'a, I: Str, V: ConsumeRead<'a, 'lua>>(&'a mut self, index: I) -> Option<V> {
+    pub fn load<'a, I: Str, V: ConsumeRead<'a, Lua<'lua>>>(&'a mut self, index: I) -> Option<V> {
         unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
         ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
@@ -210,7 +210,7 @@ impl<'lua> Lua<'lua> {
     }
 
     #[unstable]
-    pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, 'lua> {
+    pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, Lua<'lua>> {
         unsafe { ffi::lua_newtable(self.lua) };
         ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
     }
@@ -225,9 +225,10 @@ impl<'lua> Drop for Lua<'lua> {
     }
 }
 
-#[unsafe_destructor]
-impl<'a, 'lua> Drop for LoadedVariable<'a, 'lua> {
+// TODO: crashes the compiler
+/*#[unsafe_destructor]
+impl<'a, 'lua, L: HasLua<'lua>> Drop for LoadedVariable<'a, L> {
     fn drop(&mut self) {
-        unsafe { ffi::lua_pop(self.lua.lua, self.size as libc::c_int) }
+        unsafe { ffi::lua_pop(self.use_lua(), self.size as libc::c_int) }
     }
-}
+}*/

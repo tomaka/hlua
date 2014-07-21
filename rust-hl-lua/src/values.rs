@@ -25,8 +25,8 @@ macro_rules! integer_impl(
                 }
             }
         }
-        impl<'a,'lua> ConsumeRead<'a,'lua> for $t {
-            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
+        impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<$t, LoadedVariable<'a, L>> {
                 match CopyRead::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
@@ -62,8 +62,8 @@ macro_rules! unsigned_impl(
                 }
             }
         }
-        impl<'a,'lua> ConsumeRead<'a,'lua> for $t {
-            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
+        impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<$t, LoadedVariable<'a, L>> {
                 match CopyRead::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
@@ -99,8 +99,8 @@ macro_rules! numeric_impl(
                 }
             }
         }
-        impl<'a,'lua> ConsumeRead<'a,'lua> for $t {
-            fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<$t, LoadedVariable<'a, 'lua>> {
+        impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for $t {
+            fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<$t, LoadedVariable<'a, L>> {
                 match CopyRead::read_from_lua(var.lua, -1) {
                     None => Err(var),
                     Some(a) => Ok(a)
@@ -134,8 +134,8 @@ impl<'lua, L: HasLua<'lua>> CopyRead<L> for String {
     }
 }
 
-impl<'a,'lua> ConsumeRead<'a,'lua> for String {
-    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<String, LoadedVariable<'a, 'lua>> {
+impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for String {
+    fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<String, LoadedVariable<'a, L>> {
         match CopyRead::read_from_lua(var.lua, -1) {
             None => Err(var),
             Some(a) => Ok(a)
@@ -170,8 +170,8 @@ impl<'lua, L: HasLua<'lua>> CopyRead<L> for bool {
     }
 }
 
-impl<'a,'lua> ConsumeRead<'a,'lua> for bool {
-    fn read_from_variable(var: LoadedVariable<'a, 'lua>) -> Result<bool, LoadedVariable<'a, 'lua>> {
+impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for bool {
+    fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<bool, LoadedVariable<'a, L>> {
         match CopyRead::read_from_lua(var.lua, -1) {
             None => Err(var),
             Some(a) => Ok(a)
@@ -194,8 +194,8 @@ impl<'lua, L: HasLua<'lua>> CopyRead<L> for () {
     }
 }
 
-impl<'a,'lua> ConsumeRead<'a,'lua> for () {
-    fn read_from_variable(_: LoadedVariable<'a, 'lua>) -> Result<(), LoadedVariable<'a, 'lua>> {
+impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for () {
+    fn read_from_variable(_: LoadedVariable<'a, L>) -> Result<(), LoadedVariable<'a, L>> {
         Ok(())
     }
 }
