@@ -4,13 +4,13 @@ extern crate lua = "rust-hl-lua";
 fn readwrite() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Push<'a> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
+        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyRead for Foo {
-        fn read_from_lua<'lua>(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Foo> {
+    impl<'lua> lua::CopyRead<lua::Lua<'lua>> for Foo {
+        fn read_from_lua(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Foo> {
             lua::userdata::read_copy_userdata(lua, index)
         }
     }
@@ -52,26 +52,26 @@ fn destructor_called() {
 fn type_check() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Push<'a> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
+        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyRead for Foo {
-        fn read_from_lua<'lua>(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Foo> {
+    impl<'lua> lua::CopyRead<lua::Lua<'lua>> for Foo {
+        fn read_from_lua(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Foo> {
             lua::userdata::read_copy_userdata(lua, index)
         }
     }
 
     #[deriving(Clone)]
     struct Bar;
-    impl<'a> lua::Push<'a> for Bar {
-        fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+    impl<'lua> lua::Push<lua::Lua<'lua>> for Bar {
+        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl lua::CopyRead for Bar {
-        fn read_from_lua<'lua>(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Bar> {
+    impl<'lua> lua::CopyRead<lua::Lua<'lua>> for Bar {
+        fn read_from_lua(lua: &mut lua::Lua<'lua>, index: i32) -> Option<Bar> {
             lua::userdata::read_copy_userdata(lua, index)
         }
     }
@@ -88,8 +88,8 @@ fn type_check() {
 fn metatables() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'a> lua::Push<'a> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
+        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
             lua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(
                     ("test".to_string(), || 5i)

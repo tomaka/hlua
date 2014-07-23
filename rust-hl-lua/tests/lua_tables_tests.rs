@@ -7,7 +7,7 @@ fn iterable() {
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table = lua.load_table("a").unwrap();
     let mut counter = 0u;
 
     for (key, value) in table.iter().filter_map(|e| e) {
@@ -26,7 +26,7 @@ fn iterable_multipletimes() {
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table = lua.load_table("a").unwrap();
 
     for _ in range(0u, 10) {
         let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
@@ -39,7 +39,7 @@ fn get_set() {
     let mut lua = Lua::new();
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
-    let mut table: LuaTable = lua.load("a").unwrap();
+    let mut table = lua.load_table("a").unwrap();
 
     let x: int = table.get(2i).unwrap();
     assert_eq!(x, 8);
@@ -59,7 +59,7 @@ fn metatable() {
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
     {
-        let table: LuaTable = lua.load("a").unwrap();
+        let table = lua.load_table("a").unwrap();
 
         let mut metatable = table.get_or_create_metatable();
         fn handler() -> int { 5 };
