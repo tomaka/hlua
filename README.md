@@ -103,13 +103,11 @@ If your Rust function returns a `Result` object which contains an error, then a 
 
 #### Manipulating Lua tables
 
-Manipulating a Lua table can be done by reading a `LuaTable` object.
+Manipulating a Lua table can be done by reading a `LuaTable` object. This can be achieved easily by calling `load_table`.
 
 ```rust
-let mut table: rust-hl-lua::LuaTable = lua.load("a").unwrap();
+let mut table = lua.load_table("a").unwrap();
 ```
-
-Note that we use the `load` function instead of `get` function, because reading a `LuaTable` mutably borrows the Lua context.
 
 You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<(Key, Value)>`, the `Option` being empty when either the key or the value is not convertible to the requested type. The `filter_map` function (provided by the standard `Iterator` trait) is very useful when dealing with this.
 

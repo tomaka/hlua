@@ -192,6 +192,12 @@ impl<'lua> Lua<'lua> {
         ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
+    /// Loads the value of a global variable as a table.
+    #[unstable]
+    pub fn load_table<'a, I: Str>(&'a mut self, index: I) -> Option<LuaTable<Lua<'lua>>> {
+        self.load(index)
+    }
+
     /// Reads the value of a global variable by copying it.
     #[unstable]
     pub fn get<I: Str, V: CopyRead<Lua<'lua>>>(&mut self, index: I) -> Option<V> {
