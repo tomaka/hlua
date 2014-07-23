@@ -15,7 +15,8 @@ impl<'var, L: HasLua> HasLua for LuaTable<'var, L> {
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
 #[unstable]
 pub struct LuaTableIterator<'var, 'table, L> {
-    table: &'table mut LuaTable<'var, L>
+    table: &'table mut LuaTable<'var, L>,
+    finished: bool,     // if true, the key is not on the stack anymore
 }
 
 impl<'var, 'table, L: HasLua> HasLua for LuaTableIterator<'var, 'table, L> {
@@ -41,7 +42,7 @@ impl<'var, L: HasLua> LuaTable<'var, L> {
         -> LuaTableIterator<'var, 'me, L>
     {
         unsafe { ffi::lua_pushnil(self.variable.use_lua()) };
-        LuaTableIterator { table: self }
+        LuaTableIterator{table: self, finished: false}
     }
 
     pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
@@ -94,8 +95,13 @@ impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lu
     fn next(&mut self)
         -> Option<Option<(K,V)>>
     {
+        if self.finished {
+            return None
+        }
+
         // this call pushes the next key and value on the stack
         if unsafe { ffi::lua_next(self.table.use_lua(), -2) } == 0 {
+            self.finished = true;
             return None
         }
 
@@ -114,9 +120,11 @@ impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lu
     }
 }
 
-// TODO: this destructor crashes the compiler
-/*impl<'a, 'b> Drop for LuaTableIterator<'a, 'b> {
+#[unsafe_destructor]
+impl<'a, 'b, L: HasLua> Drop for LuaTableIterator<'a, 'b, L> {
     fn drop(&mut self) {
-        unsafe { ffi::lua_pop(self.table.variable.lua.lua, 1) }
+        if !self.finished {
+            unsafe { ffi::lua_pop(self.table.variable.use_lua(), 1) }
+        }
     }
-}*/
+}
