@@ -52,6 +52,31 @@ fn get_set() {
     assert_eq!(z, 9);
 }
 
+// this test triggers an ICE
+/*#[test]
+fn table_over_table() {
+    let mut lua = Lua::new();
+
+    let _:() = lua.execute("a = { 9, { 8, 7 }, 6 }").unwrap();
+    let mut table = lua.load_table("a").unwrap();
+
+    let x: int = table.get(1i).unwrap();
+    assert_eq!(x, 9);
+
+    {
+        let mut subtable = table.load_table(2i).unwrap();
+
+        let y: int = subtable.get(1i).unwrap();
+        assert_eq!(y, 8);
+
+        let z: int = subtable.get(2i).unwrap();
+        assert_eq!(z, 7);
+    }
+
+    let w: int = table.get(3i).unwrap();
+    assert_eq!(w, 6);
+}*/
+
 #[test]
 fn metatable() {
     let mut lua = Lua::new();
