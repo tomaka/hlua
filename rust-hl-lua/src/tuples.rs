@@ -1,4 +1,4 @@
-use {HasLua, Lua, Push, CopyRead};
+use {HasLua, Push, CopyRead};
 
 macro_rules! tuple_impl(
     ($($ty:ident | $nb:ident),+) => (

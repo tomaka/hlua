@@ -1,5 +1,5 @@
 use ffi;
-use {HasLua, Lua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError};
+use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError};
 
 #[unstable]
 ///

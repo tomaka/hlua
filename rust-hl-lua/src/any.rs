@@ -1,4 +1,4 @@
-use {Lua, HasLua, Push, CopyRead, ConsumeRead, LoadedVariable};
+use {HasLua, Push, CopyRead, ConsumeRead, LoadedVariable};
 
 /// Represents any value that can be stored by Lua
 #[experimental]

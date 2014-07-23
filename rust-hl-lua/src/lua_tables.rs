@@ -1,4 +1,4 @@
-use {HasLua, Lua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
+use {HasLua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
 use ffi;
 
 #[unstable]

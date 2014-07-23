@@ -33,7 +33,6 @@ pub struct Lua<'lua> {
     lua: *mut ffi::lua_State,
     marker: ContravariantLifetime<'lua>,
     must_be_closed: bool,
-    inside_callback: bool           // if true, we are inside a callback
 }
 
 /// Trait for objects that have access to a Lua context.
@@ -149,7 +148,6 @@ impl<'lua> Lua<'lua> {
             lua: lua,
             marker: ContravariantLifetime,
             must_be_closed: true,
-            inside_callback: false
         }
     }
 
@@ -163,7 +161,6 @@ impl<'lua> Lua<'lua> {
             lua: std::mem::transmute(lua),
             marker: ContravariantLifetime,
             must_be_closed: close_at_the_end,
-            inside_callback: false
         }
     }
 

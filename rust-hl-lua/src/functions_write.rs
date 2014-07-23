@@ -1,5 +1,5 @@
 use super::ffi;
-use {HasLua, Lua, Push, CopyRead};
+use {HasLua, Push, CopyRead};
 use std::kinds::marker::ContravariantLifetime;
 
 // this function is the main entry point when Lua wants to call one of our functions

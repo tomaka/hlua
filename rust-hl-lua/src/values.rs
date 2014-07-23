@@ -1,6 +1,5 @@
 use super::ffi;
 use super::Index;
-use super::Lua;
 use super::Push;
 use super::CopyRead;
 use super::ConsumeRead;
