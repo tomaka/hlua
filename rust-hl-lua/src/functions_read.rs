@@ -25,7 +25,7 @@ extern fn reader(_: *mut ffi::lua_State, dataRaw: *mut ::libc::c_void, size: *mu
     data.buffer.as_ptr() as *const ::libc::c_char
 }
 
-impl<'a, 'lua, L: HasLua<'lua>> LuaFunction<'a, L> {
+impl<'a, 'lua, L: HasLua> LuaFunction<'a, L> {
     pub fn call<V: CopyRead<LoadedVariable<'a, L>>>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
         let pcallReturnValue = unsafe { ffi::lua_pcall(self.variable.use_lua(), 0, 1, 0) };     // TODO: 
@@ -98,7 +98,7 @@ impl<'a, 'lua, L: HasLua<'lua>> LuaFunction<'a, L> {
     }
 }*/
 
-impl<'a, 'lua, L: HasLua<'lua>> ConsumeRead<'a, L> for LuaFunction<'a, L> {
+impl<'a, 'lua, L: HasLua> ConsumeRead<'a, L> for LuaFunction<'a, L> {
     fn read_from_variable(mut var: LoadedVariable<'a, L>)
         -> Result<LuaFunction<'a, L>, LoadedVariable<'a, L>>
     {

@@ -6,7 +6,7 @@ pub struct LuaTable<'var, L> {
     variable: LoadedVariable<'var, L>
 }
 
-impl<'var, 'lua, L: HasLua<'lua>> HasLua<'lua> for LuaTable<'var, L> {
+impl<'var, 'lua, L: HasLua> HasLua for LuaTable<'var, L> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.variable.use_lua()
     }
@@ -18,13 +18,13 @@ pub struct LuaTableIterator<'var, 'table, L> {
     table: &'table mut LuaTable<'var, L>
 }
 
-impl<'var, 'lua, 'table, L: HasLua<'lua>> HasLua<'lua> for LuaTableIterator<'var, 'table, L> {
+impl<'var, 'lua, 'table, L: HasLua> HasLua for LuaTableIterator<'var, 'table, L> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.table.use_lua()
     }
 }
 
-impl<'var, 'lua, L: HasLua<'lua>> ConsumeRead<'var, L> for LuaTable<'var, L> {
+impl<'var, 'lua, L: HasLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
     fn read_from_variable(mut var: LoadedVariable<'var, L>)
         -> Result<LuaTable<'var, L>, LoadedVariable<'var, L>>
     {
@@ -36,7 +36,7 @@ impl<'var, 'lua, L: HasLua<'lua>> ConsumeRead<'var, L> for LuaTable<'var, L> {
     }
 }
 
-impl<'var, 'lua, L: HasLua<'lua>> LuaTable<'var, L> {
+impl<'var, 'lua, L: HasLua> LuaTable<'var, L> {
     pub fn iter<'me>(&'me mut self)
         -> LuaTableIterator<'var, 'me, L>
     {
@@ -77,7 +77,7 @@ impl<'var, 'lua, L: HasLua<'lua>> LuaTable<'var, L> {
     }
 }
 
-impl<'a, 'b, 'lua, L: HasLua<'lua>, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<LuaTableIterator<'a, 'b, L>>>
+impl<'a, 'b, 'lua, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<LuaTableIterator<'a, 'b, L>>>
     Iterator<Option<(K, V)>> for LuaTableIterator<'a, 'b, L>
 {
     fn next(&mut self)

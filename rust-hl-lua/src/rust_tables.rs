@@ -6,7 +6,7 @@ use std::collections::hashmap::{HashMap, HashSet};
 use std::iter::Repeat;
 use collections::hash::Hash;
 
-fn push_iter<'lua, L: HasLua<'lua>, V: Push<L>, I: Iterator<V>>(lua: &mut L, iterator: I) -> uint
+fn push_iter<'lua, L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, iterator: I) -> uint
 {
     // creating empty table
     unsafe { ffi::lua_newtable(lua.use_lua()) };
@@ -29,7 +29,7 @@ fn push_iter<'lua, L: HasLua<'lua>, V: Push<L>, I: Iterator<V>>(lua: &mut L, ite
     1
 }
 
-fn push_rec_iter<'lua, L: HasLua<'lua>, V: Push<L>, I: Iterator<V>>(lua: &mut L, mut iterator: I)
+fn push_rec_iter<'lua, L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, mut iterator: I)
                                                                    -> uint
 {
     let (nrec, _) = iterator.size_hint();
@@ -50,25 +50,25 @@ fn push_rec_iter<'lua, L: HasLua<'lua>, V: Push<L>, I: Iterator<V>>(lua: &mut L,
     1
 }
 
-impl<'lua, L: HasLua<'lua>, T: Push<L>> Push<L> for Vec<T> {
+impl<'lua, L: HasLua, T: Push<L>> Push<L> for Vec<T> {
     fn push_to_lua(self, lua: &mut L) -> uint {
         push_iter(lua, self.move_iter())
     }
 }
 
-impl<'a, 'lua, L: HasLua<'lua>, T: Push<L> + Clone> Push<L> for &'a [T] {
+impl<'a, 'lua, L: HasLua, T: Push<L> + Clone> Push<L> for &'a [T] {
     fn push_to_lua(self, lua: &mut L) -> uint {
         push_iter(lua, self.iter().map(|e| e.clone()))
     }
 }
 
-impl<'lua, L: HasLua<'lua>, K: Push<L> + Eq + Hash, V: Push<L>> Push<L> for HashMap<K, V> {
+impl<'lua, L: HasLua, K: Push<L> + Eq + Hash, V: Push<L>> Push<L> for HashMap<K, V> {
     fn push_to_lua(self, lua: &mut L) -> uint {
         push_rec_iter(lua, self.move_iter())
     }
 }
 
-impl<'lua, L: HasLua<'lua>, K: Push<L> + Eq + Hash> Push<L> for HashSet<K> {
+impl<'lua, L: HasLua, K: Push<L> + Eq + Hash> Push<L> for HashSet<K> {
     fn push_to_lua(self, lua: &mut L) -> uint {
         push_rec_iter(lua, self.move_iter().zip(Repeat::new(true)))
     }

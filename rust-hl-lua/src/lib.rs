@@ -38,11 +38,11 @@ pub struct Lua<'lua> {
 
 /// Trait for objects that have access to a Lua context.
 /// The lifetime parameter is the lifetime of the Lua context.
-pub trait HasLua<'lua> {
+pub trait HasLua {
     fn use_lua(&mut self) -> *mut ffi::lua_State;
 }
 
-impl<'lua> HasLua<'lua> for Lua<'lua> {
+impl<'lua> HasLua for Lua<'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.lua
     }
@@ -54,7 +54,7 @@ struct LoadedVariable<'var, L> {
     size: uint,       // number of elements over "lua"
 }
 
-impl<'var, 'lua, L: HasLua<'lua>> HasLua<'lua> for LoadedVariable<'var, L> {
+impl<'var, 'lua, L: HasLua> HasLua for LoadedVariable<'var, L> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.lua.use_lua()
     }
@@ -226,9 +226,9 @@ impl<'lua> Drop for Lua<'lua> {
 }
 
 // TODO: crashes the compiler
-/*#[unsafe_destructor]
-impl<'a, 'lua, L: HasLua<'lua>> Drop for LoadedVariable<'a, L> {
+#[unsafe_destructor]
+impl<'a, L: HasLua> Drop for LoadedVariable<'a, L> {
     fn drop(&mut self) {
         unsafe { ffi::lua_pop(self.use_lua(), self.size as libc::c_int) }
     }
-}*/
+}

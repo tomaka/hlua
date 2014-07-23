@@ -31,7 +31,7 @@ struct InsideCallback<'lua> {
     marker: ContravariantLifetime<'lua>,
 }
 
-impl<'lua> HasLua<'lua> for InsideCallback<'lua> {
+impl<'lua> HasLua for InsideCallback<'lua> {
     fn use_lua(&mut self) -> *mut ffi::lua_State {
         self.lua
     }
@@ -75,7 +75,7 @@ impl<'lua, Args: CopyRead<InsideCallback<'lua>>, Ret: Push<InsideCallback<'lua>>
 // this macro will allow us to handle multiple parameters count
 macro_rules! Push_function(
     ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
-        impl<'lua, L: HasLua<'lua>, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
+        impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
@@ -100,7 +100,7 @@ macro_rules! Push_function(
             }
         }
 
-        impl<'lua, L: HasLua<'lua>, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
+        impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
                 let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
