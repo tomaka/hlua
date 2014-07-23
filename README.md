@@ -253,23 +253,6 @@ Two syntax extensions are defined:
  - `#[export_lua_module]`: Must be put in front of a module. The name of the module must be the same as the name of your Lua module.
  - `#[lua_module_init]`: Can be put in front of a function inside the module. This function will be executed when the module is loaded.
 
-### Roadmap
+### Contributing
 
- - [ ] Reading/writing inside Lua tables
-   - [x] Iterating through tables
-   - [x] Reading elements by value
-   - [ ] Reading functions and sub-tables
- - [ ] Reading/writing containers
-   - [x] Vectors and slices
-   - [ ] HashMaps and HashSets
- - [x] Writing functions
-   - [x] Basic support
-   - [x] Functions with parameters
-   - [x] Closures
- - [ ] Reading or loading a function and calling it later
-   - [x] Basic support
-   - [ ] Passing parameters
- - [ ] Access to the metatables of tables and user data
- - [ ] Access to the registry
- - [ ] Better user data
- - [x] Allow writing Lua binary modules in Rust
+Contributions are welcome!
