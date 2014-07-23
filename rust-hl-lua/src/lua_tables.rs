@@ -36,12 +36,23 @@ impl<'var, 'lua, L: HasLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
     }
 }
 
-impl<'var, 'lua, L: HasLua> LuaTable<'var, L> {
+impl<'var, L: HasLua> LuaTable<'var, L> {
     pub fn iter<'me>(&'me mut self)
         -> LuaTableIterator<'var, 'me, L>
     {
         unsafe { ffi::lua_pushnil(self.variable.use_lua()) };
         LuaTableIterator { table: self }
+    }
+
+    pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
+        index.push_to_lua(self);
+        unsafe { ffi::lua_gettable(self.use_lua(), -2); }
+        let var = LoadedVariable{lua: self, size: 1};
+        ConsumeRead::read_from_variable(var).ok()
+    }
+
+    pub fn load_table<'a, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<LuaTable<'a, LuaTable<'var, L>>> {
+        self.load(index)
     }
 
     pub fn get<R: CopyRead<LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&mut self, index: I) -> Option<R> {
