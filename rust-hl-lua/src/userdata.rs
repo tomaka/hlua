@@ -5,7 +5,7 @@ use CopyRead;
 use ConsumeRead;
 use Push;
 use LuaTable;
-use std::any::Any;
+use std::intrinsics::TypeId;
 
 /*fn destructor<T>(_: T) {
 
@@ -17,8 +17,8 @@ use std::any::Any;
 ///  * metatable: Function that fills the metatable of the object.
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn push_userdata<'a, 'lua, T: ::std::any::Any>(data: T, lua: &'a mut Lua<'lua>, metatable: |&mut LuaTable<'a, Lua<'lua>>|) -> uint {
-    let typeid = format!("{}", data.get_type_id());
+pub fn push_userdata<'a, 'lua, T: 'static>(data: T, lua: &'a mut Lua<'lua>, metatable: |&mut LuaTable<'a, Lua<'lua>>|) -> uint {
+    let typeid = format!("{}", TypeId::of::<T>());
 
     let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, ::std::mem::size_of_val(&data) as ::libc::size_t) };
     let luaData: *mut T = unsafe { ::std::mem::transmute(luaDataRaw) };
@@ -55,10 +55,9 @@ pub fn push_userdata<'a, 'lua, T: ::std::any::Any>(data: T, lua: &'a mut Lua<'lu
 
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn read_copy_userdata<T: Clone + ::std::any::Any>(lua: &mut Lua, index: ::libc::c_int) -> Option<T> {
+pub fn read_copy_userdata<T: Clone + 'static>(lua: &mut Lua, index: ::libc::c_int) -> Option<T> {
     unsafe {
-        let dummyMe: &T = ::std::mem::uninitialized();      // TODO: this is very very hacky, I don't even know if it works
-        let expectedTypeid = format!("{}", dummyMe.get_type_id());
+        let expectedTypeid = format!("{}", TypeId::of::<T>());
 
         let dataPtr = ffi::lua_touserdata(lua.lua, index);
         if dataPtr.is_null() {

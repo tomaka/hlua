@@ -86,7 +86,7 @@ impl<'a, 'lua, L: HasLua> LuaFunction<'a, L> {
     pub fn load(lua: &'a mut L, code: &str)
         -> Result<LuaFunction<'a, L>, LuaError>
     {
-        let reader = ::std::io::MemReader::new(code.to_c_str().as_bytes().init().to_owned());
+        let reader = ::std::io::MemReader::new(code.to_c_str().as_bytes().init().to_vec());
         LuaFunction::load_from_reader(lua, reader)
     }
 }
