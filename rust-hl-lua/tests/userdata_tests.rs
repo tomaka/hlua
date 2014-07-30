@@ -4,8 +4,8 @@ extern crate lua = "rust-hl-lua";
 fn readwrite() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+    impl<L: lua::HasLua> lua::Push<L> for Foo {
+        fn push_to_lua(self, lua: &mut L) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -38,8 +38,8 @@ fn destructor_called() {
         }
     }
 
-    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+    impl<L: lua::HasLua> lua::Push<L> for Foo {
+        fn push_to_lua(self, lua: &mut L) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -57,8 +57,8 @@ fn destructor_called() {
 fn type_check() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+    impl<L: lua::HasLua> lua::Push<L> for Foo {
+        fn push_to_lua(self, lua: &mut L) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -70,8 +70,8 @@ fn type_check() {
 
     #[deriving(Clone)]
     struct Bar;
-    impl<'lua> lua::Push<lua::Lua<'lua>> for Bar {
-        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+    impl<L: lua::HasLua> lua::Push<L> for Bar {
+        fn push_to_lua(self, lua: &mut L) -> uint {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -93,8 +93,8 @@ fn type_check() {
 fn metatables() {
     #[deriving(Clone)]
     struct Foo;
-    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
-        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+    impl<L: lua::HasLua> lua::Push<L> for Foo {
+        fn push_to_lua(self, lua: &mut L) -> uint {
             lua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(
                     ("test".to_string(), || 5i)

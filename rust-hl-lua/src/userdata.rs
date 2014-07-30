@@ -41,12 +41,14 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 ///  * metatable: Function that fills the metatable of the object.
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn push_userdata<'a, 'lua, T: 'static>(data: T, lua: &'a mut Lua<'lua>, metatable: |&mut LuaTable<'a, Lua<'lua>>|) -> uint {
+pub fn push_userdata<L: HasLua, T: 'static>(data: T, lua: &mut L,
+    metatable: |&mut LuaTable<L>|) -> uint
+{
     use std::mem;
 
     let typeid = format!("{}", TypeId::of::<T>());
 
-    let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.lua, mem::size_of_val(&data) as ::libc::size_t) };
+    let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), mem::size_of_val(&data) as ::libc::size_t) };
     let luaData: *mut T = unsafe { mem::transmute(luaDataRaw) };
     unsafe { use std::ptr; ptr::write(luaData, data) };
 
@@ -54,12 +56,12 @@ pub fn push_userdata<'a, 'lua, T: 'static>(data: T, lua: &'a mut Lua<'lua>, meta
 
     // creating a metatable
     unsafe {
-        ffi::lua_newtable(lua.lua);
+        ffi::lua_newtable(lua.use_lua());
 
         // index "__typeid" corresponds to the hash of the TypeId of T
         "__typeid".push_to_lua(lua);
         typeid.push_to_lua(lua);
-        ffi::lua_settable(lua.lua, -3);
+        ffi::lua_settable(lua.use_lua(), -3);
 
         // index "__gc" call the object's destructor
         {
@@ -72,11 +74,11 @@ pub fn push_userdata<'a, 'lua, T: 'static>(data: T, lua: &'a mut Lua<'lua>, meta
             // pushing destructor_wrapper as a closure
             ffi::lua_pushcclosure(lua.use_lua(), mem::transmute(destructor_wrapper), 1);
 
-            ffi::lua_settable(lua.lua, -3);
+            ffi::lua_settable(lua.use_lua(), -3);
         }
 
         {
-            let mut table = ConsumeRead::read_from_variable(::LoadedVariable { lua: lua, size: 1 }).ok().unwrap();
+            let mut table = ConsumeRead::read_from_variable(::LoadedVariable{ lua: lua, size: 1 }).ok().unwrap();
             metatable(&mut table);
             mem::forget(table);
         }
