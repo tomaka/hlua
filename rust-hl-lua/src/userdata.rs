@@ -1,5 +1,4 @@
 use ffi;
-use Lua;
 use HasLua;
 use CopyRead;
 use ConsumeRead;
@@ -91,25 +90,25 @@ pub fn push_userdata<L: HasLua, T: 'static>(data: T, lua: &mut L,
 
 // TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn read_copy_userdata<T: Clone + 'static>(lua: &mut Lua, index: ::libc::c_int) -> Option<T> {
+pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
     unsafe {
         let expectedTypeid = format!("{}", TypeId::of::<T>());
 
-        let dataPtr = ffi::lua_touserdata(lua.lua, index);
+        let dataPtr = ffi::lua_touserdata(lua.use_lua(), index);
         if dataPtr.is_null() {
             return None;
         }
 
-        if ffi::lua_getmetatable(lua.lua, -1) == 0 {
+        if ffi::lua_getmetatable(lua.use_lua(), -1) == 0 {
             return None;
         }
 
         "__typeid".push_to_lua(lua);
-        ffi::lua_gettable(lua.lua, -2);
+        ffi::lua_gettable(lua.use_lua(), -2);
         if CopyRead::read_from_lua(lua, -1) != Some(expectedTypeid) {
             return None;
         }
-        ffi::lua_pop(lua.lua, -2);
+        ffi::lua_pop(lua.use_lua(), -2);
 
         let data: &T = ::std::mem::transmute(dataPtr);
         Some(data.clone())
