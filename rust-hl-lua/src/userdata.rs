@@ -28,6 +28,14 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 
 
 /// Pushes an object as a user data.
+///
+/// In Lua, a user data is anything that is not recognized by Lua. When the script attempts to
+///  copy a user data, instead only a reference to the data is copied.
+///
+/// The way a Lua script can use the user data depends on the content of the **metatable**, which is
+///  a Lua table linked to the object.
+/// 
+/// [See this link for more infos.](http://www.lua.org/manual/5.2/manual.html#2.4)
 /// 
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
