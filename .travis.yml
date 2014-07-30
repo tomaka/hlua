@@ -1,9 +1,10 @@
+language: rust
+
 env:
   global:
     - secure: l3icJ2F1c7Gn0zqUyeEXQjLHdoZNjtLO3BaAGWpBI/ctmNWxgoLl1rZB6N/0pm8Vdnt5VJ4YnVxk+BkC3WsZ9kIwvTtZn/lNtZJlECPPhItylSoU8m3NnLXCh5KLBzzb/ygx81Lu/HtianeyKNResHvjwc1QMHolheGP+hrLTT8=
 
 install:
-  - curl http://www.rust-lang.org/rustup.sh | sudo sh -
   - sudo apt-get install liblua5.2-dev
 
 script:
