@@ -38,9 +38,8 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 /// 
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
-// TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
-pub fn push_userdata<L: HasLua, T: 'static>(data: T, lua: &mut L,
+pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
     metatable: |&mut LuaTable<L>|) -> uint
 {
     use std::mem;
@@ -88,7 +87,6 @@ pub fn push_userdata<L: HasLua, T: 'static>(data: T, lua: &mut L,
     1
 }
 
-// TODO: the type must be Send because the Lua context is Send, but this conflicts with &str
 #[experimental]
 pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
     unsafe {
