@@ -18,7 +18,7 @@ fn readwrite() {
     let mut lua = lua::Lua::new();
 
     lua.set("a", Foo);
-   // let x: Foo = lua.get("a").unwrap();
+    let _: Foo = lua.get("a").unwrap();
 }
 
 #[test]
@@ -85,8 +85,8 @@ fn type_check() {
 
     lua.set("a", Foo);
     
-    /*let x: Option<Bar> = lua.get("a");
-    assert!(x.is_none())*/
+    let x: Option<Bar> = lua.get("a");
+    assert!(x.is_none())
 }
 
 #[test]
