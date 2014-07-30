@@ -1,10 +1,6 @@
-use ffi;
-use HasLua;
-use CopyRead;
-use ConsumeRead;
-use Push;
-use LuaTable;
+use {HasLua, CopyRead, ConsumeRead, Push, LuaTable};
 use std::intrinsics::TypeId;
+use ffi;
 
 extern fn destructor_wrapper(lua: *mut ffi::lua_State) -> ::libc::c_int {
     use std::mem;
@@ -31,8 +27,8 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 /// In Lua, a user data is anything that is not recognized by Lua. When the script attempts to
 ///  copy a user data, instead only a reference to the data is copied.
 ///
-/// The way a Lua script can use the user data depends on the content of the **metatable**, which is
-///  a Lua table linked to the object.
+/// The way a Lua script can use the user data depends on the content of the **metatable**, which
+///  is a Lua table linked to the object.
 /// 
 /// [See this link for more infos.](http://www.lua.org/manual/5.2/manual.html#2.4)
 /// 
@@ -46,9 +42,10 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
 
     let typeid = format!("{}", TypeId::of::<T>());
 
-    let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), mem::size_of_val(&data) as ::libc::size_t) };
-    let luaData: *mut T = unsafe { mem::transmute(luaDataRaw) };
-    unsafe { use std::ptr; ptr::write(luaData, data) };
+    let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(),
+        mem::size_of_val(&data) as ::libc::size_t) };
+    let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
+    unsafe { use std::ptr; ptr::write(lua_data, data) };
 
     let lua_raw = lua.use_lua();
 
@@ -75,8 +72,11 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
             ffi::lua_settable(lua.use_lua(), -3);
         }
 
+        // calling the metatable closure
         {
-            let mut table = ConsumeRead::read_from_variable(::LoadedVariable{ lua: lua, size: 1 }).ok().unwrap();
+            use LoadedVariable;
+            let mut table = ConsumeRead::read_from_variable(LoadedVariable{ lua: lua, size: 1 })
+                .ok().unwrap();
             metatable(&mut table);
             mem::forget(table);
         }
