@@ -23,11 +23,12 @@ fn readwrite() {
 
 #[test]
 fn destructor_called() {
-    // TODO: 
-    /*let called = ::std::sync::Arc::new(::std::sync::Mutex::new(false));
+    use std::sync::{Arc, Mutex};
+
+    let called = Arc::new(Mutex::new(false));
 
     struct Foo {
-        called: ::std::sync::Arc<::std::sync::Mutex<bool>>
+        called: Arc<Mutex<bool>>
     }
 
     impl Drop for Foo {
@@ -37,15 +38,19 @@ fn destructor_called() {
         }
     }
 
-    impl<'a> ::Push<'a> for Foo {}
+    impl<'lua> lua::Push<lua::Lua<'lua>> for Foo {
+        fn push_to_lua(self, lua: &mut lua::Lua<'lua>) -> uint {
+            lua::userdata::push_userdata(self, lua, |_|{})
+        }
+    }
 
     {
-        let mut lua = Lua::new();
+        let mut lua = lua::Lua::new();
         lua.set("a", Foo{called: called.clone()});
     }
 
     let locked = called.lock();
-    assert!(*locked);*/
+    assert!(*locked);
 }
 
 #[test]
