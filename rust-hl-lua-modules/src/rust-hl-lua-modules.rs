@@ -117,7 +117,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
         };
 
         for i in view_items.view_items.iter() {
-            mut_new_item.view_items.unshift(i.clone())
+            mut_new_item.view_items.insert(0, i.clone())
         }
     }
 
