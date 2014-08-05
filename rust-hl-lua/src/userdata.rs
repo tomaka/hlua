@@ -1,4 +1,4 @@
-use {HasLua, CopyRead, ConsumeRead, Push, LuaTable};
+use {HasLua, CopyRead, ConsumeRead, Push, LoadedVariable, LuaTable};
 use std::intrinsics::TypeId;
 use ffi;
 
@@ -88,6 +88,33 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
 }
 
 #[experimental]
+pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<'a, L>)
+    -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>> 
+{
+    unsafe {
+        let expectedTypeid = format!("{}", TypeId::of::<T>());
+
+        let dataPtr = ffi::lua_touserdata(var.use_lua(), -1);
+        if dataPtr.is_null() {
+            return Err(var);
+        }
+
+        if ffi::lua_getmetatable(var.use_lua(), -1) == 0 {
+            return Err(var);
+        }
+
+        "__typeid".push_to_lua(&mut var);
+        ffi::lua_gettable(var.use_lua(), -2);
+        if CopyRead::read_from_lua(&mut var, -1) != Some(expectedTypeid) {
+            return Err(var);
+        }
+        ffi::lua_pop(var.use_lua(), -2);
+
+        Ok(UserdataOnStack { variable: var })
+    }
+}
+
+#[experimental]
 pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
     unsafe {
         let expectedTypeid = format!("{}", TypeId::of::<T>());
@@ -110,5 +137,28 @@ pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::l
 
         let data: &T = ::std::mem::transmute(dataPtr);
         Some(data.clone())
+    }
+}
+
+pub struct UserdataOnStack<'a, L, T> {
+    variable: LoadedVariable<'a, L>,
+}
+
+impl<'a, L: HasLua, T> Deref<T> for UserdataOnStack<'a, L, T> {
+    fn deref(&self) -> &T {
+        use std::mem;
+        let me: &mut UserdataOnStack<L, T> = unsafe { mem::transmute(self) };
+        let data = unsafe { ffi::lua_touserdata(me.variable.use_lua(), -1) };
+        let data: &T = unsafe { mem::transmute(data) };
+        data
+    }
+}
+
+impl<'a, L: HasLua, T> DerefMut<T> for UserdataOnStack<'a, L, T> {
+    fn deref_mut(&mut self) -> &mut T {
+        use std::mem;
+        let data = unsafe { ffi::lua_touserdata(self.variable.use_lua(), -1) };
+        let data: &mut T = unsafe { mem::transmute(data) };
+        data
     }
 }
