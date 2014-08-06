@@ -6,13 +6,14 @@ extern crate rustc;
 extern crate syntax;
 
 use std::gc::{GC, Gc};
-use syntax::parse::token;
 use syntax::ast;
+use syntax::ast::Item;
 use syntax::attr::AttrMetaMethods;
+use syntax::codemap;
 use syntax::ext::build::AstBuilder;
 use syntax::ext::base;
 use syntax::ext::quote::rt::ToSource;
-use syntax::codemap;
+use syntax::parse::token;
 
 #[plugin_registrar]
 #[doc(hidden)]
@@ -29,8 +30,11 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
     let ecx: &base::ExtCtxt = &*ecx;
 
     // checking that the input item is a module
-    let module = match input_item.node {
-        ast::ItemMod(ref module) => module,
+    // and creating the new item that will be returned by the function
+    let (module, mut new_item) = match input_item.node {
+        ast::ItemMod(ref module) => {
+            (module, module.clone())
+        },
         _ => {
             ecx.span_err(input_item.span,
                 "`export_lua_module` extension is only allowed on modules");
@@ -38,14 +42,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
         }
     };
 
-    // creating the new item that will be returned by the function
-    // it is just a clone of the input with more elements added to it
-    let mut new_item = input_item.deref().clone();
-    new_item.vis = ast::Public;
-    if input_item.vis != ast::Public {
-        ecx.span_warn(input_item.span,
-            "`export_lua_module` will turn the module into a public module");
-    }
+    // cleaning the content of `new_item`
+    new_item.items.clear();
 
     // creating an array of the statements to add to the main Lua entry point
     let module_handler_body: Vec<Gc<ast::Stmt>> = {
@@ -56,14 +54,55 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
             let moditem_name = moditem.ident.to_source();
 
             match moditem.node {
-                ast::ItemFn(..) | ast::ItemStatic(..) => {
+                ast::ItemFn(ref decl, ref style, ref abi, ref generics, ref block) => {
                     let moditem_name_slice = moditem_name.as_slice();
                     let moditem_name_item = ecx.ident_of(moditem_name_slice);
+
                     module_handler_body.push(
                         quote_stmt!(&*ecx,
                             table.set($moditem_name_slice.to_string(), $moditem_name_item);
                         )
-                    )
+                    );
+
+                    new_item.items.push(box (GC) Item {
+                        ident: moditem.ident.clone(),
+                        attrs: moditem.attrs.clone(),
+                        id: moditem.id.clone(),
+                        node: ast::ItemFn(
+                            decl.clone(),
+                            style.clone(),
+                            abi.clone(),
+                            generics.clone(),
+                            ecx.block_expr(
+                                quote_expr!(&*ecx, 
+                                    {
+                                        let (tx, rx) = channel();
+                                        native::start(0, core::ptr::null(), proc() {
+                                            tx.send({
+                                                $block
+                                            })
+                                        });
+                                        rx.recv()
+                                    }
+                                )
+                            )
+                        ),
+                        vis: moditem.vis.clone(),
+                        span: moditem.span.clone(),
+                    });
+                },
+
+                ast::ItemStatic(..) => {
+                    let moditem_name_slice = moditem_name.as_slice();
+                    let moditem_name_item = ecx.ident_of(moditem_name_slice);
+
+                    module_handler_body.push(
+                        quote_stmt!(&*ecx,
+                            table.set($moditem_name_slice.to_string(), $moditem_name_item);
+                        )
+                    );
+
+                    new_item.items.push(moditem.clone());
                 },
 
                 _ => {
@@ -71,7 +110,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
                         format!("item `{}` is neiter a function nor a static
                             and will thus be ignored by `export_lua_module`",
                             moditem_name).as_slice());
-                    continue
+                    new_item.items.push(moditem.clone());
+                    continue;
                 }
             };
 
@@ -91,8 +131,10 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
     {
         let view_items = quote_item!(ecx, 
             mod x {
+                extern crate core;
                 extern crate lua = "rust-hl-lua";
                 extern crate libc;
+                extern crate native;
             }
         );
 
@@ -111,13 +153,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
             _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
         };
 
-        let ref mut mut_new_item = match &mut new_item.node {
-            &ast::ItemMod(ref mut m) => m,
-            _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
-        };
-
         for i in view_items.view_items.iter() {
-            mut_new_item.view_items.insert(0, i.clone())
+            new_item.view_items.insert(0, i.clone())
         }
     }
 
@@ -170,14 +207,22 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
         };
 
         // adding the function to the module
-        match &mut new_item.node {
-            &ast::ItemMod(ref mut m) => {
-                m.items.push(function)
-            },
-            _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
-        };
+        new_item.items.push(function);
     }
 
     // returning
-    box(GC) new_item
+    box(GC) Item {
+        ident: input_item.ident.clone(),
+        attrs: input_item.attrs.clone(),
+        id: input_item.id.clone(),
+        node: ast::ItemMod(new_item),
+        vis: {
+            if input_item.vis != ast::Public {
+                ecx.span_warn(input_item.span,
+                    "`export_lua_module` will turn the module into a public module");
+            }
+            ast::Public
+        },
+        span: input_item.span.clone(),
+    }
 }
