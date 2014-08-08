@@ -253,6 +253,10 @@ Two syntax extensions are defined:
  - `#[export_lua_module]`: Must be put in front of a module. The name of the module must be the same as the name of your Lua module.
  - `#[lua_module_init]`: Can be put in front of a function inside the module. This function will be executed when the module is loaded.
 
+**Restrictions**: 
+ - `fail!()` will crash the program.
+ - If you spawn tasks, they will have to end before the hand is given back to lua.
+
 ### Contributing
 
 Contributions are welcome!
