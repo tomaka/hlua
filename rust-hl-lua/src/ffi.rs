@@ -8,7 +8,7 @@ use std::{ default, ptr };
 
 pub static MULTRET: c_int = -1;
 
-pub static LUAI_MAXSTACK: c_int = 1000000;  // or 15000 with 32b        // TODO: 
+pub static LUAI_MAXSTACK: c_int = 1000000;  // or 15000 with 32b        // TODO:
 pub static LUAI_FIRSTPSEUDOIDX: c_int = (-LUAI_MAXSTACK - 1000);
 pub static LUA_REGISTRYINDEX: c_int = LUAI_FIRSTPSEUDOIDX;
 
@@ -21,6 +21,7 @@ pub static LUA_ERRGCMM: c_int = 5;
 pub static LUA_ERRERR: c_int = 6;
 
 
+#[repr(C)]
 pub struct lua_State;
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
@@ -90,6 +91,7 @@ pub static LUA_MASKRET: c_int = 1 << LUA_HOOKRET as uint;
 pub static LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE as uint;
 pub static LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
 
+#[repr(C)]
 pub struct lua_Debug {
     pub event: c_int,
     pub name: *const libc::c_char,
