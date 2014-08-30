@@ -140,7 +140,7 @@ pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::l
     }
 }
 
-pub struct UserdataOnStack<'a, L, T> {
+pub struct UserdataOnStack<'a, L: 'a, T> {
     variable: LoadedVariable<'a, L>,
 }
 

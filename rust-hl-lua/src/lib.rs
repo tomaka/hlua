@@ -48,7 +48,7 @@ impl<'lua> HasLua for Lua<'lua> {
 }
 
 /// Object which allows access to a Lua variable.
-struct LoadedVariable<'var, L> {
+struct LoadedVariable<'var, L: 'var> {
     lua: &'var mut L,
     size: uint,       // number of elements over "lua"
 }

@@ -4,7 +4,7 @@ name = "modules-test"
 version = "0.1.0"
 authors = [ "pierre.krieger1708@gmail.com" ]
 
-[[lib]]
+[lib]
 name = "mylib"
 crate_type = ["dylib"]
 path = "module_test.rs"
