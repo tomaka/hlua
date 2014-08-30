@@ -2,7 +2,7 @@ use {HasLua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
 use ffi;
 
 #[unstable]
-pub struct LuaTable<'var, L> {
+pub struct LuaTable<'var, L: 'var> {
     variable: LoadedVariable<'var, L>
 }
 
@@ -14,7 +14,7 @@ impl<'var, L: HasLua> HasLua for LuaTable<'var, L> {
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
 #[unstable]
-pub struct LuaTableIterator<'var, 'table, L> {
+pub struct LuaTableIterator<'var: 'table, 'table, L: 'var> {
     table: &'table mut LuaTable<'var, L>,
     finished: bool,     // if true, the key is not on the stack anymore
 }

@@ -5,12 +5,12 @@ use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, Wr
 ///
 /// Lifetime `'a` represents the lifetime of the function on the stack.
 /// Param `L` represents the stack the function has been loaded on and must be a `HasLua`.
-pub struct LuaFunction<'a, L> {
+pub struct LuaFunction<'a, L: 'a> {
     variable: LoadedVariable<'a, L>,
 }
 
 struct ReadData {
-    reader: Box<::std::io::Reader>,
+    reader: Box<Reader + 'static>,
     buffer: [u8, ..128]
 }
 
