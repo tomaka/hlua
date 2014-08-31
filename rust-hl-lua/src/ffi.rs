@@ -1,5 +1,5 @@
 #![allow(non_camel_case_types)]
-#![allow(uppercase_variables)]
+#![allow(non_snake_case)]
 #![allow(dead_code)]
 
 use libc;

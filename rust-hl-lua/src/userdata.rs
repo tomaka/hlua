@@ -92,10 +92,10 @@ pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<
     -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>> 
 {
     unsafe {
-        let expectedTypeid = format!("{}", TypeId::of::<T>());
+        let expected_typeid = format!("{}", TypeId::of::<T>());
 
-        let dataPtr = ffi::lua_touserdata(var.use_lua(), -1);
-        if dataPtr.is_null() {
+        let data_ptr = ffi::lua_touserdata(var.use_lua(), -1);
+        if data_ptr.is_null() {
             return Err(var);
         }
 
@@ -105,7 +105,7 @@ pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<
 
         "__typeid".push_to_lua(&mut var);
         ffi::lua_gettable(var.use_lua(), -2);
-        if CopyRead::read_from_lua(&mut var, -1) != Some(expectedTypeid) {
+        if CopyRead::read_from_lua(&mut var, -1) != Some(expected_typeid) {
             return Err(var);
         }
         ffi::lua_pop(var.use_lua(), -2);
@@ -117,10 +117,10 @@ pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<
 #[experimental]
 pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
     unsafe {
-        let expectedTypeid = format!("{}", TypeId::of::<T>());
+        let expected_typeid = format!("{}", TypeId::of::<T>());
 
-        let dataPtr = ffi::lua_touserdata(lua.use_lua(), index);
-        if dataPtr.is_null() {
+        let data_ptr = ffi::lua_touserdata(lua.use_lua(), index);
+        if data_ptr.is_null() {
             return None;
         }
 
@@ -130,12 +130,12 @@ pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::l
 
         "__typeid".push_to_lua(lua);
         ffi::lua_gettable(lua.use_lua(), -2);
-        if CopyRead::read_from_lua(lua, -1) != Some(expectedTypeid) {
+        if CopyRead::read_from_lua(lua, -1) != Some(expected_typeid) {
             return None;
         }
         ffi::lua_pop(lua.use_lua(), -2);
 
-        let data: &T = ::std::mem::transmute(dataPtr);
+        let data: &T = ::std::mem::transmute(data_ptr);
         Some(data.clone())
     }
 }

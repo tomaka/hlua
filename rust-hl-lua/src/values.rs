@@ -124,12 +124,12 @@ impl<L: HasLua> Push<L> for String {
 impl<L: HasLua> CopyRead<L> for String {
     fn read_from_lua(lua: &mut L, index: i32) -> Option<String> {
         let mut size: ::libc::size_t = unsafe { ::std::mem::uninitialized() };
-        let cStrRaw = unsafe { ffi::lua_tolstring(lua.use_lua(), index, &mut size) };
-        if cStrRaw.is_null() {
+        let c_str_raw = unsafe { ffi::lua_tolstring(lua.use_lua(), index, &mut size) };
+        if c_str_raw.is_null() {
             return None;
         }
 
-        unsafe { ::std::c_str::CString::new(cStrRaw, false) }.as_str().map(|s| s.to_string())
+        unsafe { ::std::c_str::CString::new(c_str_raw, false) }.as_str().map(|s| s.to_string())
     }
 }
 

@@ -14,8 +14,8 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 // this function is called when Lua wants to call one of our functions
 fn wrapper2<T: AnyCallable>(lua: *mut ffi::lua_State) -> ::libc::c_int {
     // loading the object that we want to call from the Lua context
-    let dataRaw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
-    let data: &mut T = unsafe { ::std::mem::transmute(dataRaw) };
+    let data_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
+    let data: &mut T = unsafe { ::std::mem::transmute(data_raw) };
 
     data.load_args_and_call(lua)
 }
@@ -49,24 +49,24 @@ impl<'lua, Args: CopyRead<InsideCallback<'lua>>, Ret: Push<InsideCallback<'lua>>
         -> ::libc::c_int
     {
         // creating a temporary Lua context in order to pass it to push & read functions
-        let mut tmpLua = InsideCallback { lua: lua, marker: ::std::kinds::marker::ContravariantLifetime } ;
+        let mut tmp_lua = InsideCallback { lua: lua, marker: ::std::kinds::marker::ContravariantLifetime } ;
 
         // trying to read the arguments
-        let argumentsCount = unsafe { ffi::lua_gettop(lua) } as int;
-        let args = match CopyRead::read_from_lua(&mut tmpLua, -argumentsCount as ::libc::c_int) {      // TODO: what if the user has the wrong params?
+        let arguments_count = unsafe { ffi::lua_gettop(lua) } as int;
+        let args = match CopyRead::read_from_lua(&mut tmp_lua, -arguments_count as ::libc::c_int) {      // TODO: what if the user has the wrong params?
             None => {
-                let errMsg = format!("wrong parameter types for callback function");
-                errMsg.push_to_lua(&mut tmpLua);
+                let err_msg = format!("wrong parameter types for callback function");
+                err_msg.push_to_lua(&mut tmp_lua);
                 unsafe { ffi::lua_error(lua); }
                 unreachable!()
             },
             Some(a) => a
         };
 
-        let retValue = self.do_call(args);
+        let ret_value = self.do_call(args);
 
         // pushing back the result of the function on the stack
-        let nb = retValue.push_to_lua(&mut tmpLua);
+        let nb = ret_value.push_to_lua(&mut tmp_lua);
 
         nb as ::libc::c_int
     }
@@ -78,9 +78,9 @@ macro_rules! Push_function(
         impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
-                let luaData: *mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
-                unsafe { ::std::ptr::write(luaData, self) };
+                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let lua_data: *mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(lua_data_raw) };
+                unsafe { ::std::ptr::write(lua_data, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
@@ -103,9 +103,9 @@ macro_rules! Push_function(
         impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let luaDataRaw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
-                let luaData: *mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(luaDataRaw) };
-                unsafe { ::std::ptr::write(luaData, self) };
+                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let lua_data: *mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(lua_data_raw) };
+                unsafe { ::std::ptr::write(lua_data, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<|$($ty),*|:'lua->Ret>;
