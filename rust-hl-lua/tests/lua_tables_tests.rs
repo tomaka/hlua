@@ -52,8 +52,7 @@ fn get_set() {
     assert_eq!(z, 9);
 }
 
-// this test triggers an ICE
-/*#[test]
+#[test]
 fn table_over_table() {
     let mut lua = Lua::new();
 
@@ -75,7 +74,7 @@ fn table_over_table() {
 
     let w: int = table.get(3i).unwrap();
     assert_eq!(w, 6);
-}*/
+}
 
 #[test]
 fn metatable() {
