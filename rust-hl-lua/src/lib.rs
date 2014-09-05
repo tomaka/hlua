@@ -9,6 +9,7 @@
 extern crate libc;
 extern crate collections;
 
+use std::io::IoError;
 use std::kinds::marker::ContravariantLifetime;
 
 pub use lua_tables::LuaTable;
@@ -106,6 +107,9 @@ pub enum LuaError {
     /// There was an error during execution of the Lua code
     /// (for example not enough parameters for a function call).
     ExecutionError(String),
+
+    /// There was an IoError while reading the source code to execute.
+    ReadError(IoError),
 
     /// The call to `execute` has requested the wrong type of data.
     WrongType

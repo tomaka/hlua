@@ -1,5 +1,6 @@
 use ffi;
-use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, SyntaxError};
+use std::io::IoError;
+use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, ReadError, SyntaxError};
 
 #[unstable]
 ///
@@ -11,15 +12,29 @@ pub struct LuaFunction<'a, L: 'a> {
 
 struct ReadData {
     reader: Box<Reader + 'static>,
-    buffer: [u8, ..128]
+    buffer: [u8, ..128],
+    triggered_error: Option<IoError>,
 }
 
 extern fn reader(_: *mut ffi::lua_State, data_raw: *mut ::libc::c_void, size: *mut ::libc::size_t) -> *const ::libc::c_char {
+    use std::io::EndOfFile;
+
     let data: &mut ReadData = unsafe { ::std::mem::transmute(data_raw) };
 
+    if data.triggered_error.is_some() {
+        unsafe { (*size) = 0 }
+        return data.buffer.as_ptr() as *const ::libc::c_char;
+    }
+
     match data.reader.read(data.buffer.as_mut_slice()) {
-        Ok(len) => unsafe { (*size) = len as ::libc::size_t },
-        Err(_) => unsafe { (*size) = 0 }
+        Ok(len) =>
+            unsafe { (*size) = len as ::libc::size_t },
+        Err(ref e) if e.kind == EndOfFile =>
+            unsafe { (*size) = 0 },
+        Err(e) => {
+            unsafe { (*size) = 0 }
+            data.triggered_error = Some(e)
+        },
     };
 
     data.buffer.as_ptr() as *const ::libc::c_char
@@ -55,11 +70,20 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
     pub fn load_from_reader<R: ::std::io::Reader + 'static>(lua: &'a mut L, code: R)
         -> Result<LuaFunction<'a, L>, LuaError>
     {
-        let readdata = ReadData { reader: box code, buffer: unsafe { ::std::mem::uninitialized() } };
+        let readdata = ReadData {
+            reader: box code,
+            buffer: unsafe { ::std::mem::uninitialized() },
+            triggered_error: None,
+        };
 
         let load_return_value = "chunk".with_c_str(|chunk|
             unsafe { ffi::lua_load(lua.use_lua(), reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
         );
+
+        if readdata.triggered_error.is_some() {
+            let error = readdata.triggered_error.unwrap();
+            return Err(ReadError(error));
+        }
 
         if load_return_value == 0 {
             return Ok(LuaFunction{
