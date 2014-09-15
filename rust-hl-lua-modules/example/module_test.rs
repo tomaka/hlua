@@ -2,7 +2,7 @@
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lua = "rust-hl-lua-modules";
+extern crate "rust-hl-lua-modules" as lua;
 
 #[export_lua_module]
 pub mod mylib {

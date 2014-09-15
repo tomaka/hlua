@@ -5,7 +5,6 @@
 extern crate rustc;
 extern crate syntax;
 
-use std::gc::{GC, Gc};
 use syntax::ast;
 use syntax::ast::Item;
 use syntax::attr::AttrMetaMethods;
@@ -14,18 +13,19 @@ use syntax::ext::build::AstBuilder;
 use syntax::ext::base;
 use syntax::ext::quote::rt::ToSource;
 use syntax::parse::token;
+use syntax::ptr::P;
 
 #[plugin_registrar]
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut ::rustc::plugin::Registry) {
     reg.register_syntax_extension(token::intern("export_lua_module"),
-        base::ItemModifier(expand_lua_module));
+        base::ItemModifier(box expand_lua_module));
 }
 
 // handler for export_lua_module
 pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
-                        _: Gc<ast::MetaItem>, input_item: Gc<ast::Item>)
-    -> Gc<ast::Item>
+                        _: &ast::MetaItem, input_item: P<ast::Item>)
+    -> P<ast::Item>
 {
     let ecx: &base::ExtCtxt = &*ecx;
 
@@ -38,7 +38,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
         _ => {
             ecx.span_err(input_item.span,
                 "`export_lua_module` extension is only allowed on modules");
-            return input_item
+            return ecx.item_mod(span.clone(), span.clone(), ecx.ident_of("dummy"), vec![],
+                vec![], vec![]);
         }
     };
 
@@ -46,7 +47,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
     new_item.items.clear();
 
     // creating an array of the statements to add to the main Lua entry point
-    let module_handler_body: Vec<Gc<ast::Stmt>> = {
+    let module_handler_body: Vec<P<ast::Stmt>> = {
         let mut module_handler_body = Vec::new();
 
         // iterating over elements inside the module
@@ -64,11 +65,11 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
                         )
                     );
 
-                    new_item.items.push(box (GC) Item {
-                        ident: moditem.ident.clone(),
-                        attrs: moditem.attrs.clone(),
-                        id: moditem.id.clone(),
-                        node: ast::ItemFn(
+                    new_item.items.push(ecx.item(
+                        span.clone(),
+                        moditem.ident.clone(),
+                        moditem.attrs.clone(),
+                        ast::ItemFn(
                             decl.clone(),
                             style.clone(),
                             abi.clone(),
@@ -86,10 +87,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
                                     }
                                 )
                             )
-                        ),
-                        vis: moditem.vis.clone(),
-                        span: moditem.span.clone(),
-                    });
+                        )
+                    ));
                 },
 
                 ast::ItemStatic(..) => {
@@ -132,7 +131,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
         let view_items = quote_item!(ecx, 
             mod x {
                 extern crate core;
-                extern crate lua = "rust-hl-lua";
+                extern crate "rust-hl-lua" as lua;
                 extern crate libc;
                 extern crate native;
             }
@@ -143,14 +142,19 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
             None => {
                 ecx.span_err(input_item.span,
                     "internal error in the library (could not parse view items)");
-                return input_item;
+                return ecx.item_mod(span.clone(), span.clone(), ecx.ident_of("dummy"), vec![],
+                    vec![], vec![]);
             }
         };
 
         // getting all the items
         let view_items = match view_items.node {
             ast::ItemMod(ref m) => m,
-            _ => { ecx.span_err(span, "internal error in the library"); return input_item; }
+            _ => {
+                ecx.span_err(span, "internal error in the library"); 
+                return ecx.item_mod(span.clone(), span.clone(), ecx.ident_of("dummy"), vec![],
+                    vec![], vec![]);
+            }
         };
 
         for i in view_items.view_items.iter() {
@@ -202,7 +206,8 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
             None => {
                 ecx.span_err(input_item.span,
                     "internal error in the library (could not parse function body)");
-                return input_item;
+                return ecx.item_mod(span.clone(), span.clone(), ecx.ident_of("dummy"), vec![],
+                    vec![], vec![]);
             }
         };
 
@@ -211,18 +216,19 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
     }
 
     // returning
-    box(GC) Item {
-        ident: input_item.ident.clone(),
-        attrs: input_item.attrs.clone(),
-        id: input_item.id.clone(),
-        node: ast::ItemMod(new_item),
-        vis: {
+    ecx.item(
+        span.clone(),
+        input_item.ident.clone(),
+        input_item.attrs.clone(),
+        ast::ItemMod(new_item)
+    ).map(|mut item| {
+        item.vis = {
             if input_item.vis != ast::Public {
                 ecx.span_warn(input_item.span,
                     "`export_lua_module` will turn the module into a public module");
             }
             ast::Public
-        },
-        span: input_item.span.clone(),
-    }
+        };
+        item
+    })
 }
