@@ -51,7 +51,7 @@ fn push_rec_iter<L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, mut iterato
 
 impl<L: HasLua, T: Push<L>> Push<L> for Vec<T> {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        push_iter(lua, self.move_iter())
+        push_iter(lua, self.into_iter())
     }
 }
 
@@ -63,12 +63,12 @@ impl<'a, L: HasLua, T: Push<L> + Clone> Push<L> for &'a [T] {
 
 impl<L: HasLua, K: Push<L> + Eq + Hash, V: Push<L>> Push<L> for HashMap<K, V> {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        push_rec_iter(lua, self.move_iter())
+        push_rec_iter(lua, self.into_iter())
     }
 }
 
 impl<L: HasLua, K: Push<L> + Eq + Hash> Push<L> for HashSet<K> {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        push_rec_iter(lua, self.move_iter().zip(Repeat::new(true)))
+        push_rec_iter(lua, self.into_iter().zip(Repeat::new(true)))
     }
 }
