@@ -1,6 +1,6 @@
 extern crate "rust-hl-lua" as lua;
 use lua::Lua;
-use lua::any::{AnyLuaValue, Number, String, Boolean};
+use lua::any::{AnyLuaValue,LuaNumber, LuaString, LuaBoolean};
 
 #[test]
 fn read_numbers() {
@@ -10,10 +10,10 @@ fn read_numbers() {
     lua.set("b", 3.5f32);
 
     let x: AnyLuaValue = lua.get("a").unwrap();
-    assert_eq!(x, Number(-2.0));
+    assert_eq!(x, LuaNumber(-2.0));
 
     let y: AnyLuaValue = lua.get("b").unwrap();
-    assert_eq!(y, Number(3.5));
+    assert_eq!(y, LuaNumber(3.5));
 }
 
 #[test]
@@ -25,13 +25,13 @@ fn read_strings() {
     lua.set("c", "false");
 
     let x: AnyLuaValue = lua.get("a").unwrap();
-    assert_eq!(x, String("hello".to_string()));
+    assert_eq!(x, LuaString("hello".to_string()));
 
     let y: AnyLuaValue = lua.get("b").unwrap();
-    assert_eq!(y, String("3x".to_string()));
+    assert_eq!(y, LuaString("3x".to_string()));
 
     let z: AnyLuaValue = lua.get("c").unwrap();
-    assert_eq!(z, String("false".to_string()));
+    assert_eq!(z, LuaString("false".to_string()));
 }
 
 #[test]
@@ -42,17 +42,17 @@ fn read_booleans() {
     lua.set("b", false);
 
     let x: AnyLuaValue = lua.get("a").unwrap();
-    assert_eq!(x, Boolean(true));
+    assert_eq!(x, LuaBoolean(true));
 
     let y: AnyLuaValue = lua.get("b").unwrap();
-    assert_eq!(y, Boolean(false));
+    assert_eq!(y, LuaBoolean(false));
 }
 
 #[test]
 fn push_numbers() {
     let mut lua = Lua::new();
 
-    lua.set("a", Number(3.0));
+    lua.set("a", LuaNumber(3.0));
 
     let x: int = lua.get("a").unwrap();
     assert_eq!(x, 3);
@@ -62,7 +62,7 @@ fn push_numbers() {
 fn push_strings() {
     let mut lua = Lua::new();
 
-    lua.set("a", String("hello".to_string()));
+    lua.set("a", LuaString("hello".to_string()));
 
     let x: String = lua.get("a").unwrap();
     assert_eq!(x.as_slice(), "hello");
@@ -72,7 +72,7 @@ fn push_strings() {
 fn push_booleans() {
     let mut lua = Lua::new();
 
-    lua.set("a", Boolean(true));
+    lua.set("a", LuaBoolean(true));
 
     let x: bool = lua.get("a").unwrap();
     assert_eq!(x, true);

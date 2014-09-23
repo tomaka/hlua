@@ -121,7 +121,7 @@ extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc
     unsafe {
         if nsize == 0 {
             libc::free(ptr as *mut libc::c_void);
-            std::ptr::null_mut()
+            std::ptr::mut_null()
         } else {
             libc::realloc(ptr, nsize)
         }
@@ -141,7 +141,7 @@ impl<'lua> Lua<'lua> {
     /// The function fails if lua_newstate fails (which indicates lack of memory).
     #[stable]
     pub fn new() -> Lua<'lua> {
-        let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::null_mut()) };
+        let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::mut_null()) };
         if lua.is_null() {
             fail!("lua_newstate failed");
         }
