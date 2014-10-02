@@ -26,7 +26,8 @@ trait AnyCallable {
 }
 
 // lua context used inside callbacks
-struct InsideCallback<'lua> {
+#[doc(hidden)]
+pub struct InsideCallback<'lua> {
     lua: *mut ffi::lua_State,
     marker: ContravariantLifetime<'lua>,
 }

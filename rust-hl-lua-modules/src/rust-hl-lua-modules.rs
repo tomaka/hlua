@@ -19,7 +19,7 @@ use syntax::ptr::P;
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut ::rustc::plugin::Registry) {
     reg.register_syntax_extension(token::intern("export_lua_module"),
-        base::ItemModifier(box expand_lua_module));
+        base::Modifier(box expand_lua_module));
 }
 
 // handler for export_lua_module
