@@ -6,19 +6,19 @@ use libc;
 use libc::c_int;
 use std::{ default, ptr };
 
-pub static MULTRET: c_int = -1;
+pub const MULTRET: c_int = -1;
 
-pub static LUAI_MAXSTACK: c_int = 1000000;  // or 15000 with 32b        // TODO:
-pub static LUAI_FIRSTPSEUDOIDX: c_int = (-LUAI_MAXSTACK - 1000);
-pub static LUA_REGISTRYINDEX: c_int = LUAI_FIRSTPSEUDOIDX;
+pub const LUAI_MAXSTACK: c_int = 1000000;  // or 15000 with 32b        // TODO:
+pub const LUAI_FIRSTPSEUDOIDX: c_int = (-LUAI_MAXSTACK - 1000);
+pub const LUA_REGISTRYINDEX: c_int = LUAI_FIRSTPSEUDOIDX;
 
-pub static LUA_OK: c_int = 0;
-pub static LUA_YIELD: c_int = 1;
-pub static LUA_ERRRUN: c_int = 2;
-pub static LUA_ERRSYNTAX: c_int = 3;
-pub static LUA_ERRMEM: c_int = 4;
-pub static LUA_ERRGCMM: c_int = 5;
-pub static LUA_ERRERR: c_int = 6;
+pub const LUA_OK: c_int = 0;
+pub const LUA_YIELD: c_int = 1;
+pub const LUA_ERRRUN: c_int = 2;
+pub const LUA_ERRSYNTAX: c_int = 3;
+pub const LUA_ERRMEM: c_int = 4;
+pub const LUA_ERRGCMM: c_int = 5;
+pub const LUA_ERRERR: c_int = 6;
 
 
 #[repr(C)]
@@ -34,62 +34,62 @@ pub type lua_Alloc = extern "C" fn(ud: *mut libc::c_void, ptr: *mut libc::c_void
 pub type lua_Hook = extern "C" fn(L: *mut lua_State, ar: *mut lua_Debug);
 
 
-pub static LUA_TNONE: c_int = -1;
+pub const LUA_TNONE: c_int = -1;
 
-pub static LUA_TNIL: c_int = 0;
-pub static LUA_TBOOLEAN: c_int = 1;
-pub static LUA_TLIGHTUSERDATA: c_int = 2;
-pub static LUA_TNUMBER: c_int = 3;
-pub static LUA_TSTRING: c_int = 4;
-pub static LUA_TTABLE: c_int = 5;
-pub static LUA_TFUNCTION: c_int = 6;
-pub static LUA_TUSERDATA: c_int = 7;
-pub static LUA_TTHREAD: c_int = 8;
+pub const LUA_TNIL: c_int = 0;
+pub const LUA_TBOOLEAN: c_int = 1;
+pub const LUA_TLIGHTUSERDATA: c_int = 2;
+pub const LUA_TNUMBER: c_int = 3;
+pub const LUA_TSTRING: c_int = 4;
+pub const LUA_TTABLE: c_int = 5;
+pub const LUA_TFUNCTION: c_int = 6;
+pub const LUA_TUSERDATA: c_int = 7;
+pub const LUA_TTHREAD: c_int = 8;
 
-pub static LUA_MINSTACK: c_int = 20;
+pub const LUA_MINSTACK: c_int = 20;
 
-pub static LUA_RIDX_MAINTHREAD: c_int = 1;
-pub static LUA_RIDX_GLOBALS: c_int = 2;
+pub const LUA_RIDX_MAINTHREAD: c_int = 1;
+pub const LUA_RIDX_GLOBALS: c_int = 2;
 
 pub type lua_Number = libc::c_double;
 pub type lua_Integer = libc::ptrdiff_t;
 pub type lua_Unsigned = libc::c_ulong;
 
-pub static LUA_OPADD: c_int = 0;
-pub static LUA_OPSUB: c_int = 1;
-pub static LUA_OPMUL: c_int = 2;
-pub static LUA_OPDIV: c_int = 3;
-pub static LUA_OPMOD: c_int = 4;
-pub static LUA_OPPOW: c_int = 5;
-pub static LUA_OPUNM: c_int = 6;
+pub const LUA_OPADD: c_int = 0;
+pub const LUA_OPSUB: c_int = 1;
+pub const LUA_OPMUL: c_int = 2;
+pub const LUA_OPDIV: c_int = 3;
+pub const LUA_OPMOD: c_int = 4;
+pub const LUA_OPPOW: c_int = 5;
+pub const LUA_OPUNM: c_int = 6;
 
-pub static LUA_OPEQ: c_int = 0;
-pub static LUA_OPLT: c_int = 1;
-pub static LUA_OPLE: c_int = 2;
+pub const LUA_OPEQ: c_int = 0;
+pub const LUA_OPLT: c_int = 1;
+pub const LUA_OPLE: c_int = 2;
 
-pub static LUA_GCSTOP: c_int = 0;
-pub static LUA_GCRESTART: c_int = 1;
-pub static LUA_GCCOLLECT: c_int = 2;
-pub static LUA_GCCOUNT: c_int = 3;
-pub static LUA_GCCOUNTB: c_int = 4;
-pub static LUA_GCSTEP: c_int = 5;
-pub static LUA_GCSETPAUSE: c_int = 6;
-pub static LUA_GCSETSTEPMUL: c_int = 7;
-pub static LUA_GCSETMAJORINC: c_int = 8;
-pub static LUA_GCISRUNNING: c_int = 9;
-pub static LUA_GCGEN: c_int = 10;
-pub static LUA_GCINC: c_int = 11;
+pub const LUA_GCSTOP: c_int = 0;
+pub const LUA_GCRESTART: c_int = 1;
+pub const LUA_GCCOLLECT: c_int = 2;
+pub const LUA_GCCOUNT: c_int = 3;
+pub const LUA_GCCOUNTB: c_int = 4;
+pub const LUA_GCSTEP: c_int = 5;
+pub const LUA_GCSETPAUSE: c_int = 6;
+pub const LUA_GCSETSTEPMUL: c_int = 7;
+pub const LUA_GCSETMAJORINC: c_int = 8;
+pub const LUA_GCISRUNNING: c_int = 9;
+pub const LUA_GCGEN: c_int = 10;
+pub const LUA_GCINC: c_int = 11;
 
-pub static LUA_HOOKCALL: c_int = 0;
-pub static LUA_HOOKRET: c_int = 1;
-pub static LUA_HOOKLINE: c_int = 2;
-pub static LUA_HOOKCOUNT: c_int = 3;
-pub static LUA_HOOKTAILRET: c_int = 4;
+pub const LUA_HOOKCALL: c_int = 0;
+pub const LUA_HOOKRET: c_int = 1;
+pub const LUA_HOOKLINE: c_int = 2;
+pub const LUA_HOOKCOUNT: c_int = 3;
+pub const LUA_HOOKTAILRET: c_int = 4;
 
-pub static LUA_MASKCALL: c_int = 1 << LUA_HOOKCALL as uint;
-pub static LUA_MASKRET: c_int = 1 << LUA_HOOKRET as uint;
-pub static LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE as uint;
-pub static LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
+pub const LUA_MASKCALL: c_int = 1 << LUA_HOOKCALL as uint;
+pub const LUA_MASKRET: c_int = 1 << LUA_HOOKRET as uint;
+pub const LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE as uint;
+pub const LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
 
 #[repr(C)]
 pub struct lua_Debug {
