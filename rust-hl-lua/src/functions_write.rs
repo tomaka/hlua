@@ -12,12 +12,12 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 }
 
 // this function is called when Lua wants to call one of our functions
-fn wrapper2<T: AnyCallable>(lua: *mut ffi::lua_State) -> ::libc::c_int {
+fn wrapper2<T>(lua: *mut ffi::lua_State) -> ::libc::c_int where T: AnyCallable {
     // loading the object that we want to call from the Lua context
     let data_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
     let data: &mut T = unsafe { ::std::mem::transmute(data_raw) };
 
-    data.load_args_and_call(lua)
+    AnyCallable::load_args_and_call(data, lua)
 }
 
 // this trait should be implemented on objects that are pushed to be callbacks
