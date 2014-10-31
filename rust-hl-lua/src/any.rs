@@ -10,7 +10,7 @@ pub enum AnyLuaValue {
     LuaArray(Vec<(AnyLuaValue, AnyLuaValue)>),
 
     /// The "Other" element is (hopefully) temporary and will be replaced by "Function" and "Userdata".
-    /// A fail! will trigger if you try to push a Other.
+    /// A panic! will trigger if you try to push a Other.
     LuaOther
 }
 
@@ -21,7 +21,7 @@ impl<L: HasLua> Push<L> for AnyLuaValue {
             LuaNumber(val) => val.push_to_lua(lua),
             LuaBoolean(val) => val.push_to_lua(lua),
             LuaArray(val) => val.push_to_lua(lua),
-            LuaOther => fail!("can't push a AnyLuaValue of type Other")
+            LuaOther => panic!("can't push a AnyLuaValue of type Other")
         }
     }
 }

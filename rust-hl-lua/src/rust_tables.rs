@@ -21,7 +21,7 @@ fn push_iter<L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, iterator: I) ->
                 unsafe { ffi::lua_settable(lua.use_lua(), -3) }
             },
             2 => unsafe { ffi::lua_settable(lua.use_lua(), -3) },
-            _ => fail!()
+            _ => panic!()
         }
     }
 
@@ -42,7 +42,7 @@ fn push_rec_iter<L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, mut iterato
         match pushed_cnt {
             0 => continue,
             2 => unsafe { ffi::lua_settable(lua.use_lua(), -3) },
-            _ => fail!()
+            _ => panic!()
         }
     }
 
