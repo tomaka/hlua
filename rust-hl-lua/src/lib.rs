@@ -132,19 +132,19 @@ extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc
 // called whenever lua encounters an unexpected error.
 extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
     let err = unsafe { ffi::lua_tostring(lua, -1) };
-    fail!("PANIC: unprotected error in call to Lua API ({})\n", err);
+    panic!("PANIC: unprotected error in call to Lua API ({})\n", err);
 }
 
 impl<'lua> Lua<'lua> {
     /// Builds a new Lua context.
-    /// 
-    /// # Failure
-    /// The function fails if lua_newstate fails (which indicates lack of memory).
+    ///
+    /// # Panic
+    /// The function panics if lua_newstate fails (which indicates lack of memory).
     #[stable]
     pub fn new() -> Lua<'lua> {
         let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::null_mut()) };
         if lua.is_null() {
-            fail!("lua_newstate failed");
+            panic!("lua_newstate failed");
         }
 
         unsafe { ffi::lua_atpanic(lua, panic) };
@@ -157,7 +157,7 @@ impl<'lua> Lua<'lua> {
     }
 
     /// Takes an existing lua_State and build a Lua object from it.
-    /// 
+    ///
     /// # Arguments
     ///  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
     #[unstable]

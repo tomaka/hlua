@@ -29,9 +29,9 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 ///
 /// The way a Lua script can use the user data depends on the content of the **metatable**, which
 ///  is a Lua table linked to the object.
-/// 
+///
 /// [See this link for more infos.](http://www.lua.org/manual/5.2/manual.html#2.4)
-/// 
+///
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
 #[experimental]
@@ -89,7 +89,7 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
 
 #[experimental]
 pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<'a, L>)
-    -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>> 
+    -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>>
 {
     unsafe {
         let expected_typeid = format!("{}", TypeId::of::<T>());

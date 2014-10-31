@@ -43,7 +43,7 @@ extern fn reader(_: *mut ffi::lua_State, data_raw: *mut ::libc::c_void, size: *m
 impl<'a, L: HasLua> LuaFunction<'a, L> {
     pub fn call<V: CopyRead<LoadedVariable<'a, L>>>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
-        let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.use_lua(), 0, 1, 0) };     // TODO: 
+        let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.use_lua(), 0, 1, 0) };     // TODO:
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
@@ -55,7 +55,7 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
 
         // an error occured during execution
         if pcall_return_value == ffi::LUA_ERRMEM {
-            fail!("lua_pcall returned LUA_ERRMEM");
+            panic!("lua_pcall returned LUA_ERRMEM");
         }
 
         if pcall_return_value == ffi::LUA_ERRRUN {
@@ -64,7 +64,7 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
             return Err(ExecutionError(error_msg));
         }
 
-        fail!("Unknown error code returned by lua_pcall: {}", pcall_return_value)
+        panic!("Unknown error code returned by lua_pcall: {}", pcall_return_value)
     }
 
     pub fn load_from_reader<R: ::std::io::Reader + 'static>(lua: &'a mut L, code: R)
@@ -98,13 +98,13 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
         unsafe { ffi::lua_pop(lua.use_lua(), 1) };
 
         if load_return_value == ffi::LUA_ERRMEM {
-            fail!("LUA_ERRMEM");
+            panic!("LUA_ERRMEM");
         }
         if load_return_value == ffi::LUA_ERRSYNTAX {
             return Err(SyntaxError(error_msg));
         }
 
-        fail!("Unknown error while calling lua_load");
+        panic!("Unknown error while calling lua_load");
     }
 
     pub fn load(lua: &'a mut L, code: &str)
