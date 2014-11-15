@@ -2,7 +2,7 @@ use super::ffi;
 use super::Push;
 use HasLua;
 
-use std::collections::hashmap::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::iter::Repeat;
 use collections::hash::Hash;
 
