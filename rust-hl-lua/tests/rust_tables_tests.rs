@@ -2,7 +2,7 @@ extern crate "rust-hl-lua" as lua;
 extern crate test;
 use lua::{Lua, LuaTable};
 
-use std::collections::hashmap::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use test::Bencher;
 
 #[test]
