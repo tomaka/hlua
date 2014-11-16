@@ -8,6 +8,7 @@
 extern crate libc;
 extern crate collections;
 
+use std::error::Error;
 use std::io::IoError;
 use std::kinds::marker::ContravariantLifetime;
 
@@ -115,6 +116,31 @@ pub enum LuaError {
     WrongType
 }
 
+impl Error for LuaError {
+    fn description(&self) -> &str {
+        match self {
+            &LuaError::SyntaxError(_) => "Syntax error when parsing Lua code",
+            &LuaError::ExecutionError(_) => "Error while executing Lua code",
+            &LuaError::ReadError(_) => "Error while reading the Lua source code",
+            &LuaError::WrongType => "Wrong type of data requested when executing Lua code",
+        }
+    }
+
+    fn detail(&self) -> Option<String> {
+        match self {
+            &LuaError::SyntaxError(ref s) => Some(s.clone()),
+            &LuaError::ExecutionError(ref s) => Some(s.clone()),
+            _ => None,
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match self {
+            &LuaError::ReadError(ref e) => Some(e as &Error),
+            _ => None,
+        }
+    }
+}
 
 // this alloc function is required to create a lua state.
 extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void {
