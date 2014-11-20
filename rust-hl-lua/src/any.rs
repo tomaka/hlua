@@ -17,11 +17,11 @@ pub enum AnyLuaValue {
 impl<L: HasLua> Push<L> for AnyLuaValue {
     fn push_to_lua(self, lua: &mut L) -> uint {
         match self {
-            LuaString(val) => val.push_to_lua(lua),
-            LuaNumber(val) => val.push_to_lua(lua),
-            LuaBoolean(val) => val.push_to_lua(lua),
-            LuaArray(val) => val.push_to_lua(lua),
-            LuaOther => panic!("can't push a AnyLuaValue of type Other")
+            AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaArray(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other")
         }
     }
 }
@@ -29,11 +29,11 @@ impl<L: HasLua> Push<L> for AnyLuaValue {
 impl<L: HasLua> CopyRead<L> for AnyLuaValue {
     fn read_from_lua(lua: &mut L, index: i32) -> Option<AnyLuaValue> {
         None
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| LuaNumber(v)))
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| LuaBoolean(v)))
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| LuaString(v)))
+            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaNumber(v)))
+            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaBoolean(v)))
+            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaString(v)))
             //.or_else(|| CopyRead::read_from_lua(lua, index).map(|v| LuaArray(v)))
-            .or_else(|| Some(LuaOther))
+            .or_else(|| Some(AnyLuaValue::LuaOther))
     }
 }
 

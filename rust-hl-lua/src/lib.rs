@@ -2,7 +2,6 @@
 #![crate_type = "lib"]
 #![comment = "Lua bindings for Rust"]
 #![license = "MIT"]
-#![allow(visible_private_types)]
 #![feature(macro_rules)]
 #![feature(unsafe_destructor)]
 
