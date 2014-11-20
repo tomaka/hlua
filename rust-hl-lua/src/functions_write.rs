@@ -94,7 +94,7 @@ macro_rules! Push_function(
             }
         }
 
-        #[allow(unused_variable)]
+        #[allow(unused_variables)]
         impl<'lua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for fn($($ty),*)->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b
@@ -119,7 +119,7 @@ macro_rules! Push_function(
             }
         }
 
-        #[allow(unused_variable)]
+        #[allow(unused_variables)]
         impl<'lua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Callable<'lua,($($ty),*),Ret> for |$($ty),*|:'lua->Ret {
             fn do_call(&mut $s, $args: ($($ty),*)) -> Ret {
                 $b

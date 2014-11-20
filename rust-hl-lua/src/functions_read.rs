@@ -1,6 +1,7 @@
 use ffi;
 use std::io::IoError;
-use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError, ExecutionError, WrongType, ReadError, SyntaxError};
+use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError};
+use LuaError::{ExecutionError, WrongType, ReadError, SyntaxError};
 
 #[unstable]
 ///
