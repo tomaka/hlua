@@ -175,7 +175,7 @@ pub fn expand_lua_module(ecx: &mut base::ExtCtxt, span: codemap::Span,
                 let mut table = lua.load_new_table();
             ));
 
-            function_body.push_all_move(module_handler_body);
+            function_body.extend(module_handler_body.into_iter());
 
             function_body.push(quote_stmt!(ecx,
                 ::std::mem::forget(table);
