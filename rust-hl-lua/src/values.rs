@@ -116,7 +116,7 @@ numeric_impl!(f64)
 
 impl<L: HasLua> Push<L> for String {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().unwrap()) };
+        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().into_inner()) };
         1
     }
 }
@@ -147,7 +147,7 @@ impl<L: HasLua> Index<L> for String {
 
 impl<'str, L: HasLua> Push<L> for &'str str {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().unwrap()) }
+        unsafe { ffi::lua_pushstring(lua.use_lua(), self.to_c_str().into_inner()) }
         1
     }
 }
