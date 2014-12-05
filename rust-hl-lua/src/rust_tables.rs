@@ -3,7 +3,6 @@ use super::Push;
 use HasLua;
 
 use std::collections::{HashMap, HashSet};
-use std::iter::Repeat;
 use collections::hash::Hash;
 
 fn push_iter<L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, iterator: I) -> uint {
@@ -69,6 +68,7 @@ impl<L: HasLua, K: Push<L> + Eq + Hash, V: Push<L>> Push<L> for HashMap<K, V> {
 
 impl<L: HasLua, K: Push<L> + Eq + Hash> Push<L> for HashSet<K> {
     fn push_to_lua(self, lua: &mut L) -> uint {
-        push_rec_iter(lua, self.into_iter().zip(Repeat::new(true)))
+        use std::iter;
+        push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))
     }
 }

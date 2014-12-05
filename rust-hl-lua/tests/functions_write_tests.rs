@@ -41,7 +41,7 @@ fn wrong_arguments_types() {
     lua.set("add", add);
 
     match lua.execute::<int>("return add(3, \"hello\")") {
-        Err(lua::ExecutionError(_)) => (),
+        Err(lua::LuaError::ExecutionError(_)) => (),
         _ => panic!()
     }
 }
@@ -54,7 +54,7 @@ fn return_result() {
     lua.set("always_fails", always_fails);
 
     match lua.execute::<()>("always_fails()") {
-        Err(lua::ExecutionError(_)) => (),
+        Err(lua::LuaError::ExecutionError(_)) => (),
         _ => panic!()
     }
 }

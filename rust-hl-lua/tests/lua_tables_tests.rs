@@ -1,5 +1,5 @@
 extern crate "rust-hl-lua" as lua;
-use lua::{Lua, LuaTable};
+use lua::Lua;
 
 #[test]
 fn iterable() {
@@ -29,8 +29,8 @@ fn iterable_multipletimes() {
     let mut table = lua.load_table("a").unwrap();
 
     for _ in range(0u, 10) {
-        let tableContent: Vec<Option<(uint, uint)>> = table.iter().collect();
-        assert_eq!(tableContent, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
+        let table_content: Vec<Option<(uint, uint)>> = table.iter().collect();
+        assert_eq!(table_content, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
     }
 }
 

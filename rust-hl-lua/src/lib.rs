@@ -1,7 +1,4 @@
 #![crate_name = "rust-hl-lua"]
-#![crate_type = "lib"]
-#![comment = "Lua bindings for Rust"]
-#![license = "MIT"]
 #![feature(macro_rules)]
 #![feature(unsafe_destructor)]
 
@@ -218,7 +215,7 @@ impl<'lua> Lua<'lua> {
     /// Loads the value of a global variable.
     #[unstable]
     pub fn load<'a, I: Str, V: ConsumeRead<'a, Lua<'lua>>>(&'a mut self, index: I) -> Option<V> {
-        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
         ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
     }
 
@@ -231,7 +228,7 @@ impl<'lua> Lua<'lua> {
     /// Reads the value of a global variable by copying it.
     #[unstable]
     pub fn get<I: Str, V: CopyRead<Lua<'lua>>>(&mut self, index: I) -> Option<V> {
-        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
         CopyRead::read_from_lua(self, -1)
     }
 
@@ -239,7 +236,7 @@ impl<'lua> Lua<'lua> {
     #[unstable]
     pub fn set<I: Str, V: Push<Lua<'lua>>>(&mut self, index: I, value: V) {
         value.push_to_lua(self);
-        unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().unwrap()); }
+        unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
     }
 
     #[unstable]
