@@ -34,16 +34,16 @@ macro_rules! tuple_impl(
             }
         }
     );
-)
+);
 
-tuple_impl!(A | ref0, B | ref1)
-tuple_impl!(A | ref0, B | ref1, C | ref2)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10)
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10, L | ref11)
+tuple_impl!(A | ref0, B | ref1);
+tuple_impl!(A | ref0, B | ref1, C | ref2);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10);
+tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10, L | ref11);

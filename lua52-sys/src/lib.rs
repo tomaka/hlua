@@ -2,9 +2,10 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-use libc;
+extern crate libc;
+
 use libc::c_int;
-use std::{ default, ptr };
+use std::{default, ptr};
 
 pub const MULTRET: c_int = -1;
 
@@ -20,8 +21,8 @@ pub const LUA_ERRMEM: c_int = 4;
 pub const LUA_ERRGCMM: c_int = 5;
 pub const LUA_ERRERR: c_int = 6;
 
-
 #[repr(C)]
+#[allow(missing_copy_implementations)]
 pub struct lua_State;
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
@@ -92,6 +93,7 @@ pub const LUA_MASKLINE: c_int = 1 << LUA_HOOKLINE as uint;
 pub const LUA_MASKCOUNT: c_int = 1 << LUA_HOOKCOUNT as uint;
 
 #[repr(C)]
+#[allow(missing_copy_implementations)]
 pub struct lua_Debug {
     pub event: c_int,
     pub name: *const libc::c_char,

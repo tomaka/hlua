@@ -33,7 +33,7 @@ fn destructor_called() {
 
     impl Drop for Foo {
         fn drop(&mut self) {
-            let mut called = self.called.lock();
+            let mut called = self.called.lock().unwrap();
             (*called) = true;
         }
     }
@@ -49,7 +49,7 @@ fn destructor_called() {
         lua.set("a", Foo{called: called.clone()});
     }
 
-    let locked = called.lock();
+    let locked = called.lock().unwrap();
     assert!(*locked);
 }
 
