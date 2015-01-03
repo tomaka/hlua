@@ -3,7 +3,7 @@ use super::Push;
 use HasLua;
 
 use std::collections::{HashMap, HashSet};
-use collections::hash::Hash;
+use std::hash::Hash;
 
 fn push_iter<L: HasLua, V: Push<L>, I: Iterator<V>>(lua: &mut L, iterator: I) -> uint {
     // creating empty table

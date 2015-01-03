@@ -126,14 +126,14 @@ macro_rules! Push_function(
             }
         }
     );
-)
+);
 
-Push_function!(self, args, { (*self)() } | )
-Push_function!(self, args, { (*self)(args) } | Arg1 )
-Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 )
-Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 )
-Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 )
-Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 )
+Push_function!(self, args, { (*self)() } | );
+Push_function!(self, args, { (*self)(args) } | Arg1 );
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone()) } | Arg1, Arg2 );
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone()) } | Arg1, Arg2, Arg3 );
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone()) } | Arg1, Arg2, Arg3, Arg4 );
+Push_function!(self, args, { (*self)(args.ref0().clone(), args.ref1().clone(), args.ref2().clone(), args.ref3().clone(), args.ref4().clone()) } | Arg1, Arg2, Arg3, Arg4, Arg5 );
 // TODO: finish
 
 

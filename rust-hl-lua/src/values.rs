@@ -35,12 +35,12 @@ macro_rules! integer_impl(
         impl<L: HasLua> Index<L> for $t {
         }
     );
-)
+);
 
-integer_impl!(int)
-integer_impl!(i8)
-integer_impl!(i16)
-integer_impl!(i32)
+integer_impl!(int);
+integer_impl!(i8);
+integer_impl!(i16);
+integer_impl!(i32);
 //integer_impl!(i64)   // data loss
 
 macro_rules! unsigned_impl(
@@ -72,13 +72,13 @@ macro_rules! unsigned_impl(
         impl<L: HasLua> Index<L> for $t {
         }
     );
-)
+);
 
-unsigned_impl!(uint)
-unsigned_impl!(u8)
-unsigned_impl!(u16)
-unsigned_impl!(u32)
-//unsigned_impl!(u64)   // data loss
+unsigned_impl!(uint);
+unsigned_impl!(u8);
+unsigned_impl!(u16);
+unsigned_impl!(u32);
+//unsigned_impl!(u64);   // data loss
 
 macro_rules! numeric_impl(
     ($t:ident) => (
@@ -109,10 +109,10 @@ macro_rules! numeric_impl(
         impl<L: HasLua> Index<L> for $t {
         }
     );
-)
+);
 
-numeric_impl!(f32)
-numeric_impl!(f64)
+numeric_impl!(f32);
+numeric_impl!(f64);
 
 impl<L: HasLua> Push<L> for String {
     fn push_to_lua(self, lua: &mut L) -> uint {
