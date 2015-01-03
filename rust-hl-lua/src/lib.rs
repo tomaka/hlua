@@ -4,6 +4,7 @@
 
 extern crate libc;
 extern crate collections;
+extern crate "lua52-sys" as ffi;
 
 use std::error::Error;
 use std::io::IoError;
@@ -17,7 +18,6 @@ pub mod functions_read;
 pub mod lua_tables;
 pub mod userdata;
 
-mod ffi;
 mod functions_write;
 mod rust_tables;
 mod tuples;
