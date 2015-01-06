@@ -45,6 +45,12 @@ impl<'lua> HasLua for Lua<'lua> {
     }
 }
 
+impl<'a, 'lua> HasLua for &'a mut Lua<'lua> {
+    fn use_lua(&mut self) -> *mut ffi::lua_State {
+        self.lua
+    }
+}
+
 /// Object which allows access to a Lua variable.
 #[doc(hidden)]
 pub struct LoadedVariable<'var, L: 'var> {
@@ -240,7 +246,7 @@ impl<'lua> Lua<'lua> {
     }
 
     #[unstable]
-    pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, Lua<'lua>> {
+    pub fn load_new_table<'a>(&'a mut self) -> LuaTable<&'a mut Lua<'lua>> {
         unsafe { ffi::lua_newtable(self.lua) };
         ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
     }
