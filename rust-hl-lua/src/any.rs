@@ -1,8 +1,12 @@
-use {AsLua, Push, CopyRead, ConsumeRead, LoadedVariable};
+use AsLua;
+use AsMutLua;
+
+use Push;
+use PushGuard;
+use LuaRead;
 
 /// Represents any value that can be stored by Lua
-#[experimental]
-#[deriving(Clone,Show,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AnyLuaValue {
     LuaString(String),
     LuaNumber(f64),
@@ -14,34 +18,25 @@ pub enum AnyLuaValue {
     LuaOther
 }
 
-impl<L> Push<L> for AnyLuaValue where L: AsLua {
-    fn push_to_lua(self, lua: &mut L) -> uint {
+impl<L> Push<L> for AnyLuaValue where L: AsMutLua {
+    fn push_to_lua(self, lua: L) -> PushGuard<L> {
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
-            AnyLuaValue::LuaArray(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaArray(val) => unimplemented!(), //FIXME: val.push_to_lua(lua),
             AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other")
         }
     }
 }
 
-impl<L> CopyRead<L> for AnyLuaValue where L: AsLua {
-    fn read_from_lua(lua: &mut L, index: i32) -> Option<AnyLuaValue> {
+impl<L> LuaRead<L> for AnyLuaValue where L: AsLua {
+    fn lua_read_at_position(lua: L, index: i32) -> Option<AnyLuaValue> {
         None
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaNumber(v)))
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaBoolean(v)))
-            .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaString(v)))
-            //.or_else(|| CopyRead::read_from_lua(lua, index).map(|v| LuaArray(v)))
+            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaNumber(v)))
+            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaBoolean(v)))
+            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaString(v)))
+            //.or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| LuaArray(v)))
             .or_else(|| Some(AnyLuaValue::LuaOther))
-    }
-}
-
-impl<'a, L> ConsumeRead<'a, L> for AnyLuaValue where L: AsLua {
-    fn read_from_variable(mut var: LoadedVariable<'a, L>) -> Result<AnyLuaValue, LoadedVariable<'a, L>> {
-        match CopyRead::read_from_lua(&mut var, -1) {
-            None => Err(var),
-            Some(a) => Ok(a)
-        }
     }
 }

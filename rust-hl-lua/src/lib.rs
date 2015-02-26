@@ -10,7 +10,6 @@ use std::marker::PhantomData;
 /*pub use lua_tables::LuaTable;
 pub use functions_read::LuaFunction;
 
-pub mod any;
 pub mod functions_read;
 pub mod lua_tables;
 pub mod userdata;
@@ -18,6 +17,8 @@ pub mod userdata;
 mod functions_write;
 mod rust_tables;
 mod tuples;*/
+
+pub mod any;
 
 mod values;
 
@@ -71,24 +72,6 @@ unsafe impl<'a, 'lua> AsMutLua for &'a mut Lua<'lua> {
     }
 }
 
-unsafe impl<'a, L> AsLua for &'a PushGuard<L> where L: AsMutLua {
-    fn as_lua(&self) -> LuaContext {
-        self.lua.as_lua()
-    }
-}
-
-unsafe impl<'a, L> AsLua for &'a mut PushGuard<L> where L: AsMutLua {
-    fn as_lua(&self) -> LuaContext {
-        self.lua.as_lua()
-    }
-}
-
-unsafe impl<'a, L> AsMutLua for &'a mut PushGuard<L> where L: AsMutLua {
-    fn as_mut_lua(&mut self) -> LuaContext {
-        self.lua.as_mut_lua()
-    }
-}
-
 unsafe impl<L> AsLua for PushGuard<L> where L: AsMutLua {
     fn as_lua(&self) -> LuaContext {
         self.lua.as_lua()
@@ -98,6 +81,24 @@ unsafe impl<L> AsLua for PushGuard<L> where L: AsMutLua {
 unsafe impl<L> AsMutLua for PushGuard<L> where L: AsMutLua {
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua.as_mut_lua()
+    }
+}
+
+unsafe impl<'a, L> AsLua for &'a L where L: AsLua {
+    fn as_lua(&self) -> LuaContext {
+        (**self).as_lua()
+    }
+}
+
+unsafe impl<'a, L> AsLua for &'a mut L where L: AsLua {
+    fn as_lua(&self) -> LuaContext {
+        (**self).as_lua()
+    }
+}
+
+unsafe impl<'a, L> AsMutLua for &'a mut L where L: AsMutLua {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        (**self).as_mut_lua()
     }
 }
 
