@@ -17,8 +17,9 @@ pub mod userdata;
 
 mod functions_write;
 mod rust_tables;
-mod tuples;
-mod values;*/
+mod tuples;*/
+
+mod values;
 
 
 /// Main object of the library.
@@ -48,6 +49,7 @@ pub unsafe trait AsMutLua: AsLua {
 
 /// Represents a raw Lua context.
 #[derive(Copy, Clone)]
+#[allow(raw_pointer_derive)]
 pub struct LuaContext(*mut ffi::lua_State);
 unsafe impl Send for LuaContext {}
 
@@ -110,7 +112,7 @@ pub trait Push<L> where L: AsMutLua {
 }
 
 /// Reads the data from Lua.
-pub trait LuaRead<L>: Sized where L: AsMutLua {
+pub trait LuaRead<L>: Sized where L: AsLua {
     /// Reads the data from Lua.
     fn lua_read(lua: L) -> Option<Self> {
         LuaRead::lua_read_at_position(lua, -1)
