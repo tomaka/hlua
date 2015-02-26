@@ -1,20 +1,47 @@
-use {AsLua, Push, CopyRead};
+use std::mem;
 
-macro_rules! tuple_impl(
-    ($($ty:ident | $nb:ident),+) => (
-        impl<LU: AsLua, $($ty: Push<LU>),+> Push<LU> for ($($ty),+) {
-            fn push_to_lua(self, lua: &mut LU) -> uint {
+use AsMutLua;
+use AsLua;
+
+use Push;
+use PushGuard;
+use LuaRead;
+
+macro_rules! tuple_impl {
+    ($ty:ident) => (
+
+    );
+
+    ($first:ident, $($other:ident),+) => (
+        #[allow(non_snake_case)]
+        impl<LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+> Push<LU> for ($first, $($other),+)
+                                                                          where LU: AsMutLua
+        {
+            fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
                 match self {
-                    ($($nb),+) => {
+                    ($first, $($other),+) => {
                         let mut total = 0;
-                        $(total += $nb.push_to_lua(lua);)+
-                        total
+
+                        {
+                            let guard = $first.push_to_lua(&mut lua);
+                            total += guard.size;
+                            unsafe { mem::forget(guard) };
+                        }
+
+                        $(
+                            {
+                                let guard = $other.push_to_lua(&mut lua);
+                                total += guard.size;
+                                unsafe { mem::forget(guard) };
+                            }
+                        )+
+                        PushGuard { lua: lua, size: total }
                     }
                 }
             }
         }
 
-        // TODO: what if T or U are also tuples? indices won't match
+        /*// TODO: what if T or U are also tuples? indices won't match
         #[allow(unused_assignments)]
         impl<LU: AsLua, $($ty: CopyRead<LU>),+> CopyRead<LU> for ($($ty),+) {
             fn read_from_lua(lua: &mut LU, index: i32) -> Option<($($ty),+)> {
@@ -32,18 +59,10 @@ macro_rules! tuple_impl(
                 Some(($($nb.unwrap()),+))
 
             }
-        }
-    );
-);
+        }*/
 
-tuple_impl!(A | ref0, B | ref1);
-tuple_impl!(A | ref0, B | ref1, C | ref2);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10);
-tuple_impl!(A | ref0, B | ref1, C | ref2, D | ref3, E | ref4, F | ref5, G | ref6, H | ref7, I | ref8, J | ref9, K | ref10, L | ref11);
+        tuple_impl!($($other),+);
+    );
+}
+
+tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M);

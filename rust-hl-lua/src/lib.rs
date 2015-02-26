@@ -13,14 +13,14 @@ pub use functions_read::LuaFunction;
 pub mod functions_read;
 pub mod lua_tables;
 pub mod userdata;
-
-mod tuples;*/
+*/
 
 pub mod any;
 
 mod functions_write;
 mod rust_tables;
 mod values;
+mod tuples;
 
 
 /// Main object of the library.
