@@ -1,4 +1,4 @@
-use {HasLua, CopyRead, ConsumeRead, Push, LoadedVariable, LuaTable};
+use {AsLua, CopyRead, ConsumeRead, Push, LoadedVariable, LuaTable};
 use std::intrinsics::TypeId;
 use ffi;
 
@@ -35,28 +35,28 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
 #[experimental]
-pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
-    metatable: |&mut LuaTable<L>|) -> uint
+pub fn push_userdata<L: AsLua, T: 'static + Send, F>(data: T, lua: &mut L,
+    metatable: F) -> uint where F: FnMut(LuaTable<L>)
 {
     use std::mem;
 
     let typeid = format!("{}", TypeId::of::<T>());
 
-    let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(),
+    let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.as_lua(),
         mem::size_of_val(&data) as ::libc::size_t) };
     let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
     unsafe { use std::ptr; ptr::write(lua_data, data) };
 
-    let lua_raw = lua.use_lua();
+    let lua_raw = lua.as_lua();
 
     // creating a metatable
     unsafe {
-        ffi::lua_newtable(lua.use_lua());
+        ffi::lua_newtable(lua.as_lua());
 
         // index "__typeid" corresponds to the hash of the TypeId of T
         "__typeid".push_to_lua(lua);
         typeid.push_to_lua(lua);
-        ffi::lua_settable(lua.use_lua(), -3);
+        ffi::lua_settable(lua.as_lua(), -3);
 
         // index "__gc" call the object's destructor
         {
@@ -64,12 +64,12 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
 
             // pushing destructor_impl as a lightuserdata
             let destructor_impl: fn(*mut ffi::lua_State)->::libc::c_int = destructor_impl::<T>;
-            ffi::lua_pushlightuserdata(lua.use_lua(), mem::transmute(destructor_impl));
+            ffi::lua_pushlightuserdata(lua.as_lua(), mem::transmute(destructor_impl));
 
             // pushing destructor_wrapper as a closure
-            ffi::lua_pushcclosure(lua.use_lua(), mem::transmute(destructor_wrapper), 1);
+            ffi::lua_pushcclosure(lua.as_lua(), mem::transmute(destructor_wrapper), 1);
 
-            ffi::lua_settable(lua.use_lua(), -3);
+            ffi::lua_settable(lua.as_lua(), -3);
         }
 
         // calling the metatable closure
@@ -88,52 +88,52 @@ pub fn push_userdata<L: HasLua, T: 'static + Send>(data: T, lua: &mut L,
 }
 
 #[experimental]
-pub fn read_consume_userdata<'a, L: HasLua, T: 'static>(mut var: LoadedVariable<'a, L>)
+pub fn read_consume_userdata<'a, L: AsLua, T: 'static>(mut var: LoadedVariable<'a, L>)
     -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>>
 {
     unsafe {
         let expected_typeid = format!("{}", TypeId::of::<T>());
 
-        let data_ptr = ffi::lua_touserdata(var.use_lua(), -1);
+        let data_ptr = ffi::lua_touserdata(var.as_lua(), -1);
         if data_ptr.is_null() {
             return Err(var);
         }
 
-        if ffi::lua_getmetatable(var.use_lua(), -1) == 0 {
+        if ffi::lua_getmetatable(var.as_lua(), -1) == 0 {
             return Err(var);
         }
 
         "__typeid".push_to_lua(&mut var);
-        ffi::lua_gettable(var.use_lua(), -2);
+        ffi::lua_gettable(var.as_lua(), -2);
         if CopyRead::read_from_lua(&mut var, -1) != Some(expected_typeid) {
             return Err(var);
         }
-        ffi::lua_pop(var.use_lua(), -2);
+        ffi::lua_pop(var.as_lua(), -2);
 
         Ok(UserdataOnStack { variable: var })
     }
 }
 
 #[experimental]
-pub fn read_copy_userdata<L: HasLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
+pub fn read_copy_userdata<L: AsLua, T: Clone + 'static>(lua: &mut L, index: ::libc::c_int) -> Option<T> {
     unsafe {
         let expected_typeid = format!("{}", TypeId::of::<T>());
 
-        let data_ptr = ffi::lua_touserdata(lua.use_lua(), index);
+        let data_ptr = ffi::lua_touserdata(lua.as_lua(), index);
         if data_ptr.is_null() {
             return None;
         }
 
-        if ffi::lua_getmetatable(lua.use_lua(), -1) == 0 {
+        if ffi::lua_getmetatable(lua.as_lua(), -1) == 0 {
             return None;
         }
 
         "__typeid".push_to_lua(lua);
-        ffi::lua_gettable(lua.use_lua(), -2);
+        ffi::lua_gettable(lua.as_lua(), -2);
         if CopyRead::read_from_lua(lua, -1) != Some(expected_typeid) {
             return None;
         }
-        ffi::lua_pop(lua.use_lua(), -2);
+        ffi::lua_pop(lua.as_lua(), -2);
 
         let data: &T = ::std::mem::transmute(data_ptr);
         Some(data.clone())
@@ -144,20 +144,20 @@ pub struct UserdataOnStack<'a, L: 'a, T> {
     variable: LoadedVariable<'a, L>,
 }
 
-impl<'a, L: HasLua, T> Deref<T> for UserdataOnStack<'a, L, T> {
+impl<'a, L: AsLua, T> Deref<T> for UserdataOnStack<'a, L, T> {
     fn deref(&self) -> &T {
         use std::mem;
         let me: &mut UserdataOnStack<L, T> = unsafe { mem::transmute(self) };
-        let data = unsafe { ffi::lua_touserdata(me.variable.use_lua(), -1) };
+        let data = unsafe { ffi::lua_touserdata(me.variable.as_lua(), -1) };
         let data: &T = unsafe { mem::transmute(data) };
         data
     }
 }
 
-impl<'a, L: HasLua, T> DerefMut<T> for UserdataOnStack<'a, L, T> {
+impl<'a, L: AsLua, T> DerefMut<T> for UserdataOnStack<'a, L, T> {
     fn deref_mut(&mut self) -> &mut T {
         use std::mem;
-        let data = unsafe { ffi::lua_touserdata(self.variable.use_lua(), -1) };
+        let data = unsafe { ffi::lua_touserdata(self.variable.as_lua(), -1) };
         let data: &mut T = unsafe { mem::transmute(data) };
         data
     }

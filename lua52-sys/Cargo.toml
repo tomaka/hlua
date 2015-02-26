@@ -11,3 +11,6 @@ repository = "https://github.com/tomaka/rust-hl-lua"
 
 [build-dependencies]
 pkg-config = "*"
+
+[dependencies]
+libc = "*"

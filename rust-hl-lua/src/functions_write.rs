@@ -1,5 +1,5 @@
 use super::ffi;
-use {HasLua, Push, CopyRead};
+use {AsLua, Push, CopyRead};
 use std::kinds::marker::ContravariantLifetime;
 
 // this function is the main entry point when Lua wants to call one of our functions
@@ -32,8 +32,8 @@ pub struct InsideCallback<'lua> {
     marker: ContravariantLifetime<'lua>,
 }
 
-impl<'lua> HasLua for InsideCallback<'lua> {
-    fn use_lua(&mut self) -> *mut ffi::lua_State {
+impl<'lua> AsLua for InsideCallback<'lua> {
+    fn as_lua(&mut self) -> *mut ffi::lua_State {
         self.lua
     }
 }
@@ -76,19 +76,19 @@ impl<'lua, Args: CopyRead<InsideCallback<'lua>>, Ret: Push<InsideCallback<'lua>>
 // this macro will allow us to handle multiple parameters count
 macro_rules! Push_function(
     ($s:ident, $args:ident, $b:block | $($ty:ident),*) => (
-        impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
+        impl<'lua, L: AsLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for fn($($ty),*)->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.as_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
                 let lua_data: *mut fn($($ty),*)->Ret = unsafe { ::std::mem::transmute(lua_data_raw) };
                 unsafe { ::std::ptr::write(lua_data, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<fn($($ty),*)->Ret>;
-                unsafe { ffi::lua_pushlightuserdata(lua.use_lua(), ::std::mem::transmute(wrapper2)) };
+                unsafe { ffi::lua_pushlightuserdata(lua.as_lua(), ::std::mem::transmute(wrapper2)) };
 
                 // pushing wrapper1 as a closure
-                unsafe { ffi::lua_pushcclosure(lua.use_lua(), ::std::mem::transmute(wrapper1), 2) };
+                unsafe { ffi::lua_pushcclosure(lua.as_lua(), ::std::mem::transmute(wrapper1), 2) };
 
                 1
             }
@@ -101,19 +101,19 @@ macro_rules! Push_function(
             }
         }
 
-        impl<'lua, L: HasLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
+        impl<'lua, L: AsLua, Ret: Push<InsideCallback<'lua>> $(, $ty : CopyRead<InsideCallback<'lua>>+Clone)*> Push<L> for |$($ty),*|:'lua->Ret {
             fn push_to_lua(self, lua: &mut L) -> uint {
                 // pushing the function pointer as a userdata
-                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.use_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
+                let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.as_lua(), ::std::mem::size_of_val(&self) as ::libc::size_t) };
                 let lua_data: *mut |$($ty),*|->Ret = unsafe { ::std::mem::transmute(lua_data_raw) };
                 unsafe { ::std::ptr::write(lua_data, self) };
 
                 // pushing wrapper2 as a lightuserdata
                 let wrapper2: fn(*mut ffi::lua_State)->::libc::c_int = wrapper2::<|$($ty),*|:'lua->Ret>;
-                unsafe { ffi::lua_pushlightuserdata(lua.use_lua(), ::std::mem::transmute(wrapper2)) };
+                unsafe { ffi::lua_pushlightuserdata(lua.as_lua(), ::std::mem::transmute(wrapper2)) };
 
                 // pushing wrapper1 as a closure
-                unsafe { ffi::lua_pushcclosure(lua.use_lua(), ::std::mem::transmute(wrapper1), 2) };
+                unsafe { ffi::lua_pushcclosure(lua.as_lua(), ::std::mem::transmute(wrapper1), 2) };
 
                 1
             }
@@ -145,7 +145,7 @@ impl<'lua, T: Push<InsideCallback<'lua>>, E: ::std::fmt::Show> Push<InsideCallba
             Err(val) => {
                 let msg = format!("{}", val);
                 msg.push_to_lua(lua);
-                unsafe { ffi::lua_error(lua.use_lua()); }
+                unsafe { ffi::lua_error(lua.as_lua()); }
                 unreachable!()
             }
         }

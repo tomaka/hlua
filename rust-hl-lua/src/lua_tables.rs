@@ -1,35 +1,50 @@
-use {HasLua, CopyRead, ConsumeRead, LoadedVariable, Push, Index};
 use ffi;
+use LuaContext;
 
-#[unstable]
-pub struct LuaTable<'var, L: 'var> {
-    variable: LoadedVariable<'var, L>
+use AsMutLua;
+
+use LuaRead;
+use PushGuard;
+
+/// 
+pub struct LuaTable<L> where L: AsMutLua {
+    table: L,
 }
 
-impl<'var, L: HasLua> HasLua for LuaTable<'var, L> {
-    fn use_lua(&mut self) -> *mut ffi::lua_State {
-        self.variable.use_lua()
+impl<'a, L> AsLua for &'a LuaTable<L> where L: AsMutLua {
+    fn as_lua(&self) -> LuaContext {
+        self.table.as_lua()
+    }
+}
+
+impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
+    fn lua_read(lua: L) -> Option<LuaTable<L>> {
+        if unsafe { ffi::lua_istable(var.as_mut_lua(), -1) } {
+            Ok(LuaTable { table: lua })
+        } else {
+            Err(var)
+        }
     }
 }
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
 #[unstable]
-pub struct LuaTableIterator<'var: 'table, 'table, L: 'var> {
-    table: &'table mut LuaTable<'var, L>,
+pub struct LuaTableIterator<'table, L: 'table> {
+    table: &'table mut LuaTable<L>,
     finished: bool,     // if true, the key is not on the stack anymore
 }
 
-impl<'var, 'table, L: HasLua> HasLua for LuaTableIterator<'var, 'table, L> {
-    fn use_lua(&mut self) -> *mut ffi::lua_State {
-        self.table.use_lua()
+impl<'var, 'table, L: AsLua> AsLua for LuaTableIterator<'var, 'table, L> {
+    fn as_lua(&mut self) -> *mut ffi::lua_State {
+        self.table.as_lua()
     }
 }
 
-impl<'var, L: HasLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
+impl<'var, L: AsLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
     fn read_from_variable(mut var: LoadedVariable<'var, L>)
         -> Result<LuaTable<'var, L>, LoadedVariable<'var, L>>
     {
-        if unsafe { ffi::lua_istable(var.use_lua(), -1) } {
+        if unsafe { ffi::lua_istable(var.as_lua(), -1) } {
             Ok(LuaTable{ variable: var })
         } else {
             Err(var)
@@ -37,17 +52,15 @@ impl<'var, L: HasLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
     }
 }
 
-impl<'var, L: HasLua> LuaTable<'var, L> {
-    pub fn iter<'me>(&'me mut self)
-        -> LuaTableIterator<'var, 'me, L>
-    {
-        unsafe { ffi::lua_pushnil(self.variable.use_lua()) };
+impl<L> LuaTable<L> where L: AsMutLua {
+    pub fn iter<'me>(&'me mut self) -> LuaTableIterator<'me, L> {
+        unsafe { ffi::lua_pushnil(self.variable.as_lua()) };
         LuaTableIterator{table: self, finished: false}
     }
 
     pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
         index.push_to_lua(self);
-        unsafe { ffi::lua_gettable(self.use_lua(), -2); }
+        unsafe { ffi::lua_gettable(self.as_lua(), -2); }
         let var = LoadedVariable{lua: self, size: 1};
         ConsumeRead::read_from_variable(var).ok()
     }
@@ -58,27 +71,27 @@ impl<'var, L: HasLua> LuaTable<'var, L> {
 
     pub fn get<R: CopyRead<LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&mut self, index: I) -> Option<R> {
         index.push_to_lua(self);
-        unsafe { ffi::lua_gettable(self.use_lua(), -2); }
+        unsafe { ffi::lua_gettable(self.as_lua(), -2); }
         let value = CopyRead::read_from_lua(self, -1);
-        unsafe { ffi::lua_pop(self.use_lua(), 1); }
+        unsafe { ffi::lua_pop(self.as_lua(), 1); }
         value
     }
 
     pub fn set<I: Index<LuaTable<'var, L>>, V: Push<LuaTable<'var, L>>>(&mut self, index: I, value: V) {
         index.push_to_lua(self);
         value.push_to_lua(self);
-        unsafe { ffi::lua_settable(self.use_lua(), -3); }
+        unsafe { ffi::lua_settable(self.as_lua(), -3); }
     }
 
     // Obtains or create the metatable of the table
     pub fn get_or_create_metatable(mut self) -> LuaTable<'var, L> {
-        let result = unsafe { ffi::lua_getmetatable(self.variable.use_lua(), -1) };
+        let result = unsafe { ffi::lua_getmetatable(self.variable.as_lua(), -1) };
 
         if result == 0 {
             unsafe {
-                ffi::lua_newtable(self.variable.use_lua());
-                ffi::lua_setmetatable(self.variable.use_lua(), -2);
-                let r = ffi::lua_getmetatable(self.variable.use_lua(), -1);
+                ffi::lua_newtable(self.variable.as_lua());
+                ffi::lua_setmetatable(self.variable.as_lua(), -2);
+                let r = ffi::lua_getmetatable(self.variable.as_lua(), -1);
                 assert!(r != 0);
             }
         }
@@ -89,7 +102,7 @@ impl<'var, L: HasLua> LuaTable<'var, L> {
     }
 }
 
-impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<LuaTableIterator<'a, 'b, L>>>
+impl<'a, 'b, L: AsLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<LuaTableIterator<'a, 'b, L>>>
     Iterator<Option<(K, V)>> for LuaTableIterator<'a, 'b, L>
 {
     fn next(&mut self)
@@ -100,7 +113,7 @@ impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lu
         }
 
         // this call pushes the next key and value on the stack
-        if unsafe { ffi::lua_next(self.table.use_lua(), -2) } == 0 {
+        if unsafe { ffi::lua_next(self.table.as_lua(), -2) } == 0 {
             self.finished = true;
             return None
         }
@@ -109,7 +122,7 @@ impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lu
         let value = CopyRead::read_from_lua(self, -1);
 
         // removing the value, leaving only the key on the top of the stack
-        unsafe { ffi::lua_pop(self.table.use_lua(), 1) };
+        unsafe { ffi::lua_pop(self.table.as_lua(), 1) };
 
         //
         if key.is_none() || value.is_none() {
@@ -121,10 +134,10 @@ impl<'a, 'b, L: HasLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lu
 }
 
 #[unsafe_destructor]
-impl<'a, 'b, L: HasLua> Drop for LuaTableIterator<'a, 'b, L> {
+impl<'a, 'b, L: AsLua> Drop for LuaTableIterator<'a, 'b, L> {
     fn drop(&mut self) {
         if !self.finished {
-            unsafe { ffi::lua_pop(self.table.variable.use_lua(), 1) }
+            unsafe { ffi::lua_pop(self.table.variable.as_lua(), 1) }
         }
     }
 }

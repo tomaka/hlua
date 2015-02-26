@@ -107,7 +107,7 @@ pub struct lua_Debug {
     pub nparams: libc::c_uchar,
     pub isvararg: libc::c_char,
     pub istailcall: libc::c_char,
-    pub short_src: [libc::c_char, ..60]//,
+    pub short_src: [libc::c_char ; 60],
     //i_ci: *CallInfo
 }
 
@@ -335,7 +335,7 @@ impl default::Default for lua_Debug {
             nparams: 0,
             isvararg: 0,
             istailcall: 0,
-            short_src: [0, ..60]
+            short_src: [0 ; 60]
         }
     }
 }

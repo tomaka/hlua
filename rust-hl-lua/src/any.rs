@@ -1,4 +1,4 @@
-use {HasLua, Push, CopyRead, ConsumeRead, LoadedVariable};
+use {AsLua, Push, CopyRead, ConsumeRead, LoadedVariable};
 
 /// Represents any value that can be stored by Lua
 #[experimental]
@@ -14,7 +14,7 @@ pub enum AnyLuaValue {
     LuaOther
 }
 
-impl<L: HasLua> Push<L> for AnyLuaValue {
+impl<L> Push<L> for AnyLuaValue where L: AsLua {
     fn push_to_lua(self, lua: &mut L) -> uint {
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
@@ -26,7 +26,7 @@ impl<L: HasLua> Push<L> for AnyLuaValue {
     }
 }
 
-impl<L: HasLua> CopyRead<L> for AnyLuaValue {
+impl<L> CopyRead<L> for AnyLuaValue where L: AsLua {
     fn read_from_lua(lua: &mut L, index: i32) -> Option<AnyLuaValue> {
         None
             .or_else(|| CopyRead::read_from_lua(lua, index).map(|v| AnyLuaValue::LuaNumber(v)))
@@ -37,7 +37,7 @@ impl<L: HasLua> CopyRead<L> for AnyLuaValue {
     }
 }
 
-impl<'a, L: HasLua> ConsumeRead<'a, L> for AnyLuaValue {
+impl<'a, L> ConsumeRead<'a, L> for AnyLuaValue where L: AsLua {
     fn read_from_variable(mut var: LoadedVariable<'a, L>) -> Result<AnyLuaValue, LoadedVariable<'a, L>> {
         match CopyRead::read_from_lua(&mut var, -1) {
             None => Err(var),

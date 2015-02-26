@@ -1,16 +1,13 @@
-#![crate_name = "rust-hl-lua"]
-#![feature(macro_rules)]
 #![feature(unsafe_destructor)]
 
-extern crate libc;
-extern crate collections;
 extern crate "lua52-sys" as ffi;
+extern crate libc;
 
-use std::error::Error;
-use std::io::IoError;
-use std::kinds::marker::ContravariantLifetime;
+use std::ffi::{CStr, CString};
+use std::borrow::Borrow;
+use std::marker::PhantomData;
 
-pub use lua_tables::LuaTable;
+/*pub use lua_tables::LuaTable;
 pub use functions_read::LuaFunction;
 
 pub mod any;
@@ -21,83 +18,110 @@ pub mod userdata;
 mod functions_write;
 mod rust_tables;
 mod tuples;
-mod values;
+mod values;*/
 
 
 /// Main object of the library.
-/// The lifetime parameter corresponds to the lifetime of the Lua object itself.
-#[unstable]
+///
+/// The lifetime parameter corresponds to the lifetime of the content of the Lua context.
 pub struct Lua<'lua> {
-    lua: *mut ffi::lua_State,
-    marker: ContravariantLifetime<'lua>,
+    lua: LuaContext,
     must_be_closed: bool,
+    marker: PhantomData<&'lua ()>,
+}
+
+///
+pub struct PushGuard<L> where L: AsMutLua {
+    lua: L,
+    size: i32,
 }
 
 /// Trait for objects that have access to a Lua context.
-/// The lifetime parameter is the lifetime of the Lua context.
-pub trait HasLua {
-    fn use_lua(&mut self) -> *mut ffi::lua_State;
+pub unsafe trait AsLua {
+    fn as_lua(&self) -> LuaContext;
 }
 
-impl<'lua> HasLua for Lua<'lua> {
-    fn use_lua(&mut self) -> *mut ffi::lua_State {
+/// Trait for objects that have access to a Lua context.
+pub unsafe trait AsMutLua: AsLua {
+    fn as_mut_lua(&mut self) -> LuaContext;
+}
+
+/// Represents a raw Lua context.
+#[derive(Copy, Clone)]
+pub struct LuaContext(*mut ffi::lua_State);
+unsafe impl Send for LuaContext {}
+
+unsafe impl<'a, 'lua> AsLua for &'a Lua<'lua> {
+    fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
-/// Object which allows access to a Lua variable.
-#[doc(hidden)]
-pub struct LoadedVariable<'var, L: 'var> {
-    lua: &'var mut L,
-    size: uint,       // number of elements over "lua"
+unsafe impl<'a, 'lua> AsLua for &'a mut Lua<'lua> {
+    fn as_lua(&self) -> LuaContext {
+        self.lua
+    }
 }
 
-impl<'var, 'lua, L: HasLua> HasLua for LoadedVariable<'var, L> {
-    fn use_lua(&mut self) -> *mut ffi::lua_State {
-        self.lua.use_lua()
+unsafe impl<'a, 'lua> AsMutLua for &'a mut Lua<'lua> {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.lua
+    }
+}
+
+unsafe impl<'a, L> AsLua for &'a PushGuard<L> where L: AsMutLua {
+    fn as_lua(&self) -> LuaContext {
+        self.lua.as_lua()
+    }
+}
+
+unsafe impl<'a, L> AsLua for &'a mut PushGuard<L> where L: AsMutLua {
+    fn as_lua(&self) -> LuaContext {
+        self.lua.as_lua()
+    }
+}
+
+unsafe impl<'a, L> AsMutLua for &'a mut PushGuard<L> where L: AsMutLua {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.lua.as_mut_lua()
+    }
+}
+
+unsafe impl<L> AsLua for PushGuard<L> where L: AsMutLua {
+    fn as_lua(&self) -> LuaContext {
+        self.lua.as_lua()
+    }
+}
+
+unsafe impl<L> AsMutLua for PushGuard<L> where L: AsMutLua {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.lua.as_mut_lua()
     }
 }
 
 /// Should be implemented by whatever type is pushable on the Lua stack.
-#[unstable]
-pub trait Push<L> {
+pub trait Push<L> where L: AsMutLua {
     /// Pushes the value on the top of the stack.
     /// Must return the number of elements pushed.
     ///
     /// You can implement this for any type you want by redirecting to call to
     /// another implementation (for example `5.push_to_lua`) or by calling `userdata::push_userdata`
-    fn push_to_lua(self, lua: &mut L) -> uint;
+    fn push_to_lua(self, lua: L) -> PushGuard<L>;
 }
 
-/// Should be implemented by types that can be read by consomming a LoadedVariable.
-#[unstable]
-pub trait ConsumeRead<'a, L> {
-    /// Returns the LoadedVariable in case of failure.
-    fn read_from_variable(var: LoadedVariable<'a, L>) -> Result<Self, LoadedVariable<'a, L>>;
-}
+/// Reads the data from Lua.
+pub trait LuaRead<L>: Sized where L: AsMutLua {
+    /// Reads the data from Lua.
+    fn lua_read(lua: L) -> Option<Self> {
+        LuaRead::lua_read_at_position(lua, -1)
+    }
 
-/// Should be implemented by whatever type can be read by copy from the Lua stack.
-#[unstable]
-pub trait CopyRead<L> {
-    /// Reads an object from the Lua stack.
-    ///
-    /// Similar to Push, you can implement this trait for your own types either by
-    /// redirecting the calls to another implementation or by calling userdata::read_copy_userdata
-    ///
-    /// # Arguments
-    ///  * `lua` - The Lua object to read from
-    ///  * `index` - The index on the stack to read from
-    fn read_from_lua(lua: &mut L, index: i32) -> Option<Self>;
-}
-
-/// Types that can be indices in Lua tables.
-#[unstable]
-pub trait Index<L>: Push<L> + CopyRead<L> {
+    /// Reads the data from Lua.
+    fn lua_read_at_position(lua: L, index: i32) -> Option<Self>;
 }
 
 /// Error that can happen when executing Lua code.
-#[deriving(Show)]
-#[unstable]
+#[derive(Debug)]
 pub enum LuaError {
     /// There was a syntax error when parsing the Lua code.
     SyntaxError(String),
@@ -106,75 +130,54 @@ pub enum LuaError {
     /// (for example not enough parameters for a function call).
     ExecutionError(String),
 
-    /// There was an IoError while reading the source code to execute.
-    ReadError(IoError),
+    /*/// There was an IoError while reading the source code to execute.
+    ReadError(IoError),*/
 
     /// The call to `execute` has requested the wrong type of data.
-    WrongType
-}
-
-impl Error for LuaError {
-    fn description(&self) -> &str {
-        match self {
-            &LuaError::SyntaxError(_) => "Syntax error when parsing Lua code",
-            &LuaError::ExecutionError(_) => "Error while executing Lua code",
-            &LuaError::ReadError(_) => "Error while reading the Lua source code",
-            &LuaError::WrongType => "Wrong type of data requested when executing Lua code",
-        }
-    }
-
-    fn detail(&self) -> Option<String> {
-        match self {
-            &LuaError::SyntaxError(ref s) => Some(s.clone()),
-            &LuaError::ExecutionError(ref s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        match self {
-            &LuaError::ReadError(ref e) => Some(e as &Error),
-            _ => None,
-        }
-    }
-}
-
-// this alloc function is required to create a lua state.
-extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void {
-    unsafe {
-        if nsize == 0 {
-            libc::free(ptr as *mut libc::c_void);
-            std::ptr::null_mut()
-        } else {
-            libc::realloc(ptr, nsize)
-        }
-    }
-}
-
-// called whenever lua encounters an unexpected error.
-extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
-    let err = unsafe { ffi::lua_tostring(lua, -1) };
-    panic!("PANIC: unprotected error in call to Lua API ({})\n", err);
+    WrongType,
 }
 
 impl<'lua> Lua<'lua> {
     /// Builds a new Lua context.
     ///
     /// # Panic
-    /// The function panics if lua_newstate fails (which indicates lack of memory).
-    #[stable]
+    ///
+    /// The function panics if the underlying call to `lua_newstate` fails
+    /// (which indicates lack of memory).
     pub fn new() -> Lua<'lua> {
         let lua = unsafe { ffi::lua_newstate(alloc, std::ptr::null_mut()) };
         if lua.is_null() {
             panic!("lua_newstate failed");
         }
 
+        // this alloc function is required to create a lua state.
+        extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t,
+                            nsize: libc::size_t) -> *mut libc::c_void
+        {
+            unsafe {
+                if nsize == 0 {
+                    libc::free(ptr as *mut libc::c_void);
+                    std::ptr::null_mut()
+                } else {
+                    libc::realloc(ptr, nsize)
+                }
+            }
+        }
+
+        // called whenever lua encounters an unexpected error.
+        extern "C" fn panic(lua: *mut ffi::lua_State) -> libc::c_int {
+            let err = unsafe { ffi::lua_tostring(lua, -1) };
+            let err = unsafe { CStr::from_ptr(err) };
+            let err = String::from_utf8(err.to_bytes().to_vec()).unwrap();
+            panic!("PANIC: unprotected error in call to Lua API ({})\n", err);
+        }
+
         unsafe { ffi::lua_atpanic(lua, panic) };
 
         Lua {
-            lua: lua,
-            marker: ContravariantLifetime,
+            lua: LuaContext(lua),
             must_be_closed: true,
+            marker: PhantomData,
         }
     }
 
@@ -182,67 +185,49 @@ impl<'lua> Lua<'lua> {
     ///
     /// # Arguments
     ///  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
-    #[unstable]
     pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua<'lua> {
         Lua {
             lua: std::mem::transmute(lua),
-            marker: ContravariantLifetime,
             must_be_closed: close_at_the_end,
+            marker: PhantomData,
         }
     }
 
     /// Opens all standard Lua libraries.
     /// This is done by calling `luaL_openlibs`.
-    #[unstable]
     pub fn openlibs(&mut self) {
-        unsafe { ffi::luaL_openlibs(self.lua) }
+        unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
 
-    /// Executes some Lua code on the context.
-    #[unstable]
+    /*/// Executes some Lua code on the context.
     pub fn execute<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>>(&'a mut self, code: &str) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
-    #[unstable]
     pub fn execute_from_reader<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>, R: std::io::Reader + 'static>(&'a mut self, code: R) -> Result<T, LuaError> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
-    }
-
-    /// Loads the value of a global variable.
-    #[unstable]
-    pub fn load<'a, I: Str, V: ConsumeRead<'a, Lua<'lua>>>(&'a mut self, index: I) -> Option<V> {
-        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
-        ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok()
-    }
-
-    /// Loads the value of a global variable as a table.
-    #[unstable]
-    pub fn load_table<'a, I: Str>(&'a mut self, index: I) -> Option<LuaTable<Lua<'lua>>> {
-        self.load(index)
-    }
+    }*/
 
     /// Reads the value of a global variable by copying it.
-    #[unstable]
-    pub fn get<I: Str, V: CopyRead<Lua<'lua>>>(&mut self, index: I) -> Option<V> {
-        unsafe { ffi::lua_getglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
-        CopyRead::read_from_lua(self, -1)
+    pub fn get<'l, I, V>(&'l mut self, index: I) -> Option<V>
+                         where I: Borrow<str>, V: LuaRead<&'l mut Lua<'lua>>
+    {
+        let index = CString::new(index.borrow()).unwrap();
+        unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        LuaRead::lua_read(self)
     }
 
     /// Modifies the value of a global variable.
-    #[unstable]
-    pub fn set<I: Str, V: Push<Lua<'lua>>>(&mut self, index: I, value: V) {
-        value.push_to_lua(self);
-        unsafe { ffi::lua_setglobal(self.lua, index.as_slice().to_c_str().into_inner()); }
-    }
-
-    #[unstable]
-    pub fn load_new_table<'var>(&'var mut self) -> LuaTable<'var, Lua<'lua>> {
-        unsafe { ffi::lua_newtable(self.lua) };
-        ConsumeRead::read_from_variable(LoadedVariable { lua: self, size: 1 }).ok().unwrap()
+    pub fn set<'a, I, V>(&'a mut self, index: I, value: V)
+                         where I: Borrow<str>, V: Push<&'a mut Lua<'lua>>
+    {
+        let index = CString::new(index.borrow()).unwrap();
+        let guard = value.push_to_lua(self);
+        unsafe { ffi::lua_setglobal(self.lua.0, index.as_ptr()); }
+        unsafe { std::mem::forget(guard) }
     }
 }
 
@@ -250,15 +235,14 @@ impl<'lua> Lua<'lua> {
 impl<'lua> Drop for Lua<'lua> {
     fn drop(&mut self) {
         if self.must_be_closed {
-            unsafe { ffi::lua_close(self.lua) }
+            unsafe { ffi::lua_close(self.lua.0) }
         }
     }
 }
 
-// TODO: crashes the compiler
 #[unsafe_destructor]
-impl<'a, L: HasLua> Drop for LoadedVariable<'a, L> {
+impl<L> Drop for PushGuard<L> where L: AsMutLua {
     fn drop(&mut self) {
-        unsafe { ffi::lua_pop(self.use_lua(), self.size as libc::c_int) }
+        unsafe { ffi::lua_pop(self.lua.as_mut_lua().0, self.size); }
     }
 }

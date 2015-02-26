@@ -1,19 +1,19 @@
 use ffi;
 use std::io::IoError;
-use {HasLua, ConsumeRead, CopyRead, LoadedVariable, LuaError};
+use {AsLua, ConsumeRead, CopyRead, LoadedVariable, LuaError};
 use LuaError::{ExecutionError, WrongType, ReadError, SyntaxError};
 
 #[unstable]
 ///
 /// Lifetime `'a` represents the lifetime of the function on the stack.
-/// Param `L` represents the stack the function has been loaded on and must be a `HasLua`.
+/// Param `L` represents the stack the function has been loaded on and must be a `AsLua`.
 pub struct LuaFunction<'a, L: 'a> {
     variable: LoadedVariable<'a, L>,
 }
 
 struct ReadData {
     reader: Box<Reader + 'static>,
-    buffer: [u8, ..128],
+    buffer: [u8 ; 128],
     triggered_error: Option<IoError>,
 }
 
@@ -41,10 +41,10 @@ extern fn reader(_: *mut ffi::lua_State, data_raw: *mut ::libc::c_void, size: *m
     data.buffer.as_ptr() as *const ::libc::c_char
 }
 
-impl<'a, L: HasLua> LuaFunction<'a, L> {
+impl<'a, L: AsLua> LuaFunction<'a, L> {
     pub fn call<V: CopyRead<LoadedVariable<'a, L>>>(&mut self) -> Result<V, LuaError> {
         // calling pcall pops the parameters and pushes output
-        let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.use_lua(), 0, 1, 0) };     // TODO:
+        let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.as_lua(), 0, 1, 0) };     // TODO:
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
@@ -61,7 +61,7 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
 
         if pcall_return_value == ffi::LUA_ERRRUN {
             let error_msg: String = CopyRead::read_from_lua(self.variable.lua, -1).expect("can't find error message at the top of the Lua stack");
-            unsafe { ffi::lua_pop(self.variable.use_lua(), 1) };
+            unsafe { ffi::lua_pop(self.variable.as_lua(), 1) };
             return Err(ExecutionError(error_msg));
         }
 
@@ -78,7 +78,7 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
         };
 
         let load_return_value = "chunk".with_c_str(|chunk|
-            unsafe { ffi::lua_load(lua.use_lua(), reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
+            unsafe { ffi::lua_load(lua.as_lua(), reader, ::std::mem::transmute(&readdata), chunk, ::std::ptr::null()) }
         );
 
         if readdata.triggered_error.is_some() {
@@ -96,7 +96,7 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
         }
 
         let error_msg: String = CopyRead::read_from_lua(lua, -1).expect("can't find error message at the top of the Lua stack");
-        unsafe { ffi::lua_pop(lua.use_lua(), 1) };
+        unsafe { ffi::lua_pop(lua.as_lua(), 1) };
 
         if load_return_value == ffi::LUA_ERRMEM {
             panic!("LUA_ERRMEM");
@@ -123,11 +123,11 @@ impl<'a, L: HasLua> LuaFunction<'a, L> {
     }
 }*/
 
-impl<'a, L: HasLua> ConsumeRead<'a, L> for LuaFunction<'a, L> {
+impl<'a, L: AsLua> ConsumeRead<'a, L> for LuaFunction<'a, L> {
     fn read_from_variable(mut var: LoadedVariable<'a, L>)
         -> Result<LuaFunction<'a, L>, LoadedVariable<'a, L>>
     {
-        if unsafe { ffi::lua_isfunction(var.use_lua(), -1) } {
+        if unsafe { ffi::lua_isfunction(var.as_lua(), -1) } {
             Ok(LuaFunction{ variable: var })
         } else {
             Err(var)
