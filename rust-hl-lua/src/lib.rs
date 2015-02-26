@@ -7,15 +7,17 @@ use std::ffi::{CStr, CString};
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-/*pub use lua_tables::LuaTable;
+/*
 pub use functions_read::LuaFunction;
 
 pub mod functions_read;
-pub mod lua_tables;
 pub mod userdata;
 */
 
+pub use lua_tables::LuaTable;
+
 pub mod any;
+pub mod lua_tables;
 
 mod functions_write;
 mod rust_tables;

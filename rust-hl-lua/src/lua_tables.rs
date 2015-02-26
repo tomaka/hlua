@@ -1,64 +1,72 @@
+use std::marker::PhantomData;
+
 use ffi;
 use LuaContext;
 
+use AsLua;
 use AsMutLua;
 
 use LuaRead;
-use PushGuard;
 
 /// 
-pub struct LuaTable<L> where L: AsMutLua {
+pub struct LuaTable<L> {
     table: L,
 }
 
-impl<'a, L> AsLua for &'a LuaTable<L> where L: AsMutLua {
+unsafe impl<L> AsLua for LuaTable<L> where L: AsLua {
     fn as_lua(&self) -> LuaContext {
         self.table.as_lua()
     }
 }
 
+unsafe impl<L> AsMutLua for LuaTable<L> where L: AsMutLua {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.table.as_mut_lua()
+    }
+}
+
 impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
-    fn lua_read(lua: L) -> Option<LuaTable<L>> {
-        if unsafe { ffi::lua_istable(var.as_mut_lua(), -1) } {
-            Ok(LuaTable { table: lua })
+    fn lua_read_at_position(mut lua: L, index: i32) -> Option<LuaTable<L>> {
+        assert!(index == -1);   // FIXME: not sure if it's working
+        if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
+            Some(LuaTable { table: lua })
         } else {
-            Err(var)
+            None
         }
     }
 }
 
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
-#[unstable]
-pub struct LuaTableIterator<'table, L: 'table> {
-    table: &'table mut LuaTable<L>,
+pub struct LuaTableIterator<'t, L: 't, K, V> {
+    table: &'t mut LuaTable<L>,
     finished: bool,     // if true, the key is not on the stack anymore
+    marker: PhantomData<(K, V)>,
 }
 
-impl<'var, 'table, L: AsLua> AsLua for LuaTableIterator<'var, 'table, L> {
-    fn as_lua(&mut self) -> *mut ffi::lua_State {
+unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V> where L: AsLua {
+    fn as_lua(&self) -> LuaContext {
         self.table.as_lua()
     }
 }
 
-impl<'var, L: AsLua> ConsumeRead<'var, L> for LuaTable<'var, L> {
-    fn read_from_variable(mut var: LoadedVariable<'var, L>)
-        -> Result<LuaTable<'var, L>, LoadedVariable<'var, L>>
-    {
-        if unsafe { ffi::lua_istable(var.as_lua(), -1) } {
-            Ok(LuaTable{ variable: var })
-        } else {
-            Err(var)
-        }
+unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V> where L: AsMutLua {
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.table.as_mut_lua()
     }
 }
 
 impl<L> LuaTable<L> where L: AsMutLua {
-    pub fn iter<'me>(&'me mut self) -> LuaTableIterator<'me, L> {
-        unsafe { ffi::lua_pushnil(self.variable.as_lua()) };
-        LuaTableIterator{table: self, finished: false}
+    pub fn iter<K, V>(&mut self) -> LuaTableIterator<L, K, V> {
+        unsafe { ffi::lua_pushnil(self.table.as_mut_lua().0) };
+
+        LuaTableIterator {
+            table: self,
+            finished: false,
+            marker: PhantomData,
+        }
     }
 
-    pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
+    /*pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
         index.push_to_lua(self);
         unsafe { ffi::lua_gettable(self.as_lua(), -2); }
         let var = LoadedVariable{lua: self, size: 1};
@@ -99,30 +107,33 @@ impl<L> LuaTable<L> where L: AsMutLua {
         // note: it would be cleaner to create another table, but cannot manage to make it compile
         self.variable.size += 1;
         self
-    }
+    }*/
 }
 
-impl<'a, 'b, L: AsLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<LuaTableIterator<'a, 'b, L>>>
-    Iterator<Option<(K, V)>> for LuaTableIterator<'a, 'b, L>
+impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
+                  where L: AsMutLua + 't,
+                        K: for<'i, 'j> LuaRead<&'i mut &'j mut LuaTableIterator<'t, L, K, V>> + 'static,
+                        V: for<'i, 'j> LuaRead<&'i mut &'j mut LuaTableIterator<'t, L, K, V>> + 'static
 {
-    fn next(&mut self)
-        -> Option<Option<(K,V)>>
-    {
+    type Item = Option<(K, V)>;
+
+    fn next(&mut self) -> Option<Option<(K,V)>> {
         if self.finished {
-            return None
+            return None;
         }
 
         // this call pushes the next key and value on the stack
-        if unsafe { ffi::lua_next(self.table.as_lua(), -2) } == 0 {
+        if unsafe { ffi::lua_next(self.table.as_mut_lua().0, -2) } == 0 {
             self.finished = true;
-            return None
+            return None;
         }
 
-        let key = CopyRead::read_from_lua(self, -2);
-        let value = CopyRead::read_from_lua(self, -1);
+        let mut me = self;
+        let key = LuaRead::lua_read_at_position(&mut me, -2);
+        let value = LuaRead::lua_read_at_position(&mut me, -1);
 
         // removing the value, leaving only the key on the top of the stack
-        unsafe { ffi::lua_pop(self.table.as_lua(), 1) };
+        unsafe { ffi::lua_pop(me.table.as_mut_lua().0, 1) };
 
         //
         if key.is_none() || value.is_none() {
@@ -134,10 +145,10 @@ impl<'a, 'b, L: AsLua, K: CopyRead<LuaTableIterator<'a, 'b, L>>, V: CopyRead<Lua
 }
 
 #[unsafe_destructor]
-impl<'a, 'b, L: AsLua> Drop for LuaTableIterator<'a, 'b, L> {
+impl<'t, L, K, V> Drop for LuaTableIterator<'t, L, K, V> where L: AsMutLua + 't {
     fn drop(&mut self) {
         if !self.finished {
-            unsafe { ffi::lua_pop(self.table.variable.as_lua(), 1) }
+            unsafe { ffi::lua_pop(self.table.table.as_mut_lua().0, 1) }
         }
     }
 }
