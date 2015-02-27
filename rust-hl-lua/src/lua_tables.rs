@@ -7,6 +7,7 @@ use LuaContext;
 use AsLua;
 use AsMutLua;
 use Push;
+use PushGuard;
 use LuaRead;
 
 /// 
@@ -89,23 +90,23 @@ impl<L> LuaTable<L> where L: AsMutLua {
         unsafe { ffi::lua_settable(me.as_mut_lua().0, -3); }
     }
 
-    /*// Obtains or create the metatable of the table
-    pub fn get_or_create_metatable(mut self) -> LuaTable<'var, L> {
-        let result = unsafe { ffi::lua_getmetatable(self.variable.as_lua(), -1) };
+    // Obtains or create the metatable of the table
+    pub fn get_or_create_metatable(mut self) -> LuaTable<PushGuard<L>> {
+        let result = unsafe { ffi::lua_getmetatable(self.table.as_mut_lua().0, -1) };
 
         if result == 0 {
             unsafe {
-                ffi::lua_newtable(self.variable.as_lua());
-                ffi::lua_setmetatable(self.variable.as_lua(), -2);
-                let r = ffi::lua_getmetatable(self.variable.as_lua(), -1);
+                ffi::lua_newtable(self.table.as_mut_lua().0);
+                ffi::lua_setmetatable(self.table.as_mut_lua().0, -2);
+                let r = ffi::lua_getmetatable(self.table.as_mut_lua().0, -1);
                 assert!(r != 0);
             }
         }
 
-        // note: it would be cleaner to create another table, but cannot manage to make it compile
-        self.variable.size += 1;
-        self
-    }*/
+        LuaTable {
+            table: PushGuard { lua: self.table, size: 1 }
+        }
+    }
 }
 
 impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
