@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::mem;
 
 use ffi;
 use LuaContext;

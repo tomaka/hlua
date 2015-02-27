@@ -93,6 +93,8 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, L>>
                            where L: AsMutLua, T: 'static
 {
+    assert!(index == -1);   // FIXME: 
+
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
 

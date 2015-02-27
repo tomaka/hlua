@@ -24,7 +24,7 @@ impl<L> Push<L> for AnyLuaValue where L: AsMutLua {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
-            AnyLuaValue::LuaArray(val) => unimplemented!(), //FIXME: val.push_to_lua(lua),
+            AnyLuaValue::LuaArray(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other")
         }
     }

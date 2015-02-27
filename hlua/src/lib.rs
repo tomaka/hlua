@@ -1,3 +1,4 @@
+#![feature(io, std_misc, core)]
 #![feature(unsafe_destructor)]
 
 extern crate "lua52-sys" as ffi;

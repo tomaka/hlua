@@ -35,7 +35,7 @@ fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     let mut tmp_lua = InsideCallback { lua: LuaContext(lua) };
 
     // trying to read the arguments
-    let arguments_count = unsafe { ffi::lua_gettop(lua) } as int;
+    let arguments_count = unsafe { ffi::lua_gettop(lua) } as i32;
     let args = match LuaRead::lua_read_at_position(&mut tmp_lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
         None => {
             let err_msg = format!("wrong parameter types for callback function");
