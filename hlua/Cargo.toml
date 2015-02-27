@@ -1,9 +1,12 @@
 [package]
 
-name = "rust-hl-lua"
+name = "hlua"
 version = "0.1.0"
 authors = [ "pierre.krieger1708@gmail.com" ]
 license = "MIT"
+
+[dependencies]
+libc = "*"
 
 [dependencies.lua52-sys]
 version = "*"

@@ -1,13 +1,14 @@
-extern crate "rust-hl-lua" as lua;
-use lua::Lua;
+extern crate hlua;
+
+use hlua::Lua;
 
 #[test]
-fn read_ints() {
+fn read_i32s() {
     let mut lua = Lua::new();
 
-    lua.set("a", 2i);
+    lua.set("a", 2);
 
-    let x: int = lua.get("a").unwrap();
+    let x: i32 = lua.get("a").unwrap();
     assert_eq!(x, 2);
 
     let y: i8 = lua.get("a").unwrap();
@@ -19,7 +20,7 @@ fn read_ints() {
     let w: i32 = lua.get("a").unwrap();
     assert_eq!(w, 2);
 
-    let a: uint = lua.get("a").unwrap();
+    let a: u32 = lua.get("a").unwrap();
     assert_eq!(a, 2);
 
     let b: u8 = lua.get("a").unwrap();
@@ -33,13 +34,13 @@ fn read_ints() {
 }
 
 #[test]
-fn write_ints() {
+fn write_i32s() {
     // TODO: 
 
     let mut lua = Lua::new();
 
-    lua.set("a", 2i);
-    let x: int = lua.get("a").unwrap();
+    lua.set("a", 2);
+    let x: i32 = lua.get("a").unwrap();
     assert_eq!(x, 2);
 }
 
@@ -85,32 +86,32 @@ fn readwrite_strings() {
     lua.set("b", "hello".to_string());
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "hello");
+    assert_eq!(x, "hello");
 
     let y: String = lua.get("b").unwrap();
-    assert_eq!(y.as_slice(), "hello");
+    assert_eq!(y, "hello");
 }
 
 #[test]
-fn int_to_string() {
+fn i32_to_string() {
     let mut lua = Lua::new();
 
-    lua.set("a", 2i);
+    lua.set("a", 2);
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "2");
+    assert_eq!(x, "2");
 }
 
 #[test]
-fn string_to_int() {
+fn string_to_i32() {
     let mut lua = Lua::new();
 
     lua.set("a", "2");
     lua.set("b", "aaa");
 
-    let x: int = lua.get("a").unwrap();
+    let x: i32 = lua.get("a").unwrap();
     assert_eq!(x, 2);
 
-    let y: Option<int> = lua.get("b");
+    let y: Option<i32> = lua.get("b");
     assert!(y.is_none());
 }

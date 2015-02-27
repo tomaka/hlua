@@ -1,19 +1,9 @@
 language: rust
 
-env:
-  global:
-    - secure: l3icJ2F1c7Gn0zqUyeEXQjLHdoZNjtLO3BaAGWpBI/ctmNWxgoLl1rZB6N/0pm8Vdnt5VJ4YnVxk+BkC3WsZ9kIwvTtZn/lNtZJlECPPhItylSoU8m3NnLXCh5KLBzzb/ygx81Lu/HtianeyKNResHvjwc1QMHolheGP+hrLTT8=
-
 install:
   - sudo apt-get install liblua5.2-dev
 
 script:
-  - cd rust-hl-lua
-  - cargo test
-  - cd ../rust-hl-lua-modules
-  - cargo test
-  - cd ..
-  - rustdoc rust-hl-lua/src/lib.rs
-
-after_script:
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+  - cargo test --manifest-path lua52-sys/Cargo.toml
+  - cargo test --manifest-path hlua/Cargo.toml
+  #- cargo test --manifest-path rust-hl-lua-modules/Cargo.toml

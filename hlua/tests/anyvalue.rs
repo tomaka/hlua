@@ -1,6 +1,7 @@
-extern crate "rust-hl-lua" as lua;
-use lua::Lua;
-use lua::any::AnyLuaValue;
+extern crate hlua;
+
+use hlua::Lua;
+use hlua::any::AnyLuaValue;
 
 #[test]
 fn read_numbers() {
@@ -54,7 +55,7 @@ fn push_numbers() {
 
     lua.set("a", AnyLuaValue::LuaNumber(3.0));
 
-    let x: int = lua.get("a").unwrap();
+    let x: i32 = lua.get("a").unwrap();
     assert_eq!(x, 3);
 }
 
@@ -65,7 +66,7 @@ fn push_strings() {
     lua.set("a", AnyLuaValue::LuaString("hello".to_string()));
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "hello");
+    assert_eq!(x, "hello");
 }
 
 #[test]
