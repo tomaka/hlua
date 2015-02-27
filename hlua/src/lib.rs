@@ -237,7 +237,7 @@ impl<'lua> Lua<'lua> {
     pub fn execute_from_reader<'a, T, R>(&'a mut self, code: R) -> Result<T, LuaError>
             where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> +
                      for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>,
-                  R: Read + 'static
+                  R: Read
     {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
