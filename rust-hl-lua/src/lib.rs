@@ -8,17 +8,13 @@ use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-/*
-
-pub mod userdata;
-*/
-
 pub use functions_read::LuaFunction;
 pub use lua_tables::LuaTable;
 
 pub mod any;
 pub mod functions_read;
 pub mod lua_tables;
+//pub mod userdata;
 
 mod functions_write;
 mod rust_tables;

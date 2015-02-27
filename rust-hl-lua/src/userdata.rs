@@ -34,7 +34,6 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> ::libc::c_int {
 ///
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
-#[experimental]
 pub fn push_userdata<L: AsLua, T: 'static + Send, F>(data: T, lua: &mut L,
     metatable: F) -> uint where F: FnMut(LuaTable<L>)
 {
