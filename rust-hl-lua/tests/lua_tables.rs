@@ -1,5 +1,7 @@
 extern crate "rust-hl-lua" as lua;
+
 use lua::Lua;
+use lua::LuaTable;
 
 #[test]
 fn iterable() {
@@ -7,8 +9,7 @@ fn iterable() {
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-    let mut table = lua.load_table("a").unwrap();
-    let mut counter = 0u;
+    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap(); let mut counter = 0u;
 
     for (key, value) in table.iter().filter_map(|e| e) {
         let _: uint = key;
@@ -26,7 +27,7 @@ fn iterable_multipletimes() {
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-    let mut table = lua.load_table("a").unwrap();
+    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
     for _ in range(0u, 10) {
         let table_content: Vec<Option<(uint, uint)>> = table.iter().collect();
@@ -39,7 +40,7 @@ fn get_set() {
     let mut lua = Lua::new();
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
-    let mut table = lua.load_table("a").unwrap();
+    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
     let x: int = table.get(2i).unwrap();
     assert_eq!(x, 8);
@@ -57,13 +58,13 @@ fn table_over_table() {
     let mut lua = Lua::new();
 
     let _:() = lua.execute("a = { 9, { 8, 7 }, 6 }").unwrap();
-    let mut table = lua.load_table("a").unwrap();
+    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
     let x: int = table.get(1i).unwrap();
     assert_eq!(x, 9);
 
     {
-        let mut subtable = table.load_table(2i).unwrap();
+        let mut subtable = table.get::<LuaTable<_>, _>(2i).unwrap();
 
         let y: int = subtable.get(1i).unwrap();
         assert_eq!(y, 8);
@@ -83,7 +84,7 @@ fn metatable() {
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
     {
-        let table = lua.load_table("a").unwrap();
+        let table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
         let mut metatable = table.get_or_create_metatable();
         fn handler() -> int { 5 };

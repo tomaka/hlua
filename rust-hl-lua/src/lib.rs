@@ -215,7 +215,7 @@ impl<'lua> Lua<'lua> {
     }
 
     /// Reads the value of a global variable by copying it.
-    pub fn get<'l, I, V>(&'l mut self, index: I) -> Option<V>
+    pub fn get<'l, V, I>(&'l mut self, index: I) -> Option<V>
                          where I: Borrow<str>, V: LuaRead<&'l mut Lua<'lua>>
     {
         let index = CString::new(index.borrow()).unwrap();
