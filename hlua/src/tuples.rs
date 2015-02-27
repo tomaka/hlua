@@ -41,25 +41,33 @@ macro_rules! tuple_impl {
             }
         }
 
-        /*// TODO: what if T or U are also tuples? indices won't match
+        // TODO: what if T or U are also tuples? indices won't match
         #[allow(unused_assignments)]
-        impl<LU: AsLua, $($ty: CopyRead<LU>),+> CopyRead<LU> for ($($ty),+) {
-            fn read_from_lua(lua: &mut LU, index: i32) -> Option<($($ty),+)> {
-
+        #[allow(non_snake_case)]
+        impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+> LuaRead<LU> for ($first, $($other),+) where LU: AsLua {
+            fn lua_read_at_position(mut lua: LU, index: i32) -> Option<($first, $($other),+)> {
                 let mut i = index;
+
+                let $first: Option<$first> = LuaRead::lua_read_at_position(&mut lua, i);
+                i += 1;
+
                 $(
-                    let $nb: Option<$ty> = CopyRead::read_from_lua(lua, i);
+                    let $other: Option<$other> = LuaRead::lua_read_at_position(&mut lua, i);
                     i += 1;
                 )+
 
-                if $($nb.is_none())||+ {
+                if $first.is_none() {
                     return None;
                 }
 
-                Some(($($nb.unwrap()),+))
+                if $($other.is_none())||+ {
+                    return None;
+                }
+
+                Some(($first.unwrap(), $($other.unwrap()),+))
 
             }
-        }*/
+        }
 
         tuple_impl!($($other),+);
     );
