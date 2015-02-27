@@ -53,6 +53,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
     {
         // calling pcall pops the parameters and pushes output
         let (pcall_return_value, pushed_value) = unsafe {
+            ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);   // lua_pcall pops the function, so we have to make a copy of it
             let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO:
             (pcall_return_value, PushGuard { lua: &mut self.variable, size: 1 })
         };
