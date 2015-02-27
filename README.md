@@ -9,8 +9,8 @@ This library is a high-level binding for Lua 5.2. You don't have access to the L
 Add this to the `Cargo.toml` file of your project
 
 ```toml
-[dependencies.hlua]
-git = "https://github.com/tomaka/hlua"
+[dependencies]
+hlua = "0.1"
 ```
 
 In the future, this library will directly include the Lua C library if cargo allows this.
@@ -28,7 +28,7 @@ The `Lua` struct is the main element of this library. It represents a context in
 let mut lua = Lua::new();     // mutable is mandatory
 ```
 
-[You can check the documentation here](http://rust-ci.org/tomaka/hlua/doc/hlua/).
+**[You can check the documentation here](http://tomaka.github.io/hlua/hlua/index.html)**.
 
 #### Reading and writing variables
 
