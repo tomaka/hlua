@@ -38,6 +38,14 @@ pub struct PushGuard<L> where L: AsMutLua {
     size: i32,
 }
 
+impl<L> PushGuard<L> where L: AsMutLua {
+    fn forget(mut self) -> i32 {
+        let size = self.size;
+        self.size = 0;
+        size
+    }
+}
+
 /// Trait for objects that have access to a Lua context.
 pub unsafe trait AsLua {
     fn as_lua(&self) -> LuaContext;
@@ -246,6 +254,8 @@ impl<'lua> Drop for Lua<'lua> {
 #[unsafe_destructor]
 impl<L> Drop for PushGuard<L> where L: AsMutLua {
     fn drop(&mut self) {
-        unsafe { ffi::lua_pop(self.lua.as_mut_lua().0, self.size); }
+        if self.size != 0 {
+            unsafe { ffi::lua_pop(self.lua.as_mut_lua().0, self.size); }
+        }
     }
 }

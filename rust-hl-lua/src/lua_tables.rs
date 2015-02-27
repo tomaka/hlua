@@ -1,11 +1,12 @@
 use std::marker::PhantomData;
+use std::mem;
 
 use ffi;
 use LuaContext;
 
 use AsLua;
 use AsMutLua;
-
+use Push;
 use LuaRead;
 
 /// 
@@ -66,32 +67,29 @@ impl<L> LuaTable<L> where L: AsMutLua {
         }
     }
 
-    /*pub fn load<'a, R: ConsumeRead<'a, LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<R> {
-        index.push_to_lua(self);
-        unsafe { ffi::lua_gettable(self.as_lua(), -2); }
-        let var = LoadedVariable{lua: self, size: 1};
-        ConsumeRead::read_from_variable(var).ok()
-    }
+    /*pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R> where R: LuaRead<&'a mut LuaTable<L>>, I: Push<&'a mut LuaTable<L>> {
+        {
+            let guard = index.push_to_lua(self);
+            unsafe { mem::forget(guard) };
+        }
 
-    pub fn load_table<'a, I: Index<LuaTable<'var, L>>>(&'a mut self, index: I) -> Option<LuaTable<'a, LuaTable<'var, L>>> {
-        self.load(index)
-    }
-
-    pub fn get<R: CopyRead<LuaTable<'var, L>>, I: Index<LuaTable<'var, L>>>(&mut self, index: I) -> Option<R> {
-        index.push_to_lua(self);
-        unsafe { ffi::lua_gettable(self.as_lua(), -2); }
-        let value = CopyRead::read_from_lua(self, -1);
-        unsafe { ffi::lua_pop(self.as_lua(), 1); }
+        unsafe { ffi::lua_gettable(self.as_mut_lua().0, -2); }
+        let value = LuaRead::lua_read(self);
+        unsafe { ffi::lua_pop(self.as_mut_lua().0, 1); }
         value
+    }*/
+
+    pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
+                         where I: for<'a> Push<&'a mut &'s mut LuaTable<L>>,
+                               V: for<'a> Push<&'a mut &'s mut LuaTable<L>>
+    {
+        let mut me = self;
+        index.push_to_lua(&mut me).forget();
+        value.push_to_lua(&mut me).forget();
+        unsafe { ffi::lua_settable(me.as_mut_lua().0, -3); }
     }
 
-    pub fn set<I: Index<LuaTable<'var, L>>, V: Push<LuaTable<'var, L>>>(&mut self, index: I, value: V) {
-        index.push_to_lua(self);
-        value.push_to_lua(self);
-        unsafe { ffi::lua_settable(self.as_lua(), -3); }
-    }
-
-    // Obtains or create the metatable of the table
+    /*// Obtains or create the metatable of the table
     pub fn get_or_create_metatable(mut self) -> LuaTable<'var, L> {
         let result = unsafe { ffi::lua_getmetatable(self.variable.as_lua(), -1) };
 
