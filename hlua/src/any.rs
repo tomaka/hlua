@@ -31,12 +31,27 @@ impl<L> Push<L> for AnyLuaValue where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for AnyLuaValue where L: AsLua {
-    fn lua_read_at_position(lua: L, index: i32) -> Option<AnyLuaValue> {
-        None
-            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaNumber(v)))
-            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaBoolean(v)))
-            .or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| AnyLuaValue::LuaString(v)))
-            //.or_else(|| LuaRead::lua_read_at_position(&lua, index).map(|v| LuaArray(v)))
-            .or_else(|| Some(AnyLuaValue::LuaOther))
+    fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {
+        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
+            Err(lua) => lua
+        };
+
+        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaBoolean(v)),
+            Err(lua) => lua
+        };
+
+        let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
+            Err(lua) => lua
+        };
+
+        /*let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaArray(v)),
+            Err(lua) => lua
+        };*/
+
+        Ok(AnyLuaValue::LuaOther)
     }
 }
