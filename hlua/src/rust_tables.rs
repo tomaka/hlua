@@ -6,6 +6,7 @@ use AsMutLua;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::iter;
 use std::mem;
 
 fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
@@ -14,20 +15,14 @@ fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
     // creating empty table
     unsafe { ffi::lua_newtable(lua.as_mut_lua().0) };
 
-    for (index, elem) in iterator.enumerate() {
-        let size = {
-            let pushed_cnt = elem.push_to_lua(&mut lua);
-
-            let size = pushed_cnt.size;
-            unsafe { mem::forget(pushed_cnt) };
-            size
-        };
+    for (elem, index) in iterator.zip(iter::count(1, 1)) {
+        let size = elem.push_to_lua(&mut lua).forget();
 
         match size {
             0 => continue,
             1 => {
                 let index = index as u32;
-                index.push_to_lua(&mut lua);
+                index.push_to_lua(&mut lua).forget();
                 unsafe { ffi::lua_insert(lua.as_mut_lua().0, -2) }
                 unsafe { ffi::lua_settable(lua.as_mut_lua().0, -3) }
             },
@@ -48,12 +43,7 @@ fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
     unsafe { ffi::lua_createtable(lua.as_mut_lua().0, 0, nrec as i32) };
 
     for elem in iterator {
-        let size = {
-            let pushed_cnt = elem.push_to_lua(&mut lua);
-            let size = pushed_cnt.size;
-            unsafe { mem::forget(pushed_cnt) };
-            size
-        };
+        let size = elem.push_to_lua(&mut lua).forget();
 
         match size {
             0 => continue,
