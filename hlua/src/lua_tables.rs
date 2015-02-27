@@ -68,15 +68,12 @@ impl<L> LuaTable<L> where L: AsMutLua {
         }
     }
 
-    pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R> where R: LuaRead<&'a mut LuaTable<L>>, I: Push<&'a mut LuaTable<L>> {
-        {
-            let guard = index.push_to_lua(self);
-            unsafe { mem::forget(guard) };
-        }
-
-        unsafe { ffi::lua_gettable(self.as_mut_lua().0, -2); }
-        let value = LuaRead::lua_read(self);
-        unsafe { ffi::lua_pop(self.as_mut_lua().0, 1); }
+    pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R> where R: for<'b> LuaRead<&'b mut &'a mut LuaTable<L>>, I: for<'b> Push<&'b mut &'a mut LuaTable<L>> {
+        let mut me = self;
+        index.push_to_lua(&mut me).forget();
+        unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
+        let value = LuaRead::lua_read(&mut me);
+        unsafe { ffi::lua_pop(me.as_mut_lua().0, 1); }
         value
     }
 
