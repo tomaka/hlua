@@ -86,10 +86,10 @@ fn readwrite_strings() {
     lua.set("b", "hello".to_string());
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "hello");
+    assert_eq!(x, "hello");
 
     let y: String = lua.get("b").unwrap();
-    assert_eq!(y.as_slice(), "hello");
+    assert_eq!(y, "hello");
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn i32_to_string() {
     lua.set("a", 2);
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "2");
+    assert_eq!(x, "2");
 }
 
 #[test]

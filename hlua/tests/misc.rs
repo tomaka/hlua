@@ -7,5 +7,6 @@ use std::fs::File;
 #[should_fail]
 fn readerrors() {
     let mut lua = Lua::new();
-    let _res: () = lua.execute_from_reader(File::open(&Path::new("/path/to/unexisting/file"))).unwrap();
+    let file = File::open(&Path::new("/path/to/unexisting/file")).unwrap();
+    let _res: () = lua.execute_from_reader(file).unwrap();
 }

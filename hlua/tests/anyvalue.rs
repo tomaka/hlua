@@ -66,7 +66,7 @@ fn push_strings() {
     lua.set("a", AnyLuaValue::LuaString("hello".to_string()));
 
     let x: String = lua.get("a").unwrap();
-    assert_eq!(x.as_slice(), "hello");
+    assert_eq!(x, "hello");
 }
 
 #[test]
