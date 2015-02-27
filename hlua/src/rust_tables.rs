@@ -66,13 +66,18 @@ impl<'a, L, T> Push<L> for &'a [T] where L: AsMutLua, T: Clone + for<'b> Push<&'
     }
 }
 
-impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua, K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash, V: for<'a, 'b> Push<&'a mut &'b mut L> {
+impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua,
+                                              K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash,
+                                              V: for<'a, 'b> Push<&'a mut &'b mut L>
+{
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_rec_iter(lua, self.into_iter())
     }
 }
 
-impl<L, K> Push<L> for HashSet<K> where L: AsMutLua, K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash {
+impl<L, K> Push<L> for HashSet<K> where L: AsMutLua,
+                                        K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash
+{
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         use std::iter;
         push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))
