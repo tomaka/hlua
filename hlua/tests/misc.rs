@@ -1,7 +1,7 @@
 extern crate "hlua" as lua;
 
 use lua::Lua;
-use std::io::fs::File;
+use std::fs::File;
 
 #[test]
 #[should_fail]

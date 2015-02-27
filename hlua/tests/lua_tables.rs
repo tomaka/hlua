@@ -9,7 +9,8 @@ fn iterable() {
 
     let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
 
-    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap(); let mut counter = 0u;
+    let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
+    let mut counter = 0;
 
     for (key, value) in table.iter().filter_map(|e| e) {
         let _: u32 = key;
@@ -29,9 +30,9 @@ fn iterable_multipletimes() {
 
     let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
-    for _ in range(0u, 10) {
+    for _ in (0 .. 10) {
         let table_content: Vec<Option<(u32, u32)>> = table.iter().collect();
-        assert_eq!(table_content, vec!( Some((1,9)), Some((2,8)), Some((3,7)) ));
+        assert_eq!(table_content, vec![ Some((1,9)), Some((2,8)), Some((3,7)) ]);
     }
 }
 

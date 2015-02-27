@@ -75,7 +75,7 @@ fn closures() {
 
 #[test]
 fn closures_lifetime() {
-    fn t(f: |i32,i32|->i32) {
+    fn t<F>(f: F) where F: Fn(i32, i32) -> i32 {
         let mut lua = lua::Lua::new();
 
         lua.set("add", f);
@@ -84,18 +84,18 @@ fn closures_lifetime() {
         assert_eq!(val1, 10);
     }
 
-    t(|a,b| a+b);
+    t(|a, b| a + b);
 }
 
 #[test]
 fn closures_extern_access() {
-    let mut a = 5i;
+    let mut a = 5;
 
     {
         let mut lua = lua::Lua::new();
 
         lua.set("inc", || a += 1);
-        for _ in range(0i, 15) {
+        for _ in (0 .. 15) {
             lua.execute::<()>("inc()").unwrap();
         }
     }
