@@ -4,19 +4,20 @@ extern crate "lua52-sys" as ffi;
 extern crate libc;
 
 use std::ffi::{CStr, CString};
+use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
 /*
-pub use functions_read::LuaFunction;
 
-pub mod functions_read;
 pub mod userdata;
 */
 
+pub use functions_read::LuaFunction;
 pub use lua_tables::LuaTable;
 
 pub mod any;
+pub mod functions_read;
 pub mod lua_tables;
 
 mod functions_write;
@@ -135,8 +136,8 @@ pub enum LuaError {
     /// (for example not enough parameters for a function call).
     ExecutionError(String),
 
-    /*/// There was an IoError while reading the source code to execute.
-    ReadError(IoError),*/
+    /// There was an IoError while reading the source code to execute.
+    ReadError(IoError),
 
     /// The call to `execute` has requested the wrong type of data.
     WrongType,
