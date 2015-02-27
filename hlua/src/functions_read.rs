@@ -52,8 +52,10 @@ impl<L> LuaFunction<L> where L: AsMutLua {
                             for<'a> LuaRead<&'a mut L>
     {
         // calling pcall pops the parameters and pushes output
-        let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0) };     // TODO:
-        let pushed_value = PushGuard { lua: &mut self.variable, size: 1 };
+        let (pcall_return_value, pushed_value) = unsafe {
+            let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO:
+            (pcall_return_value, PushGuard { lua: &mut self.variable, size: 1 })
+        };
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
@@ -87,9 +89,12 @@ impl<L> LuaFunction<L> where L: AsMutLua {
             triggered_error: None,
         };
 
-
-        let chunk_name = CString::new("chunk").unwrap();
-        let load_return_value = unsafe { ffi::lua_load(lua.as_mut_lua().0, reader, mem::transmute(&readdata), chunk_name.as_ptr(), ptr::null()) };
+        let (load_return_value, pushed_value) = unsafe {
+            let chunk_name = CString::new("chunk").unwrap();
+            let code = ffi::lua_load(lua.as_mut_lua().0, reader, mem::transmute(&readdata),
+                                     chunk_name.as_ptr(), ptr::null());
+            (code, PushGuard { lua: lua, size: 1 })
+        };
 
         if readdata.triggered_error.is_some() {
             let error = readdata.triggered_error.unwrap();
@@ -98,19 +103,18 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 
         if load_return_value == 0 {
             return Ok(LuaFunction{
-                variable: PushGuard {
-                    lua: lua,
-                    size: 1
-                }
+                variable: pushed_value,
             });
         }
 
-        let error_msg: String = LuaRead::lua_read(&mut lua).expect("can't find error message at the top of the Lua stack");
-        unsafe { ffi::lua_pop(lua.as_mut_lua().0, 1) };
+        let error_msg: String = LuaRead::lua_read(pushed_value).expect("can't find error message \
+                                                                        at the top of the Lua \
+                                                                        stack");
 
         if load_return_value == ffi::LUA_ERRMEM {
             panic!("LUA_ERRMEM");
         }
+
         if load_return_value == ffi::LUA_ERRSYNTAX {
             return Err(LuaError::SyntaxError(error_msg));
         }
