@@ -244,9 +244,8 @@ impl<'lua> Lua<'lua> {
                          where I: Borrow<str>, V: Push<&'a mut Lua<'lua>>
     {
         let index = CString::new(index.borrow()).unwrap();
-        let guard = value.push_to_lua(self);
+        let guard = value.push_to_lua(self).forget();
         unsafe { ffi::lua_setglobal(self.lua.0, index.as_ptr()); }
-        unsafe { std::mem::forget(guard) }
     }
 }
 

@@ -60,13 +60,13 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
         ffi::lua_newtable(lua.as_mut_lua().0);
 
         // index "__typeid" corresponds to the hash of the TypeId of T
-        "__typeid".push_to_lua(&mut lua);
-        typeid.push_to_lua(&mut lua);
+        "__typeid".push_to_lua(&mut lua).forget();
+        typeid.push_to_lua(&mut lua).forget();
         ffi::lua_settable(lua.as_mut_lua().0, -3);
 
         // index "__gc" call the object's destructor
         {
-            "__gc".push_to_lua(&mut lua);
+            "__gc".push_to_lua(&mut lua).forget();
 
             // pushing destructor_impl as a lightuserdata
             let destructor_impl: fn(*mut ffi::lua_State) -> libc::c_int = destructor_impl::<T>;
@@ -107,7 +107,7 @@ pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, 
             return None;
         }
 
-        "__typeid".push_to_lua(&mut lua);
+        "__typeid".push_to_lua(&mut lua).forget();
         ffi::lua_gettable(lua.as_lua().0, -2);
         if LuaRead::lua_read(&mut lua) != Some(expected_typeid) {
             return None;

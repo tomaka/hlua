@@ -30,21 +30,12 @@ macro_rules! tuple_impl {
             fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
                 match self {
                     ($first, $($other),+) => {
-                        let mut total = 0;
-
-                        {
-                            let guard = $first.push_to_lua(&mut lua);
-                            total += guard.size;
-                            unsafe { mem::forget(guard) };
-                        }
+                        let mut total = $first.push_to_lua(&mut lua).forget();
 
                         $(
-                            {
-                                let guard = $other.push_to_lua(&mut lua);
-                                total += guard.size;
-                                unsafe { mem::forget(guard) };
-                            }
+                            total += $other.push_to_lua(&mut lua).forget();
                         )+
+
                         PushGuard { lua: lua, size: total }
                     }
                 }

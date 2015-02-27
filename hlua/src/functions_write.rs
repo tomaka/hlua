@@ -53,7 +53,7 @@ fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     let args = match LuaRead::lua_read_at_position(&mut tmp_lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
         None => {
             let err_msg = format!("wrong parameter types for callback function");
-            err_msg.push_to_lua(&mut tmp_lua);
+            err_msg.push_to_lua(&mut tmp_lua).forget();
             unsafe { ffi::lua_error(lua); }
             unreachable!()
         },
@@ -130,7 +130,7 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
             Ok(val) => val.push_to_lua(lua),
             Err(val) => {
                 let msg = format!("{:?}", val);
-                msg.push_to_lua(&mut lua);
+                msg.push_to_lua(&mut lua).forget();
                 unsafe { ffi::lua_error(lua.as_mut_lua().0); }
                 unreachable!()
             }
