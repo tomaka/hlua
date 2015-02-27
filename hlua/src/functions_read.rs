@@ -20,16 +20,17 @@ pub struct LuaFunction<L> {
     variable: L
 }
 
-struct ReadData {
-    reader: Box<Read + 'static>,
+struct ReadData<R> {
+    reader: R,
     buffer: [u8 ; 128],
     triggered_error: Option<IoError>,
 }
 
-extern fn reader(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut libc::size_t)
-                 -> *const libc::c_char
+extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut libc::size_t)
+                    -> *const libc::c_char
+                    where R: Read
 {
-    let data: &mut ReadData = unsafe { mem::transmute(data_raw) };
+    let data: &mut ReadData<R> = unsafe { mem::transmute(data_raw) };
 
     if data.triggered_error.is_some() {
         unsafe { (*size) = 0 }
@@ -87,17 +88,17 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 
     /// Builds a new `LuaFunction` from the code of a reader.
     pub fn load_from_reader<R>(mut lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
-                               where R: Read + 'static
+                               where R: Read
     {
         let readdata = ReadData {
-            reader: Box::new(code),
+            reader: code,
             buffer: unsafe { ::std::mem::uninitialized() },
             triggered_error: None,
         };
 
         let (load_return_value, pushed_value) = unsafe {
             let chunk_name = CString::new("chunk").unwrap();
-            let code = ffi::lua_load(lua.as_mut_lua().0, reader, mem::transmute(&readdata),
+            let code = ffi::lua_load(lua.as_mut_lua().0, reader::<R>, mem::transmute(&readdata),
                                      chunk_name.as_ptr(), ptr::null());
             (code, PushGuard { lua: lua, size: 1 })
         };
