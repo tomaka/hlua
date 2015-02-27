@@ -1,4 +1,4 @@
-extern crate "rust-hl-lua" as lua;
+extern crate "hlua" as lua;
 use lua::Lua;
 use lua::any::AnyLuaValue;
 

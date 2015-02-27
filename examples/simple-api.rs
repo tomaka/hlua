@@ -1,5 +1,6 @@
-extern crate lua = "rust-hl-lua";
-use lua::Lua;
+extern crate hlua;
+
+use hlua::Lua;
 
 fn main() {
     let mut lua = Lua::new();

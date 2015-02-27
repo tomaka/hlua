@@ -1,4 +1,4 @@
-extern crate "rust-hl-lua" as lua;
+extern crate "hlua" as lua;
 extern crate test;
 use lua::{Lua, LuaTable};
 
