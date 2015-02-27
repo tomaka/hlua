@@ -9,9 +9,9 @@ fn readwrite() {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L: lua::AsLua> lua::CopyRead<L> for Foo {
-        fn read_from_lua(lua: &mut L, index: i32) -> Option<Foo> {
-            lua::userdata::read_copy_userdata(lua, index)
+    impl<L> lua::LuaRead<L> for Foo where L: lua::AsMutLua {
+        fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
+            lua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
 
@@ -62,9 +62,9 @@ fn type_check() {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L: lua::AsLua> lua::CopyRead<L> for Foo {
-        fn read_from_lua(lua: &mut L, index: i32) -> Option<Foo> {
-            lua::userdata::read_copy_userdata(lua, index)
+    impl<L> lua::LuaRead<L> for Foo where L: lua::AsMutLua {
+        fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
+            lua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
 
@@ -75,9 +75,9 @@ fn type_check() {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L: lua::AsLua> lua::CopyRead<L> for Bar {
-        fn read_from_lua(lua: &mut L, index: i32) -> Option<Bar> {
-            lua::userdata::read_copy_userdata(lua, index)
+    impl<L> lua::LuaRead<L> for Bar where L: lua::AsMutLua {
+        fn lua_read_at_position(lua: L, index: i32) -> Option<Bar> {
+            lua::userdata::read_userdata::<Bar, _>(lua, index).map(|d| d.clone())
         }
     }
 

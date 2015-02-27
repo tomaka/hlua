@@ -90,8 +90,8 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
     PushGuard { lua: lua, size: 1 }
 }
 
-pub fn read_consume_userdata<L, T>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, L>>
-                                   where L: AsMutLua, T: 'static
+pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, L>>
+                           where L: AsMutLua, T: 'static
 {
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
