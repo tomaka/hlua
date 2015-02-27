@@ -47,13 +47,17 @@ extern fn reader(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut
 }
 
 impl<L> LuaFunction<L> where L: AsMutLua {
-    pub fn call<V>(&mut self) -> Result<V, LuaError> where V: for<'a> LuaRead<&'a mut L> {
+    pub fn call<V>(&mut self) -> Result<V, LuaError>
+                   where V: for<'a> LuaRead<PushGuard<&'a mut L>> +
+                            for<'a> LuaRead<&'a mut L>
+    {
         // calling pcall pops the parameters and pushes output
         let pcall_return_value = unsafe { ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0) };     // TODO:
+        let pushed_value = PushGuard { lua: &mut self.variable, size: 1 };
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
-            return match LuaRead::lua_read(&mut self.variable) {
+            return match LuaRead::lua_read(pushed_value) {
                 None => Err(LuaError::WrongType),
                 Some(x) => Ok(x)
             };
@@ -65,8 +69,9 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         }
 
         if pcall_return_value == ffi::LUA_ERRRUN {
-            let error_msg: String = LuaRead::lua_read(&mut self.variable).expect("can't find error message at the top of the Lua stack");
-            unsafe { ffi::lua_pop(self.variable.as_mut_lua().0, 1) };
+            let error_msg: String = LuaRead::lua_read(pushed_value).expect("can't find error \
+                                                                            message at the top of \
+                                                                            the Lua stack");
             return Err(LuaError::ExecutionError(error_msg));
         }
 

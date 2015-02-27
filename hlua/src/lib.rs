@@ -214,13 +214,18 @@ impl<'lua> Lua<'lua> {
     }
 
     /// Executes some Lua code on the context.
-    pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError> where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> {
+    pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError>
+        where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> +
+                 for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
+    {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
-    pub fn execute_from_reader<'a, T, R: Read + 'static>(&'a mut self, code: R) -> Result<T, LuaError> where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> {
+    pub fn execute_from_reader<'a, T, R: Read + 'static>(&'a mut self, code: R) -> Result<T, LuaError>
+            where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> + for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
+        {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }

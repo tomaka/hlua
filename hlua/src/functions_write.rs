@@ -38,7 +38,7 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 // this function is called when Lua wants to call one of our functions
 fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
                      where T: FnMut<P, Output=R>,
-                           P: for<'p> LuaRead<&'p mut InsideCallback>,
+                           P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
                            R: for<'p> Push<&'p mut InsideCallback>
 {
     // loading the object that we want to call from the Lua context
@@ -63,13 +63,7 @@ fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     let ret_value = data.call_mut(args);
 
     // pushing back the result of the function on the stack
-    let nb = {
-        let guard = ret_value.push_to_lua(&mut tmp_lua);
-        let nb = guard.size;
-        unsafe { mem::forget(guard) };
-        nb
-    };
-
+    let nb = ret_value.push_to_lua(&mut tmp_lua).forget();
     nb as libc::c_int
 }
 
