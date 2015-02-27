@@ -1,7 +1,7 @@
 extern crate "rust-hl-lua" as lua;
 
 use lua::Lua;
-use std::io::File;
+use std::io::fs::File;
 
 #[test]
 #[should_fail]
