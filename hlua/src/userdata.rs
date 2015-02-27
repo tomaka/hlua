@@ -1,4 +1,5 @@
 use std::any::TypeId;
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::mem;
 use std::ptr;
@@ -88,53 +89,56 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 
     PushGuard { lua: lua, size: 1 }
 }
-/*
-pub fn read_consume_userdata<'a, L: AsLua, T: 'static>(mut var: LoadedVariable<'a, L>)
-    -> Result<UserdataOnStack<'a, L, T>, LoadedVariable<'a, L>>
+
+pub fn read_consume_userdata<L, T>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, L>>
+                                   where L: AsMutLua, T: 'static
 {
     unsafe {
-        let expected_typeid = format!("{}", TypeId::of::<T>());
+        let expected_typeid = format!("{:?}", TypeId::of::<T>());
 
-        let data_ptr = ffi::lua_touserdata(var.as_lua(), -1);
+        let data_ptr = ffi::lua_touserdata(lua.as_lua().0, -1);
         if data_ptr.is_null() {
-            return Err(var);
+            return None;
         }
 
-        if ffi::lua_getmetatable(var.as_lua(), -1) == 0 {
-            return Err(var);
+        if ffi::lua_getmetatable(lua.as_lua().0, -1) == 0 {
+            return None;
         }
 
-        "__typeid".push_to_lua(&mut var);
-        ffi::lua_gettable(var.as_lua(), -2);
-        if CopyRead::read_from_lua(&mut var, -1) != Some(expected_typeid) {
-            return Err(var);
+        "__typeid".push_to_lua(&mut lua);
+        ffi::lua_gettable(lua.as_lua().0, -2);
+        if LuaRead::lua_read(&mut lua) != Some(expected_typeid) {
+            return None;
         }
-        ffi::lua_pop(var.as_lua(), -2);
+        ffi::lua_pop(lua.as_lua().0, -2);
 
-        Ok(UserdataOnStack { variable: var })
+        Some(UserdataOnStack {
+            variable: lua,
+            marker: PhantomData,
+        })
     }
 }
 
-pub struct UserdataOnStack<'a, L: 'a, T> {
-    variable: LoadedVariable<'a, L>,
+pub struct UserdataOnStack<T, L> {
+    variable: L,
+    marker: PhantomData<T>,
 }
 
-impl<'a, L: AsLua, T> Deref<T> for UserdataOnStack<'a, L, T> {
+impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static {
+    type Target = T;
+
     fn deref(&self) -> &T {
-        use std::mem;
-        let me: &mut UserdataOnStack<L, T> = unsafe { mem::transmute(self) };
-        let data = unsafe { ffi::lua_touserdata(me.variable.as_lua(), -1) };
+        let me: &mut UserdataOnStack<T, L> = unsafe { mem::transmute(self) };       // FIXME: 
+        let data = unsafe { ffi::lua_touserdata(me.variable.as_mut_lua().0, -1) };
         let data: &T = unsafe { mem::transmute(data) };
         data
     }
 }
 
-impl<'a, L: AsLua, T> DerefMut<T> for UserdataOnStack<'a, L, T> {
+impl<T, L> DerefMut for UserdataOnStack<T, L> where L: AsMutLua, T: 'static {
     fn deref_mut(&mut self) -> &mut T {
-        use std::mem;
-        let data = unsafe { ffi::lua_touserdata(self.variable.as_lua(), -1) };
+        let data = unsafe { ffi::lua_touserdata(self.variable.as_mut_lua().0, -1) };
         let data: &mut T = unsafe { mem::transmute(data) };
         data
     }
 }
-*/
