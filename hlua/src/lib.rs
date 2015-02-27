@@ -1,4 +1,5 @@
 #![feature(io, std_misc, core)]
+#![feature(unboxed_closures)]
 #![feature(unsafe_destructor)]
 
 extern crate "lua52-sys" as ffi;
@@ -11,6 +12,7 @@ use std::borrow::Borrow;
 use std::marker::PhantomData;
 
 pub use functions_read::LuaFunction;
+pub use functions_write::function;
 pub use lua_tables::LuaTable;
 
 pub mod any;

@@ -95,10 +95,10 @@ fn metatables() {
     struct Foo;
     impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |table| {
-                table.set("__index".to_string(), vec!(
-                    ("test".to_string(), || 5)
-                ));
+            hlua::userdata::push_userdata(self, lua, |mut table| {
+                table.set("__index".to_string(), vec![
+                    ("test".to_string(), hlua::function(|| 5))
+                ]);
             })
         }
     }

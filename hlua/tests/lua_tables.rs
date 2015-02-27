@@ -89,7 +89,7 @@ fn metatable() {
 
         let mut metatable = table.get_or_create_metatable();
         fn handler() -> i32 { 5 };
-        metatable.set("__add".to_string(), handler);
+        metatable.set("__add".to_string(), hlua::function(handler));
     }
 
     let r: i32 = lua.execute("return a + a").unwrap();

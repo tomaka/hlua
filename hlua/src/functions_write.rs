@@ -8,9 +8,23 @@ use LuaRead;
 use Push;
 use PushGuard;
 
+use std::marker::PhantomData;
 use std::fmt::Debug;
 use std::mem;
 use std::ptr;
+
+/// 
+pub fn function<F, P>(f: F) -> Function<F, P, <F as FnMut<P>>::Output> where F: FnMut<P> {
+    Function {
+        function: f,
+        marker: PhantomData,
+    }
+}
+
+pub struct Function<F, P, R> {
+    function: F,
+    marker: PhantomData<(P, R)>,
+}
 
 // this function is the main entry point when Lua wants to call one of our functions
 extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
@@ -88,7 +102,7 @@ unsafe impl<'a> AsMutLua for &'a mut InsideCallback {
     }
 }
 
-impl<L, P, R> Push<L> for fn(P) -> R
+impl<L, F, P, R> Push<L> for Function<F, P, R>
         where L: AsMutLua, P: 'static,
               P: for<'p> LuaRead<&'p mut InsideCallback>,
               R: for<'a> Push<&'a mut InsideCallback> + 'static
@@ -96,11 +110,11 @@ impl<L, P, R> Push<L> for fn(P) -> R
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         // pushing the function pointer as a userdata
         let lua_data_raw = unsafe {
-            ffi::lua_newuserdata(lua.as_mut_lua().0, mem::size_of_val(&self) as libc::size_t)
+            ffi::lua_newuserdata(lua.as_mut_lua().0, mem::size_of::<F>() as libc::size_t)
         };
 
-        let lua_data: *mut fn(P) -> R = unsafe { mem::transmute(lua_data_raw) };
-        unsafe { ptr::write(lua_data, self) };
+        let lua_data: *mut F = unsafe { mem::transmute(lua_data_raw) };
+        unsafe { ptr::write(lua_data, self.function) };
 
         // pushing wrapper2 as a lightuserdata
         let wrapper2: fn(*mut ffi::lua_State) -> libc::c_int = wrapper2::<fn(P) -> R, _, _>;
