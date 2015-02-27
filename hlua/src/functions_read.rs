@@ -65,8 +65,8 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
             return match LuaRead::lua_read(pushed_value) {
-                None => Err(LuaError::WrongType),
-                Some(x) => Ok(x)
+                Err(_) => Err(LuaError::WrongType),
+                Ok(x) => Ok(x)
             };
         }
 
@@ -76,9 +76,9 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         }
 
         if pcall_return_value == ffi::LUA_ERRRUN {
-            let error_msg: String = LuaRead::lua_read(pushed_value).expect("can't find error \
-                                                                            message at the top of \
-                                                                            the Lua stack");
+            let error_msg: String = LuaRead::lua_read(pushed_value).ok().expect("can't find error \
+                                                                                 message at the top of \
+                                                                                 the Lua stack");
             return Err(LuaError::ExecutionError(error_msg));
         }
 
@@ -113,9 +113,9 @@ impl<L> LuaFunction<L> where L: AsMutLua {
             });
         }
 
-        let error_msg: String = LuaRead::lua_read(pushed_value).expect("can't find error message \
-                                                                        at the top of the Lua \
-                                                                        stack");
+        let error_msg: String = LuaRead::lua_read(pushed_value).ok().expect("can't find error message \
+                                                                             at the top of the Lua \
+                                                                             stack");
 
         if load_return_value == ffi::LUA_ERRMEM {
             panic!("LUA_ERRMEM");
@@ -144,14 +144,12 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 }*/
 
 impl<L> LuaRead<L> for LuaFunction<L> where L: AsMutLua {
-    fn lua_read_at_position(mut lua: L, index: i32)
-                            -> Option<LuaFunction<L>>
-    {
+    fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaFunction<L>, L> {
         assert!(index == -1);   // FIXME:
         if unsafe { ffi::lua_isfunction(lua.as_mut_lua().0, -1) } {
-            Some(LuaFunction { variable: lua })
+            Ok(LuaFunction { variable: lua })
         } else {
-            None
+            Err(lua)
         }
     }
 }

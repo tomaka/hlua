@@ -136,12 +136,12 @@ pub trait Push<L> where L: AsMutLua {
 /// (for example `&'static str` implements `Push` but not `LuaRead`).
 pub trait LuaRead<L>: Sized where L: AsLua {
     /// Reads the data from Lua.
-    fn lua_read(lua: L) -> Option<Self> {
+    fn lua_read(lua: L) -> Result<Self, L> {
         LuaRead::lua_read_at_position(lua, -1)
     }
 
     /// Reads the data from Lua at a given position.
-    fn lua_read_at_position(lua: L, index: i32) -> Option<Self>;
+    fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L>;
 }
 
 /// Error that can happen when executing Lua code.
@@ -249,7 +249,7 @@ impl<'lua> Lua<'lua> {
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
-        LuaRead::lua_read(self)
+        LuaRead::lua_read(self).ok()
     }
 
     /// Modifies the value of a global variable.

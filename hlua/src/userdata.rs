@@ -83,7 +83,7 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
         // calling the metatable closure
         {
             let mut guard = PushGuard { lua: &mut lua, size: 1 };
-            metatable(LuaRead::lua_read(&mut guard).unwrap());
+            metatable(LuaRead::lua_read(&mut guard).ok().unwrap());
             guard.forget();
         }
 
@@ -94,7 +94,7 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 }
 
 /// 
-pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, L>>
+pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L>
                            where L: AsMutLua, T: 'static
 {
     assert!(index == -1);   // FIXME: 
@@ -104,21 +104,24 @@ pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Option<UserdataOnStack<T, 
 
         let data_ptr = ffi::lua_touserdata(lua.as_lua().0, -1);
         if data_ptr.is_null() {
-            return None;
+            return Err(lua);
         }
 
         if ffi::lua_getmetatable(lua.as_lua().0, -1) == 0 {
-            return None;
+            return Err(lua);
         }
 
         "__typeid".push_to_lua(&mut lua).forget();
         ffi::lua_gettable(lua.as_lua().0, -2);
-        if LuaRead::lua_read(&mut lua) != Some(expected_typeid) {
-            return None;
+        match <String as LuaRead<_>>::lua_read(&mut lua) {
+            Ok(ref val) if val == &expected_typeid => {},
+            _ => {
+                return Err(lua);
+            }
         }
         ffi::lua_pop(lua.as_lua().0, -2);
 
-        Some(UserdataOnStack {
+        Ok(UserdataOnStack {
             variable: lua,
             marker: PhantomData,
         })

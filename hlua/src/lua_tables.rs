@@ -29,12 +29,12 @@ unsafe impl<L> AsMutLua for LuaTable<L> where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
-    fn lua_read_at_position(mut lua: L, index: i32) -> Option<LuaTable<L>> {
+    fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
         assert!(index == -1);   // FIXME: not sure if it's working
         if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
-            Some(LuaTable { table: lua })
+            Ok(LuaTable { table: lua })
         } else {
-            None
+            Err(lua)
         }
     }
 }
@@ -79,7 +79,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
-        let value = LuaRead::lua_read(&mut me);
+        let value = LuaRead::lua_read(&mut me).ok();
         unsafe { ffi::lua_pop(me.as_mut_lua().0, 1); }
         value
     }
@@ -133,8 +133,8 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
         }
 
         let mut me = self;
-        let key = LuaRead::lua_read_at_position(&mut me, -2);
-        let value = LuaRead::lua_read_at_position(&mut me, -1);
+        let key = LuaRead::lua_read_at_position(&mut me, -2).ok();
+        let value = LuaRead::lua_read_at_position(&mut me, -1).ok();
 
         // removing the value, leaving only the key on the top of the stack
         unsafe { ffi::lua_pop(me.table.as_mut_lua().0, 1) };

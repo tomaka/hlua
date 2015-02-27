@@ -14,7 +14,7 @@ macro_rules! tuple_impl {
         }
 
         impl<LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua, $ty: LuaRead<LU> {
-            fn lua_read_at_position(lua: LU, index: i32) -> Option<($ty,)> {
+            fn lua_read_at_position(lua: LU, index: i32) -> Result<($ty,), LU> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
             }
         }
@@ -46,26 +46,25 @@ macro_rules! tuple_impl {
         impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
             LuaRead<LU> for ($first, $($other),+) where LU: AsLua
         {
-            fn lua_read_at_position(mut lua: LU, index: i32) -> Option<($first, $($other),+)> {
+            fn lua_read_at_position(mut lua: LU, index: i32) -> Result<($first, $($other),+), LU> {
                 let mut i = index;
 
-                let $first: Option<$first> = LuaRead::lua_read_at_position(&mut lua, i);
+                let $first: $first = match LuaRead::lua_read_at_position(&mut lua, i) {
+                    Ok(v) => v,
+                    Err(_) => return Err(lua)
+                };
+
                 i += 1;
 
                 $(
-                    let $other: Option<$other> = LuaRead::lua_read_at_position(&mut lua, i);
+                    let $other: $other = match LuaRead::lua_read_at_position(&mut lua, i) {
+                        Ok(v) => v,
+                        Err(_) => return Err(lua)
+                    };
                     i += 1;
                 )+
 
-                if $first.is_none() {
-                    return None;
-                }
-
-                if $($other.is_none())||+ {
-                    return None;
-                }
-
-                Some(($first.unwrap(), $($other.unwrap()),+))
+                Ok(($first, $($other),+))
 
             }
         }

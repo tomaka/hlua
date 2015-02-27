@@ -20,12 +20,12 @@ macro_rules! integer_impl(
         }
 
         impl<L> LuaRead<L> for $t where L: AsLua {
-            fn lua_read_at_position(lua: L, index: i32) -> Option<$t> {
+            fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
                 let val = unsafe { ffi::lua_tointegerx(lua.as_lua().0, index, &mut success) };
                 match success {
-                    0 => None,
-                    _ => Some(val as $t)
+                    0 => Err(lua),
+                    _ => Ok(val as $t)
                 }
             }
         }
@@ -47,12 +47,12 @@ macro_rules! unsigned_impl(
         }
 
         impl<L> LuaRead<L> for $t where L: AsLua {
-            fn lua_read_at_position(lua: L, index: i32) -> Option<$t> {
+            fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
                 let val = unsafe { ffi::lua_tounsignedx(lua.as_lua().0, index, &mut success) };
                 match success {
-                    0 => None,
-                    _ => Some(val as $t)
+                    0 => Err(lua),
+                    _ => Ok(val as $t)
                 }
             }
         }
@@ -74,12 +74,12 @@ macro_rules! numeric_impl(
         }
 
         impl<L> LuaRead<L> for $t where L: AsLua {
-            fn lua_read_at_position(lua: L, index: i32) -> Option<$t> {
+            fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
                 let val = unsafe { ffi::lua_tonumberx(lua.as_lua().0, index, &mut success) };
                 match success {
-                    0 => None,
-                    _ => Some(val as $t)
+                    0 => Err(lua),
+                    _ => Ok(val as $t)
                 }
             }
         }
@@ -98,17 +98,17 @@ impl<L> Push<L> for String where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for String where L: AsLua {
-    fn lua_read_at_position(lua: L, index: i32) -> Option<String> {
+    fn lua_read_at_position(lua: L, index: i32) -> Result<String, L> {
         let mut size: libc::size_t = unsafe { mem::uninitialized() };
         let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
         if c_str_raw.is_null() {
-            return None;
+            return Err(lua);
         }
 
         let c_str = unsafe { CStr::from_ptr(c_str_raw) };
         let c_str = String::from_utf8(c_str.to_bytes().to_vec()).unwrap();
 
-        Some(c_str)
+        Ok(c_str)
     }
 }
 
@@ -128,12 +128,12 @@ impl<L> Push<L> for bool where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for bool where L: AsLua {
-    fn lua_read_at_position(lua: L, index: i32) -> Option<bool> {
+    fn lua_read_at_position(lua: L, index: i32) -> Result<bool, L> {
         if unsafe { ffi::lua_isboolean(lua.as_lua().0, index) } != true {
-            return None;
+            return Err(lua);
         }
 
-        Some(unsafe { ffi::lua_toboolean(lua.as_lua().0, index) != 0 })
+        Ok(unsafe { ffi::lua_toboolean(lua.as_lua().0, index) != 0 })
     }
 }
 
@@ -144,7 +144,7 @@ impl<L> Push<L> for () where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for () where L: AsLua {
-    fn lua_read_at_position(_: L, _: i32) -> Option<()> {
-        Some(())
+    fn lua_read_at_position(_: L, _: i32) -> Result<(), L> {
+        Ok(())
     }
 }

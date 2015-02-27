@@ -10,7 +10,7 @@ fn readwrite() {
         }
     }
     impl<L> hlua::LuaRead<L> for Foo where L: hlua::AsMutLua {
-        fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
+        fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
             hlua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
@@ -63,7 +63,7 @@ fn type_check() {
         }
     }
     impl<L> hlua::LuaRead<L> for Foo where L: hlua::AsMutLua {
-        fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
+        fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
             hlua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
@@ -76,7 +76,7 @@ fn type_check() {
         }
     }
     impl<L> hlua::LuaRead<L> for Bar where L: hlua::AsMutLua {
-        fn lua_read_at_position(lua: L, index: i32) -> Option<Bar> {
+        fn lua_read_at_position(lua: L, index: i32) -> Result<Bar, L> {
             hlua::userdata::read_userdata::<Bar, _>(lua, index).map(|d| d.clone())
         }
     }
