@@ -1,8 +1,8 @@
-extern crate "hlua" as lua;
+extern crate hlua;
 
 #[test]
 fn simple_function() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     fn ret5() -> i32 { 5 };
     lua.set("ret5", ret5);
@@ -13,7 +13,7 @@ fn simple_function() {
 
 #[test]
 fn one_argument() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     fn plus_one(val: i32) -> i32 { val + 1 };
     lua.set("plus_one", plus_one);
@@ -24,7 +24,7 @@ fn one_argument() {
 
 #[test]
 fn two_arguments() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     fn add(val1: i32, val2: i32) -> i32 { val1 + val2 };
     lua.set("add", add);
@@ -35,33 +35,33 @@ fn two_arguments() {
 
 #[test]
 fn wrong_arguments_types() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     fn add(val1: i32, val2: i32) -> i32 { val1 + val2 };
     lua.set("add", add);
 
     match lua.execute::<i32>("return add(3, \"hello\")") {
-        Err(lua::LuaError::ExecutionError(_)) => (),
+        Err(hlua::LuaError::ExecutionError(_)) => (),
         _ => panic!()
     }
 }
 
 #[test]
 fn return_result() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     fn always_fails() -> Result<i32, &'static str> { Err("oops, problem") };
     lua.set("always_fails", always_fails);
 
     match lua.execute::<()>("always_fails()") {
-        Err(lua::LuaError::ExecutionError(_)) => (),
+        Err(hlua::LuaError::ExecutionError(_)) => (),
         _ => panic!()
     }
 }
 
 #[test]
 fn closures() {
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     lua.set("add", |a:i32, b:i32| a + b);
     lua.set("sub", |a:i32, b:i32| a - b);
@@ -76,7 +76,7 @@ fn closures() {
 #[test]
 fn closures_lifetime() {
     fn t<F>(f: F) where F: Fn(i32, i32) -> i32 {
-        let mut lua = lua::Lua::new();
+        let mut lua = hlua::Lua::new();
 
         lua.set("add", f);
 
@@ -92,7 +92,7 @@ fn closures_extern_access() {
     let mut a = 5;
 
     {
-        let mut lua = lua::Lua::new();
+        let mut lua = hlua::Lua::new();
 
         lua.set("inc", || a += 1);
         for _ in (0 .. 15) {

@@ -1,21 +1,21 @@
-extern crate "hlua" as lua;
+extern crate hlua;
 
 #[test]
 fn readwrite() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
-        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
-            lua::userdata::push_userdata(self, lua, |_|{})
+    impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
+            hlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L> lua::LuaRead<L> for Foo where L: lua::AsMutLua {
+    impl<L> hlua::LuaRead<L> for Foo where L: hlua::AsMutLua {
         fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
-            lua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
+            hlua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
 
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     lua.set("a", Foo);
     let _: Foo = lua.get("a").unwrap();
@@ -38,14 +38,14 @@ fn destructor_called() {
         }
     }
 
-    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
-        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
-            lua::userdata::push_userdata(self, lua, |_|{})
+    impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
+            hlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
 
     {
-        let mut lua = lua::Lua::new();
+        let mut lua = hlua::Lua::new();
         lua.set("a", Foo{called: called.clone()});
     }
 
@@ -57,31 +57,31 @@ fn destructor_called() {
 fn type_check() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
-        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
-            lua::userdata::push_userdata(self, lua, |_|{})
+    impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
+            hlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L> lua::LuaRead<L> for Foo where L: lua::AsMutLua {
+    impl<L> hlua::LuaRead<L> for Foo where L: hlua::AsMutLua {
         fn lua_read_at_position(lua: L, index: i32) -> Option<Foo> {
-            lua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
+            hlua::userdata::read_userdata::<Foo, _>(lua, index).map(|d| d.clone())
         }
     }
 
     #[derive(Clone)]
     struct Bar;
-    impl<L> lua::Push<L> for Bar where L: lua::AsMutLua {
-        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
-            lua::userdata::push_userdata(self, lua, |_|{})
+    impl<L> hlua::Push<L> for Bar where L: hlua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
+            hlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
-    impl<L> lua::LuaRead<L> for Bar where L: lua::AsMutLua {
+    impl<L> hlua::LuaRead<L> for Bar where L: hlua::AsMutLua {
         fn lua_read_at_position(lua: L, index: i32) -> Option<Bar> {
-            lua::userdata::read_userdata::<Bar, _>(lua, index).map(|d| d.clone())
+            hlua::userdata::read_userdata::<Bar, _>(lua, index).map(|d| d.clone())
         }
     }
 
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     lua.set("a", Foo);
     
@@ -93,9 +93,9 @@ fn type_check() {
 fn metatables() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
-        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
-            lua::userdata::push_userdata(self, lua, |table| {
+    impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
+            hlua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(
                     ("test".to_string(), || 5)
                 ));
@@ -103,7 +103,7 @@ fn metatables() {
         }
     }
 
-    let mut lua = lua::Lua::new();
+    let mut lua = hlua::Lua::new();
 
     lua.set("a", Foo);
 

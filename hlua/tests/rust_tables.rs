@@ -1,6 +1,6 @@
-extern crate "hlua" as lua;
-use lua::{Lua, LuaTable};
+extern crate hlua;
 
+use hlua::{Lua, LuaTable};
 use std::collections::{HashMap, HashSet};
 
 #[test]

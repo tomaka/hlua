@@ -1,7 +1,7 @@
-extern crate "hlua" as lua;
+extern crate hlua;
 
-use lua::Lua;
-use lua::LuaTable;
+use hlua::Lua;
+use hlua::LuaTable;
 
 #[test]
 fn iterable() {

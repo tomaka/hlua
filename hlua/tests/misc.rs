@@ -1,6 +1,6 @@
-extern crate "hlua" as lua;
+extern crate hlua;
 
-use lua::Lua;
+use hlua::Lua;
 use std::fs::File;
 
 #[test]

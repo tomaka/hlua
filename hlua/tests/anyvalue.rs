@@ -1,6 +1,7 @@
-extern crate "hlua" as lua;
-use lua::Lua;
-use lua::any::AnyLuaValue;
+extern crate hlua;
+
+use hlua::Lua;
+use hlua::any::AnyLuaValue;
 
 #[test]
 fn read_numbers() {

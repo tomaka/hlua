@@ -1,5 +1,6 @@
-extern crate "hlua" as lua;
-use lua::Lua;
+extern crate hlua;
+
+use hlua::Lua;
 
 #[test]
 fn read_i32s() {
