@@ -26,7 +26,9 @@ struct ReadData {
     triggered_error: Option<IoError>,
 }
 
-extern fn reader(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut libc::size_t) -> *const libc::c_char {
+extern fn reader(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut libc::size_t)
+                 -> *const libc::c_char
+{
     let data: &mut ReadData = unsafe { mem::transmute(data_raw) };
 
     if data.triggered_error.is_some() {
@@ -47,14 +49,16 @@ extern fn reader(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut
 }
 
 impl<L> LuaFunction<L> where L: AsMutLua {
+    /// Calls the `LuaFunction`.
     pub fn call<V>(&mut self) -> Result<V, LuaError>
                    where V: for<'a> LuaRead<PushGuard<&'a mut L>> +
                             for<'a> LuaRead<&'a mut L>
     {
         // calling pcall pops the parameters and pushes output
         let (pcall_return_value, pushed_value) = unsafe {
-            ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);   // lua_pcall pops the function, so we have to make a copy of it
-            let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO:
+            // lua_pcall pops the function, so we have to make a copy of it
+            ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
+            let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO: arguments
             (pcall_return_value, PushGuard { lua: &mut self.variable, size: 1 })
         };
 
@@ -81,6 +85,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         panic!("Unknown error code returned by lua_pcall: {}", pcall_return_value)
     }
 
+    /// Builds a new `LuaFunction` from the code of a reader.
     pub fn load_from_reader<R>(mut lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
                                where R: Read + 'static
     {
@@ -123,6 +128,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         panic!("Unknown error while calling lua_load");
     }
 
+    /// Builds a new `LuaFunction` from a raw string.
     pub fn load(lua: L, code: &str) -> Result<LuaFunction<PushGuard<L>>, LuaError> {
         let code = code.into_bytes();
         let reader = Cursor::new(code);

@@ -9,7 +9,9 @@ use Push;
 use PushGuard;
 use LuaRead;
 
-/// 
+/// Represents a table stored in the Lua context.
+///
+/// Loading this type mutably borrows the Lua context.
 pub struct LuaTable<L> {
     table: L,
 }
@@ -37,6 +39,7 @@ impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
     }
 }
 
+/// Iterator that enumerates the content of a Lua table.
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
 pub struct LuaTableIterator<'t, L: 't, K, V> {
     table: &'t mut LuaTable<L>,
@@ -57,6 +60,7 @@ unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V> where L: AsM
 }
 
 impl<L> LuaTable<L> where L: AsMutLua {
+    /// Iterates over the elements inside the table.
     pub fn iter<K, V>(&mut self) -> LuaTableIterator<L, K, V> {
         unsafe { ffi::lua_pushnil(self.table.as_mut_lua().0) };
 
@@ -67,7 +71,11 @@ impl<L> LuaTable<L> where L: AsMutLua {
         }
     }
 
-    pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R> where R: for<'b> LuaRead<&'b mut &'a mut LuaTable<L>>, I: for<'b> Push<&'b mut &'a mut LuaTable<L>> {
+    /// Loads a value in the table given its index.
+    pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R>
+                         where R: for<'b> LuaRead<&'b mut &'a mut LuaTable<L>>,
+                               I: for<'b> Push<&'b mut &'a mut LuaTable<L>>
+    {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
@@ -76,6 +84,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         value
     }
 
+    /// Inserts or modifies an elements of the table.
     pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
                          where I: for<'a> Push<&'a mut &'s mut LuaTable<L>>,
                                V: for<'a> Push<&'a mut &'s mut LuaTable<L>>
@@ -86,7 +95,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         unsafe { ffi::lua_settable(me.as_mut_lua().0, -3); }
     }
 
-    // Obtains or create the metatable of the table
+    /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(mut self) -> LuaTable<PushGuard<L>> {
         let result = unsafe { ffi::lua_getmetatable(self.table.as_mut_lua().0, -1) };
 

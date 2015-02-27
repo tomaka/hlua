@@ -22,8 +22,8 @@ macro_rules! tuple_impl {
 
     ($first:ident, $($other:ident),+) => (
         #[allow(non_snake_case)]
-        impl<LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+> Push<LU> for ($first, $($other),+)
-                                                                          where LU: AsMutLua
+        impl<LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
+            Push<LU> for ($first, $($other),+) where LU: AsMutLua
         {
             fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
                 match self {
@@ -43,7 +43,9 @@ macro_rules! tuple_impl {
         // TODO: what if T or U are also tuples? indices won't match
         #[allow(unused_assignments)]
         #[allow(non_snake_case)]
-        impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+> LuaRead<LU> for ($first, $($other),+) where LU: AsLua {
+        impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
+            LuaRead<LU> for ($first, $($other),+) where LU: AsLua
+        {
             fn lua_read_at_position(mut lua: LU, index: i32) -> Option<($first, $($other),+)> {
                 let mut i = index;
 

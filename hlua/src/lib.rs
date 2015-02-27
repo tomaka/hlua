@@ -35,13 +35,15 @@ pub struct Lua<'lua> {
     marker: PhantomData<&'lua ()>,
 }
 
-///
+/// RAII guard for a value pushed on the stack.
 pub struct PushGuard<L> where L: AsMutLua {
     lua: L,
     size: i32,
 }
 
 impl<L> PushGuard<L> where L: AsMutLua {
+    /// Prevents the value from being poped when the `PushGuard` is destroyed, and returns the
+    /// number of elements on the stack.
     fn forget(mut self) -> i32 {
         let size = self.size;
         self.size = 0;
@@ -49,17 +51,19 @@ impl<L> PushGuard<L> where L: AsMutLua {
     }
 }
 
-/// Trait for objects that have access to a Lua context.
+/// Trait for objects that have access to a Lua context. When using a context returned by a
+/// `AsLua`, you are not allowed to modify the stack.
 pub unsafe trait AsLua {
     fn as_lua(&self) -> LuaContext;
 }
 
-/// Trait for objects that have access to a Lua context.
+/// Trait for objects that have access to a Lua context. You are allowed to modify the stack, but
+/// it must be in the same state as it was when you started.
 pub unsafe trait AsMutLua: AsLua {
     fn as_mut_lua(&mut self) -> LuaContext;
 }
 
-/// Represents a raw Lua context.
+/// Opaque type that contains the raw Lua context.
 #[derive(Copy, Clone)]
 #[allow(raw_pointer_derive)]
 pub struct LuaContext(*mut ffi::lua_State);
@@ -113,24 +117,30 @@ unsafe impl<'a, L> AsMutLua for &'a mut L where L: AsMutLua {
     }
 }
 
-/// Should be implemented by whatever type is pushable on the Lua stack.
+/// Types that can be given to a Lua context, for example with `lua.set()` or as a return value
+/// of a function.
 pub trait Push<L> where L: AsMutLua {
     /// Pushes the value on the top of the stack.
-    /// Must return the number of elements pushed.
+    ///
+    /// Must return a guard representing the elements that have been pushed.
     ///
     /// You can implement this for any type you want by redirecting to call to
-    /// another implementation (for example `5.push_to_lua`) or by calling `userdata::push_userdata`
+    /// another implementation (for example `5.push_to_lua`) or by calling
+    /// `userdata::push_userdata`.
     fn push_to_lua(self, lua: L) -> PushGuard<L>;
 }
 
-/// Reads the data from Lua.
+/// Types that can be obtained from a Lua context.
+///
+/// Most types that implement `Push` also implement `LuaRead`, but this is not always the case
+/// (for example `&'static str` implements `Push` but not `LuaRead`).
 pub trait LuaRead<L>: Sized where L: AsLua {
     /// Reads the data from Lua.
     fn lua_read(lua: L) -> Option<Self> {
         LuaRead::lua_read_at_position(lua, -1)
     }
 
-    /// Reads the data from Lua.
+    /// Reads the data from Lua at a given position.
     fn lua_read_at_position(lua: L, index: i32) -> Option<Self>;
 }
 
@@ -195,10 +205,11 @@ impl<'lua> Lua<'lua> {
         }
     }
 
-    /// Takes an existing lua_State and build a Lua object from it.
+    /// Takes an existing `lua_State` and build a Lua object from it.
     ///
     /// # Arguments
-    ///  * close_at_the_end: if true, lua_close will be called on the lua_State on the destructor
+    ///
+    ///  * `close_at_the_end`: if true, lua_close will be called on the lua_State on the destructor
     pub unsafe fn from_existing_state<T>(lua: *mut T, close_at_the_end: bool) -> Lua<'lua> {
         Lua {
             lua: std::mem::transmute(lua),
@@ -215,22 +226,24 @@ impl<'lua> Lua<'lua> {
 
     /// Executes some Lua code on the context.
     pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError>
-        where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> +
-                 for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
+                          where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> +
+                                   for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
     {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
-    pub fn execute_from_reader<'a, T, R: Read + 'static>(&'a mut self, code: R) -> Result<T, LuaError>
-            where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> + for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
-        {
+    pub fn execute_from_reader<'a, T, R>(&'a mut self, code: R) -> Result<T, LuaError>
+            where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> +
+                     for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>,
+                  R: Read + 'static
+    {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
     }
 
-    /// Reads the value of a global variable by copying it.
+    /// Reads the value of a global variable.
     pub fn get<'l, V, I>(&'l mut self, index: I) -> Option<V>
                          where I: Borrow<str>, V: LuaRead<&'l mut Lua<'lua>>
     {

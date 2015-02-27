@@ -13,7 +13,9 @@ use std::fmt::Debug;
 use std::mem;
 use std::ptr;
 
-/// 
+/// Wraps a type that implements `FnMut` so that it can be used by hlua.
+///
+/// This is only needed because of a limitation in Rust's inferrence system.
 pub fn function<F, P>(f: F) -> Function<F, P, <F as FnMut<P>>::Output> where F: FnMut<P> {
     Function {
         function: f,
@@ -21,6 +23,7 @@ pub fn function<F, P>(f: F) -> Function<F, P, <F as FnMut<P>>::Output> where F: 
     }
 }
 
+/// Opaque type containing a Rust function or closure.
 pub struct Function<F, P, R> {
     function: F,
     marker: PhantomData<(P, R)>,
@@ -72,8 +75,10 @@ trait AnyCallable {
     fn load_args_and_call(&mut self, lua: *mut ffi::lua_State) -> ::libc::c_int;
 }
 
-// lua context used inside callbacks
-#[doc(hidden)]
+/// Opaque type that represents the Lua context when inside a callback.
+///
+/// Some types (like `Result`) can only be returned from a callback and not written inside a
+/// Lua variable. This type is here to enforce this restriction.
 pub struct InsideCallback {
     lua: LuaContext,
 }
@@ -123,7 +128,9 @@ impl<L, F, P, R> Push<L> for Function<F, P, R>
 }   
 
 impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
-                where T: Push<&'a mut InsideCallback> + for<'b> Push<&'b mut &'a mut InsideCallback>, E: Debug
+                where T: Push<&'a mut InsideCallback> +
+                         for<'b> Push<&'b mut &'a mut InsideCallback>,
+                      E: Debug
 {
     fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> PushGuard<&'a mut InsideCallback> {
         match self {
@@ -132,7 +139,7 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
                 let msg = format!("{:?}", val);
                 msg.push_to_lua(&mut lua).forget();
                 unsafe { ffi::lua_error(lua.as_mut_lua().0); }
-                unreachable!()
+                unreachable!();
             }
         }
     }
