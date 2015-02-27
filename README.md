@@ -43,7 +43,7 @@ The `get` function returns an `Option<T>` and does a copy of the value.
 
 The base types that can be read and written are: `int`, `i8`, `i16`, `i32`, `uint`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`.
 
-If you wish so, you can also add other types by implementing the `Push` and `CopyRead`/`ConsumeRead` traits.
+If you wish so, you can also add other types by implementing the `Push` and `LuaRead` traits.
 
 #### Executing Lua
 
@@ -51,7 +51,7 @@ If you wish so, you can also add other types by implementing the `Push` and `Cop
 let x: uint = lua.execute("return 6 * 2;").unwrap();    // equals 12
 ```
 
-The `execute` function takes a `&str` and returns a `Result<CopyRead, ExecutionError>`.
+The `execute` function takes a `&str` and returns a `Result<LuaRead, ExecutionError>`.
 
 You can also call `execute_from_reader` which takes a `std::io::Reader` as parameter.
 For example you can easily execute the content of a file like this:
@@ -62,12 +62,14 @@ lua.execute_from_reader(File::open(&Path::new("script.lua")).unwrap())
 
 #### Writing functions
 
+In order to write a function, you must wrap it around `hlua::function`. This is for the moment a limitation of Rust's inferrence system.
+
 ```rust
 fn add(a: int, b: int) -> int {
     a + b
 }
 
-lua.set("add", add);
+lua.set("add", hlua::function(add));
 lua.execute("local c = add(2, 4)");
 lua.get("c").unwrap();  // return 6
 ```
@@ -77,7 +79,7 @@ In Lua, functions are exactly like regular variables.
 You can write regular functions as well as closures:
 
 ```rust
-lua.set("mul", |a:int,b:int| a*b);
+lua.set("mul", hlua::function(|a:int, b:int| a * b));
 ```
 
 Note that the lifetime of the Lua context must be equal to or shorter than the lifetime of closures. This is enforced at compile-time.
@@ -148,7 +150,7 @@ It is not possible to store the function for the moment, but it may be in the fu
 
 It is possible to read and write whole Rust containers at once:
 
-```rust```
+```rust
 lua.set("a", [ 12, 13, 14, 15 ]);
 ```
 
@@ -163,8 +165,8 @@ fn foo() { }
 fn bar() { }
 
 lua.set("mylib", [
-    ("foo", foo),
-    ("bar", bar)
+    ("foo", hlua::function(foo)),
+    ("bar", hlua::function(bar))
 ]);
 
 lua.execute("mylib.foo()");
@@ -182,13 +184,13 @@ This is usually done by redirecting the call to `userdata::push_userdata`.
 ```rust
 struct Foo;
 
-impl<'a> lua::Push<'a> for Foo {
-    fn push_to_lua(self, lua: &mut lua::Lua<'a>) -> uint {
+impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+    fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
         lua::userdata::push_userdata(self, lua,
-            |metatable| {
+            |mut metatable| {
                 // you can define all the member functions of Foo here
                 // see the official Lua documentation for metatables
-                metatable.set("__call", || println!("hello from foo"))
+                metatable.set("__call", hlua::function(|| println!("hello from foo")))
             })
     }
 }
@@ -202,13 +204,13 @@ fn main() {
 
 ### Creating a Lua module
 
-This library also includes a second library named `hlua-module` which allows you to create Lua modules in Rust.
+This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
 
 To use it, add this to `Cargo.toml`:
 
 ```toml
-[dependencies.hlua-modules]
-git = "https://github.com/tomaka/hlua"
+[dependencies.rust-hl-lua-modules]
+git = "https://github.com/tomaka/rust-hl-lua"
 ```
 
 Then you can use it like this:
@@ -217,7 +219,7 @@ Then you can use it like this:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lua_mod = "hlua-modules";
+extern crate lua_mod = "rust-hl-lua-modules";
 
 #[export_lua_module]
 pub mod mylib {         // <-- must be the name of the Lua module
