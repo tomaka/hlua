@@ -4,8 +4,8 @@ extern crate "rust-hl-lua" as lua;
 fn readwrite() {
     #[derive(Clone)]
     struct Foo;
-    impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> u32 {
+    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -38,8 +38,8 @@ fn destructor_called() {
         }
     }
 
-    impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> u32 {
+    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -57,8 +57,8 @@ fn destructor_called() {
 fn type_check() {
     #[derive(Clone)]
     struct Foo;
-    impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> u32 {
+    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -70,8 +70,8 @@ fn type_check() {
 
     #[derive(Clone)]
     struct Bar;
-    impl<L: lua::AsLua> lua::Push<L> for Bar {
-        fn push_to_lua(self, lua: &mut L) -> u32 {
+    impl<L> lua::Push<L> for Bar where L: lua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -93,11 +93,11 @@ fn type_check() {
 fn metatables() {
     #[derive(Clone)]
     struct Foo;
-    impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> u32 {
+    impl<L> lua::Push<L> for Foo where L: lua::AsMutLua {
+        fn push_to_lua(self, lua: L) -> lua::PushGuard<L> {
             lua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(
-                    ("test".to_string(), || 5i)
+                    ("test".to_string(), || 5)
                 ));
             })
         }

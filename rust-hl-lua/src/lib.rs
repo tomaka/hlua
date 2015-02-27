@@ -15,7 +15,7 @@ pub use lua_tables::LuaTable;
 pub mod any;
 pub mod functions_read;
 pub mod lua_tables;
-//pub mod userdata;
+pub mod userdata;
 
 mod functions_write;
 mod rust_tables;
