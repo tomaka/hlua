@@ -9,7 +9,17 @@ use LuaRead;
 
 macro_rules! tuple_impl {
     ($ty:ident) => (
+        impl<LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua, $ty: Push<LU> {
+            fn push_to_lua(self, lua: LU) -> PushGuard<LU> {
+                self.0.push_to_lua(lua)
+            }
+        }
 
+        impl<LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua, $ty: LuaRead<LU> {
+            fn lua_read_at_position(lua: LU, index: i32) -> Option<($ty,)> {
+                LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
+            }
+        }
     );
 
     ($first:ident, $($other:ident),+) => (
