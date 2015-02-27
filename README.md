@@ -1,16 +1,16 @@
-## rust-hl-lua
+## hlua
 
 This library is a high-level binding for Lua 5.2. You don't have access to the Lua stack, all you can do is read/write variables (including callbacks) and execute Lua code.
 
-[![Build Status](https://travis-ci.org/tomaka/rust-hl-lua.svg?branch=master)](https://travis-ci.org/tomaka/rust-hl-lua)
+[![Build Status](https://travis-ci.org/tomaka/hlua.svg?branch=master)](https://travis-ci.org/tomaka/hlua)
 
 ### How to install it?
 
 Add this to the `Cargo.toml` file of your project
 
 ```toml
-[dependencies.rust-hl-lua]
-git = "https://github.com/tomaka/rust-hl-lua"
+[dependencies.hlua]
+git = "https://github.com/tomaka/hlua"
 ```
 
 In the future, this library will directly include the Lua C library if cargo allows this.
@@ -18,8 +18,8 @@ In the future, this library will directly include the Lua C library if cargo all
 ### How to use it?
 
 ```rust
-extern crate lua = "rust-hl-lua";
-use lua::Lua;
+extern crate hlua;
+use hlua::Lua;
 ```
 
 The `Lua` struct is the main element of this library. It represents a context in which you can execute Lua code.
@@ -28,7 +28,7 @@ The `Lua` struct is the main element of this library. It represents a context in
 let mut lua = Lua::new();     // mutable is mandatory
 ```
 
-[You can check the documentation here](http://rust-ci.org/tomaka/rust-hl-lua/doc/rust-hl-lua/).
+[You can check the documentation here](http://rust-ci.org/tomaka/hlua/doc/hlua/).
 
 #### Reading and writing variables
 
@@ -202,13 +202,13 @@ fn main() {
 
 ### Creating a Lua module
 
-This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
+This library also includes a second library named `hlua-module` which allows you to create Lua modules in Rust.
 
 To use it, add this to `Cargo.toml`:
 
 ```toml
-[dependencies.rust-hl-lua-modules]
-git = "https://github.com/tomaka/rust-hl-lua"
+[dependencies.hlua-modules]
+git = "https://github.com/tomaka/hlua"
 ```
 
 Then you can use it like this:
@@ -217,7 +217,7 @@ Then you can use it like this:
 #![feature(phase)]
 
 #[phase(plugin)]
-extern crate lua_mod = "rust-hl-lua-modules";
+extern crate lua_mod = "hlua-modules";
 
 #[export_lua_module]
 pub mod mylib {         // <-- must be the name of the Lua module
