@@ -37,7 +37,7 @@ extern fn wrapper1(lua: *mut ffi::lua_State) -> ::libc::c_int {
 
 // this function is called when Lua wants to call one of our functions
 fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
-                     where T: FnMut(P) -> R,
+                     where T: FnMut<P, Output=R>,
                            P: for<'p> LuaRead<&'p mut InsideCallback>,
                            R: for<'p> Push<&'p mut InsideCallback>
 {
@@ -60,7 +60,7 @@ fn wrapper2<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
         Some(a) => a
     };
 
-    let ret_value = data(args);
+    let ret_value = data.call_mut(args);
 
     // pushing back the result of the function on the stack
     let nb = {
@@ -104,6 +104,7 @@ unsafe impl<'a> AsMutLua for &'a mut InsideCallback {
 
 impl<L, F, P, R> Push<L> for Function<F, P, R>
         where L: AsMutLua, P: 'static,
+              F: FnMut<P, Output=R>,
               P: for<'p> LuaRead<&'p mut InsideCallback>,
               R: for<'a> Push<&'a mut InsideCallback> + 'static
 {
@@ -117,7 +118,7 @@ impl<L, F, P, R> Push<L> for Function<F, P, R>
         unsafe { ptr::write(lua_data, self.function) };
 
         // pushing wrapper2 as a lightuserdata
-        let wrapper2: fn(*mut ffi::lua_State) -> libc::c_int = wrapper2::<fn(P) -> R, _, _>;
+        let wrapper2: fn(*mut ffi::lua_State) -> libc::c_int = wrapper2::<F, P, R>;
         unsafe { ffi::lua_pushlightuserdata(lua.as_mut_lua().0, mem::transmute(wrapper2)) };
 
         // pushing wrapper1 as a closure
