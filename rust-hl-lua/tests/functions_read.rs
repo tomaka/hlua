@@ -6,7 +6,7 @@ fn basic() {
 
     let mut f = lua::LuaFunction::load(&mut lua, "return 5;").unwrap();
 
-    let val: int = f.call().unwrap();
+    let val: i32 = f.call().unwrap();
     assert_eq!(val, 5);
 }
 
@@ -23,6 +23,6 @@ fn execution_error() {
 
     let mut f = lua::LuaFunction::load(&mut lua, "return a:hello()").unwrap();
 
-    let val: Result<int, lua::LuaError> = f.call();
+    let val: Result<i32, lua::LuaError> = f.call();
     assert!(val.is_err());
 }

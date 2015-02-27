@@ -4,10 +4,10 @@ extern crate "rust-hl-lua" as lua;
 fn simple_function() {
     let mut lua = lua::Lua::new();
 
-    fn ret5() -> int { 5 };
+    fn ret5() -> i32 { 5 };
     lua.set("ret5", ret5);
 
-    let val: int = lua.execute("return ret5()").unwrap();
+    let val: i32 = lua.execute("return ret5()").unwrap();
     assert_eq!(val, 5);
 }
 
@@ -15,10 +15,10 @@ fn simple_function() {
 fn one_argument() {
     let mut lua = lua::Lua::new();
 
-    fn plus_one(val: int) -> int { val + 1 };
+    fn plus_one(val: i32) -> i32 { val + 1 };
     lua.set("plus_one", plus_one);
 
-    let val: int = lua.execute("return plus_one(3)").unwrap();
+    let val: i32 = lua.execute("return plus_one(3)").unwrap();
     assert_eq!(val, 4);
 }
 
@@ -26,10 +26,10 @@ fn one_argument() {
 fn two_arguments() {
     let mut lua = lua::Lua::new();
 
-    fn add(val1: int, val2: int) -> int { val1 + val2 };
+    fn add(val1: i32, val2: i32) -> i32 { val1 + val2 };
     lua.set("add", add);
 
-    let val: int = lua.execute("return add(3, 7)").unwrap();
+    let val: i32 = lua.execute("return add(3, 7)").unwrap();
     assert_eq!(val, 10);
 }
 
@@ -37,10 +37,10 @@ fn two_arguments() {
 fn wrong_arguments_types() {
     let mut lua = lua::Lua::new();
 
-    fn add(val1: int, val2: int) -> int { val1 + val2 };
+    fn add(val1: i32, val2: i32) -> i32 { val1 + val2 };
     lua.set("add", add);
 
-    match lua.execute::<int>("return add(3, \"hello\")") {
+    match lua.execute::<i32>("return add(3, \"hello\")") {
         Err(lua::LuaError::ExecutionError(_)) => (),
         _ => panic!()
     }
@@ -50,7 +50,7 @@ fn wrong_arguments_types() {
 fn return_result() {
     let mut lua = lua::Lua::new();
 
-    fn always_fails() -> Result<int, &'static str> { Err("oops, problem") };
+    fn always_fails() -> Result<i32, &'static str> { Err("oops, problem") };
     lua.set("always_fails", always_fails);
 
     match lua.execute::<()>("always_fails()") {
@@ -63,24 +63,24 @@ fn return_result() {
 fn closures() {
     let mut lua = lua::Lua::new();
 
-    lua.set("add", |a:int, b:int| a + b);
-    lua.set("sub", |a:int, b:int| a - b);
+    lua.set("add", |a:i32, b:i32| a + b);
+    lua.set("sub", |a:i32, b:i32| a - b);
 
-    let val1: int = lua.execute("return add(3, 7)").unwrap();
+    let val1: i32 = lua.execute("return add(3, 7)").unwrap();
     assert_eq!(val1, 10);
 
-    let val2: int = lua.execute("return sub(5, 2)").unwrap();
+    let val2: i32 = lua.execute("return sub(5, 2)").unwrap();
     assert_eq!(val2, 3);
 }
 
 #[test]
 fn closures_lifetime() {
-    fn t(f: |int,int|->int) {
+    fn t(f: |i32,i32|->i32) {
         let mut lua = lua::Lua::new();
 
         lua.set("add", f);
 
-        let val1: int = lua.execute("return add(3, 7)").unwrap();
+        let val1: i32 = lua.execute("return add(3, 7)").unwrap();
         assert_eq!(val1, 10);
     }
 

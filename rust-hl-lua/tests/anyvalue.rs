@@ -54,7 +54,7 @@ fn push_numbers() {
 
     lua.set("a", AnyLuaValue::LuaNumber(3.0));
 
-    let x: int = lua.get("a").unwrap();
+    let x: i32 = lua.get("a").unwrap();
     assert_eq!(x, 3);
 }
 

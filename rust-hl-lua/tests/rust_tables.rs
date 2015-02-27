@@ -9,11 +9,11 @@ use test::Bencher;
 fn write() {
     let mut lua = Lua::new();
 
-    lua.set("a", vec!(9i, 8, 7));
+    lua.set("a", vec![9, 8, 7]);
 
     let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
-    let values: Vec<(int,int)> = table.iter().filter_map(|e| e).collect();
+    let values: Vec<(i32, i32)> = table.iter().filter_map(|e| e).collect();
     assert_eq!(values, vec!( (1, 9), (2, 8), (3, 7) ));
 }
 
@@ -22,7 +22,7 @@ fn write_map() {
     let mut lua = Lua::new();
 
     let mut map = HashMap::new();
-    map.insert(5i, 8i);
+    map.insert(5, 8);
     map.insert(13, 21);
     map.insert(34, 55);
 
@@ -30,7 +30,7 @@ fn write_map() {
 
     let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
-    let values: HashMap<int, int> = table.iter().filter_map(|e| e).collect();
+    let values: HashMap<i32, i32> = table.iter().filter_map(|e| e).collect();
     assert_eq!(values, map);
 }
 
@@ -39,7 +39,7 @@ fn write_set() {
     let mut lua = Lua::new();
 
     let mut set = HashSet::new();
-    set.insert(5i);
+    set.insert(5);
     set.insert(8);
     set.insert(13);
     set.insert(21);
@@ -50,8 +50,8 @@ fn write_set() {
 
     let mut table: LuaTable<Lua> = lua.load("a").unwrap();
 
-    let values: HashSet<int> = table.iter().filter_map(|e| e)
-                                           .map(|(elem, set): (int, bool)| {
+    let values: HashSet<i32> = table.iter().filter_map(|e| e)
+                                           .map(|(elem, set): (i32, bool)| {
         assert!(set);
         elem
     }).collect();
@@ -64,7 +64,7 @@ fn new_map(b: &mut Bencher) {
     let mut lua = Lua::new();
 
     let mut map = HashMap::new();
-    map.insert(5i, 8i);
+    map.insert(5, 8);
     map.insert(13, 21);
     map.insert(34, 55);
 
@@ -78,7 +78,7 @@ fn new_large_map(b: &mut Bencher) {
     let mut lua = Lua::new();
 
     let mut map = HashMap::new();
-    for i in range(0i, 500) {
+    for i in range(0, 500) {
         map.insert(i, i + 1);
     }
 

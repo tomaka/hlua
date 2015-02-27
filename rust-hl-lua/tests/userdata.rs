@@ -5,7 +5,7 @@ fn readwrite() {
     #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> uint {
+        fn push_to_lua(self, lua: &mut L) -> u32 {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -39,7 +39,7 @@ fn destructor_called() {
     }
 
     impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> uint {
+        fn push_to_lua(self, lua: &mut L) -> u32 {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -58,7 +58,7 @@ fn type_check() {
     #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> uint {
+        fn push_to_lua(self, lua: &mut L) -> u32 {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -71,7 +71,7 @@ fn type_check() {
     #[derive(Clone)]
     struct Bar;
     impl<L: lua::AsLua> lua::Push<L> for Bar {
-        fn push_to_lua(self, lua: &mut L) -> uint {
+        fn push_to_lua(self, lua: &mut L) -> u32 {
             lua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -94,7 +94,7 @@ fn metatables() {
     #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
-        fn push_to_lua(self, lua: &mut L) -> uint {
+        fn push_to_lua(self, lua: &mut L) -> u32 {
             lua::userdata::push_userdata(self, lua, |table| {
                 table.set("__index".to_string(), vec!(
                     ("test".to_string(), || 5i)
@@ -107,6 +107,6 @@ fn metatables() {
 
     lua.set("a", Foo);
 
-    let x: int = lua.execute("return a.test()").unwrap();
+    let x: i32 = lua.execute("return a.test()").unwrap();
     assert_eq!(x, 5);
 }
