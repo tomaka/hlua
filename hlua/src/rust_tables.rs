@@ -7,7 +7,6 @@ use AsMutLua;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::iter;
-use std::mem;
 
 fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
                       where L: AsMutLua, V: for<'b> Push<&'b mut L>, I: Iterator<Item=V>
