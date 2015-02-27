@@ -4,6 +4,7 @@ extern crate "lua52-sys" as ffi;
 extern crate libc;
 
 use std::ffi::{CStr, CString};
+use std::io::Read;
 use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
@@ -201,17 +202,17 @@ impl<'lua> Lua<'lua> {
         unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
 
-    /*/// Executes some Lua code on the context.
-    pub fn execute<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>>(&'a mut self, code: &str) -> Result<T, LuaError> {
+    /// Executes some Lua code on the context.
+    pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError> where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
     }
 
     /// Executes some Lua code on the context.
-    pub fn execute_from_reader<'a, T: CopyRead<LoadedVariable<'a, Lua<'lua>>>, R: std::io::Reader + 'static>(&'a mut self, code: R) -> Result<T, LuaError> {
+    pub fn execute_from_reader<'a, T, R: Read + 'static>(&'a mut self, code: R) -> Result<T, LuaError> where T: for<'g> LuaRead<&'g mut PushGuard<&'a mut Lua<'lua>>> {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
-    }*/
+    }
 
     /// Reads the value of a global variable by copying it.
     pub fn get<'l, I, V>(&'l mut self, index: I) -> Option<V>
