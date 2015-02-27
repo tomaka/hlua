@@ -2,7 +2,7 @@ extern crate "rust-hl-lua" as lua;
 
 #[test]
 fn readwrite() {
-    #[deriving(Clone)]
+    #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
         fn push_to_lua(self, lua: &mut L) -> uint {
@@ -55,7 +55,7 @@ fn destructor_called() {
 
 #[test]
 fn type_check() {
-    #[deriving(Clone)]
+    #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
         fn push_to_lua(self, lua: &mut L) -> uint {
@@ -68,7 +68,7 @@ fn type_check() {
         }
     }
 
-    #[deriving(Clone)]
+    #[derive(Clone)]
     struct Bar;
     impl<L: lua::AsLua> lua::Push<L> for Bar {
         fn push_to_lua(self, lua: &mut L) -> uint {
@@ -91,7 +91,7 @@ fn type_check() {
 
 #[test]
 fn metatables() {
-    #[deriving(Clone)]
+    #[derive(Clone)]
     struct Foo;
     impl<L: lua::AsLua> lua::Push<L> for Foo {
         fn push_to_lua(self, lua: &mut L) -> uint {
