@@ -43,7 +43,7 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 /// # Arguments
 ///  * metatable: Function that fills the metatable of the object.
 pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
-                              where F: FnMut(LuaTable<PushGuard<&mut L>>), L: AsMutLua,
+                              where F: FnMut(LuaTable<&mut PushGuard<&mut L>>), L: AsMutLua,
                                     T: Send + 'static
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
@@ -80,8 +80,9 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 
         // calling the metatable closure
         {
-            let table = LuaRead::lua_read(PushGuard { lua: &mut lua, size: 1 }).unwrap();
-            metatable(table);
+            let mut guard = PushGuard { lua: &mut lua, size: 1 };
+            metatable(LuaRead::lua_read(&mut guard).unwrap());
+            guard.forget();
         }
 
         ffi::lua_setmetatable(lua_raw.0, -2);
