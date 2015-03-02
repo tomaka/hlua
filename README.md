@@ -13,8 +13,6 @@ Add this to the `Cargo.toml` file of your project
 hlua = "0.1"
 ```
 
-In the future, this library will directly include the Lua C library if cargo allows this.
-
 ### How to use it?
 
 ```rust
@@ -35,25 +33,25 @@ let mut lua = Lua::new();     // mutable is mandatory
 ```rust
 lua.set("x", 2);
 lua.execute("x = x + 1").unwrap();
-let x: int = lua.get("x").unwrap();  // x is equal to 3
+let x: i32 = lua.get("x").unwrap();  // x is equal to 3
 ```
 
 Reading and writing global variables of the Lua context can be done with `set` and `get`.
 The `get` function returns an `Option<T>` and does a copy of the value.
 
-The base types that can be read and written are: `int`, `i8`, `i16`, `i32`, `uint`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`.
+The base types that can be read and written are: `i8`, `i16`, `i32`, `u8`, `u16`, `u32`, `f32`, `f64`, `bool`, `String`. `&str` can be written but not read.
 
 If you wish so, you can also add other types by implementing the `Push` and `LuaRead` traits.
 
 #### Executing Lua
 
 ```rust
-let x: uint = lua.execute("return 6 * 2;").unwrap();    // equals 12
+let x: u32 = lua.execute("return 6 * 2;").unwrap();    // equals 12
 ```
 
-The `execute` function takes a `&str` and returns a `Result<LuaRead, ExecutionError>`.
+The `execute` function takes a `&str` and returns a `Result<T, ExecutionError>` where `T: LuaRead`.
 
-You can also call `execute_from_reader` which takes a `std::io::Reader` as parameter.
+You can also call `execute_from_reader` which takes a `std::io::Read` as parameter.
 For example you can easily execute the content of a file like this:
 
 ```rust
@@ -65,21 +63,21 @@ lua.execute_from_reader(File::open(&Path::new("script.lua")).unwrap())
 In order to write a function, you must wrap it around `hlua::function`. This is for the moment a limitation of Rust's inferrence system.
 
 ```rust
-fn add(a: int, b: int) -> int {
+fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
 lua.set("add", hlua::function(add));
-lua.execute("local c = add(2, 4)");
-lua.get("c").unwrap();  // return 6
+lua.execute("local c = add(2, 4)");   // calls the `add` function above
+let c: i32 = lua.get("c").unwrap();   // returns 6
 ```
-    
+
 In Lua, functions are exactly like regular variables.
 
 You can write regular functions as well as closures:
 
 ```rust
-lua.set("mul", hlua::function(|a:int, b:int| a * b));
+lua.set("mul", hlua::function(|a: i32, b: i32| a * b));
 ```
 
 Note that the lifetime of the Lua context must be equal to or shorter than the lifetime of closures. This is enforced at compile-time.
@@ -90,8 +88,8 @@ let mut a = 5i;
 {
     let mut lua = Lua::new();
 
-    lua.set("inc", || a += 1);
-    for i in range(0i, 15) {
+    lua.set("inc", || a += 1);    // borrows 'a'
+    for i in (0 .. 15) {
         lua.execute::<()>("inc()").unwrap();
     }
 } // unborrows `a`
@@ -105,10 +103,10 @@ If your Rust function returns a `Result` object which contains an error, then a 
 
 #### Manipulating Lua tables
 
-Manipulating a Lua table can be done by reading a `LuaTable` object. This can be achieved easily by calling `load_table`.
+Manipulating a Lua table can be done by reading a `LuaTable` object. This can be achieved easily by reading a `LuaTable` object.
 
 ```rust
-let mut table = lua.load_table("a").unwrap();
+let mut table: hlua::LuaTable<_> = lua.get("a").unwrap();
 ```
 
 You can then iterate through the table with the `.iter()` function. Note that the value returned by the iterator is an `Option<(Key, Value)>`, the `Option` being empty when either the key or the value is not convertible to the requested type. The `filter_map` function (provided by the standard `Iterator` trait) is very useful when dealing with this.
@@ -136,8 +134,8 @@ lua.execute("
         return 5
     end");
 
-let get_five: functions_read::LuaFunction = lua.load("get_five").unwrap();
-let value: int = get_five().unwrap();
+let get_five: functions_read::LuaFunction = lua.get("get_five").unwrap();
+let value: i32 = get_five.call().unwrap();
 assert_eq!(value, 5);
 ```
 
@@ -204,6 +202,8 @@ fn main() {
 
 ### Creating a Lua module
 
+**Note: doesn't work for the moment**
+
 This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
 
 To use it, add this to `Cargo.toml`:
@@ -217,9 +217,7 @@ Then you can use it like this:
 
 ```rust
 #![feature(phase)]
-
-#[phase(plugin)]
-extern crate lua_mod = "rust-hl-lua-modules";
+#[!plugin(rust-hl-lua-modules)]
 
 #[export_lua_module]
 pub mod mylib {         // <-- must be the name of the Lua module
