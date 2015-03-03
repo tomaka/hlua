@@ -5,8 +5,6 @@ env:
     - secure: "BzoIUhSxk27LcMIKXcwXlMPs3RrO1J/XileGsWceU1FP4CyXbigmFdEu1Wcm7doEhPsGFvd5ogUc/yTyPhExpmy7aymkwlA5aaKqhOif/u1aHEhcE0oofPoyFNpkm0GR+U+3ExvMmYzJYVddwIXuIADUcV/Dusv4ZQB2Z/ZMtyU="
     - secure: "zsXkul12GoVz/SGbhZHlP9vQXzfWi0nhPkJSmuoCbmVgvCvfL+xURdI0XUwc3oZbRy9EO+Q6bJFtogOnc5edTRdXNVONweLLhM7fpbNV3YcDcgHC3WBZtupkjXszQ0oRA/3pzGPo2tRxzmuGJkbi1zRJRLHFDljv25Bf4lCHyuY="
 
-sudo: false
-
 script:
   - cargo test --manifest-path lua52-sys/Cargo.toml
   - cargo test --manifest-path hlua/Cargo.toml
@@ -23,8 +21,8 @@ after_success:
   - |
       [ $TRAVIS_BRANCH = master ] &&
       [ $TRAVIS_PULL_REQUEST = false ] &&
-      cargo publish --manifest-path hlua/Cargo.toml --token ${CRATESIO_TOKEN}
+      cargo publish --manifest-path lua52-sys/Cargo.toml --token ${CRATESIO_TOKEN}
   - |
       [ $TRAVIS_BRANCH = master ] &&
       [ $TRAVIS_PULL_REQUEST = false ] &&
-      cargo publish --manifest-path lua52-sys/Cargo.toml --token ${CRATESIO_TOKEN}
+      cargo publish --manifest-path hlua/Cargo.toml --token ${CRATESIO_TOKEN}
