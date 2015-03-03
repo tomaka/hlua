@@ -245,11 +245,12 @@ impl<'lua> Lua<'lua> {
 
     /// Reads the value of a global variable.
     pub fn get<'l, V, I>(&'l mut self, index: I) -> Option<V>
-                         where I: Borrow<str>, V: LuaRead<&'l mut Lua<'lua>>
+                         where I: Borrow<str>, V: LuaRead<PushGuard<&'l mut Lua<'lua>>>
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
-        LuaRead::lua_read(self).ok()
+        let guard = PushGuard { lua: self, size: 1 };
+        LuaRead::lua_read(guard).ok()
     }
 
     /// Modifies the value of a global variable.
