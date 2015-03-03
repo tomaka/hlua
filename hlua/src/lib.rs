@@ -12,7 +12,7 @@ use std::borrow::Borrow;
 use std::marker::PhantomData;
 
 pub use functions_read::LuaFunction;
-pub use functions_write::function;
+pub use functions_write::{function, InsideCallback};
 pub use lua_tables::LuaTable;
 
 pub mod any;
@@ -21,6 +21,7 @@ pub mod lua_tables;
 pub mod userdata;
 
 mod functions_write;
+mod macros;
 mod rust_tables;
 mod values;
 mod tuples;
