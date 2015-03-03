@@ -73,15 +73,14 @@ impl<L> LuaTable<L> where L: AsMutLua {
 
     /// Loads a value in the table given its index.
     pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R>
-                         where R: for<'b> LuaRead<&'b mut &'a mut LuaTable<L>>,
+                         where R: LuaRead<PushGuard<&'a mut LuaTable<L>>>,
                                I: for<'b> Push<&'b mut &'a mut LuaTable<L>>
     {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
-        let value = LuaRead::lua_read(&mut me).ok();
-        unsafe { ffi::lua_pop(me.as_mut_lua().0, 1); }
-        value
+        let guard = PushGuard { lua: me, size: 1 };
+        LuaRead::lua_read(guard).ok()
     }
 
     /// Inserts or modifies an elements of the table.
