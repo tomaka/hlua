@@ -94,6 +94,19 @@ impl<L> LuaTable<L> where L: AsMutLua {
         unsafe { ffi::lua_settable(me.as_mut_lua().0, -3); }
     }
 
+    /// Inserts an empty array, then loads it.
+    pub fn empty_array<'s, I>(&'s mut self, index: I) -> LuaTable<PushGuard<&'s mut LuaTable<L>>>
+                              where I: for<'a> Push<&'a mut &'s mut LuaTable<L>> + Clone
+    {
+        // TODO: cleaner implementation
+        let mut me = self;
+        index.clone().push_to_lua(&mut me).forget();
+        Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
+        unsafe { ffi::lua_settable(me.as_mut_lua().0, -3); }
+
+        me.get(index).unwrap()
+    }
+
     /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(mut self) -> LuaTable<PushGuard<L>> {
         let result = unsafe { ffi::lua_getmetatable(self.table.as_mut_lua().0, -1) };
