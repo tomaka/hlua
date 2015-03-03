@@ -95,3 +95,16 @@ fn metatable() {
     let r: i32 = lua.execute("return a + a").unwrap();
     assert_eq!(r, 5);
 }
+
+#[test]
+fn empty_array() {
+    let mut lua = Lua::new();
+
+    {
+        let mut array = lua.empty_array("a");
+        array.set("b", 3)
+    }
+
+    let mut table: LuaTable<_> = lua.get("a").unwrap();
+    assert_eq!(table.get("b").unwrap(), 3);
+}

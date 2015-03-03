@@ -262,6 +262,19 @@ impl<'lua> Lua<'lua> {
         value.push_to_lua(self).forget();
         unsafe { ffi::lua_setglobal(self.lua.0, index.as_ptr()); }
     }
+
+    /// Inserts an empty array, then loads it.
+    pub fn empty_array<'a, I>(&'a mut self, index: I) -> LuaTable<PushGuard<&'a mut Lua<'lua>>>
+                              where I: Borrow<str>
+    {
+        // TODO: cleaner implementation
+        let mut me = self;
+        let index2 = CString::new(index.borrow()).unwrap();
+        Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
+        unsafe { ffi::lua_setglobal(me.lua.0, index2.as_ptr()); }
+
+        me.get(index).unwrap()
+    }
 }
 
 #[unsafe_destructor]

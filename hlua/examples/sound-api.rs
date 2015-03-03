@@ -7,8 +7,7 @@ fn main() {
 
     // we create a fill an array named `Sound` which will be used as a class-like interface
     {
-        lua.set("Sound", Vec::<u8>::new());
-        let mut sound_namespace: hlua::LuaTable<_> = lua.get("Sound").unwrap();
+        let mut sound_namespace = lua.empty_array("Sound");
 
         // creating the `Sound.new` function
         sound_namespace.set("new", hlua::function(|| Sound::new()));
@@ -37,9 +36,7 @@ struct Sound {
 implement_lua_push!(Sound, |mut metatable| {
     // we create a `__index` entry in the metatable
     // when the lua code calls `sound:play()`, it will look for `play` in there
-    metatable.set("__index", Vec::<u8>::new());
-
-    let mut index: hlua::LuaTable<_> = metatable.get("__index").unwrap();
+    let mut index = metatable.empty_array("__index");
 
     index.set("play", hlua::function(|snd: &mut Sound| {
         snd.play()
