@@ -5,8 +5,7 @@ env:
     - secure: "BzoIUhSxk27LcMIKXcwXlMPs3RrO1J/XileGsWceU1FP4CyXbigmFdEu1Wcm7doEhPsGFvd5ogUc/yTyPhExpmy7aymkwlA5aaKqhOif/u1aHEhcE0oofPoyFNpkm0GR+U+3ExvMmYzJYVddwIXuIADUcV/Dusv4ZQB2Z/ZMtyU="
     - secure: "zsXkul12GoVz/SGbhZHlP9vQXzfWi0nhPkJSmuoCbmVgvCvfL+xURdI0XUwc3oZbRy9EO+Q6bJFtogOnc5edTRdXNVONweLLhM7fpbNV3YcDcgHC3WBZtupkjXszQ0oRA/3pzGPo2tRxzmuGJkbi1zRJRLHFDljv25Bf4lCHyuY="
 
-install:
-  - sudo apt-get install liblua5.2-dev
+sudo: false
 
 script:
   - cargo test --manifest-path lua52-sys/Cargo.toml
