@@ -13,6 +13,7 @@ use Push;
 use PushGuard;
 use LuaRead;
 
+use InsideCallback;
 use LuaTable;
 
 extern fn destructor_wrapper(lua: *mut ffi::lua_State) -> libc::c_int {
@@ -94,8 +95,9 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 }
 
 /// 
-pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L>
-                           where L: AsMutLua, T: 'static
+pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
+                                -> Result<&'t mut T, &'c mut InsideCallback>
+                                where T: 'static
 {
     assert!(index == -1);   // FIXME: 
 
@@ -121,10 +123,7 @@ pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Result<UserdataOnStack<T, 
         }
         ffi::lua_pop(lua.as_lua().0, -2);
 
-        Ok(UserdataOnStack {
-            variable: lua,
-            marker: PhantomData,
-        })
+        Ok(mem::transmute(data_ptr))
     }
 }
 
@@ -132,6 +131,40 @@ pub fn read_userdata<T, L>(mut lua: L, index: i32) -> Result<UserdataOnStack<T, 
 pub struct UserdataOnStack<T, L> {
     variable: L,
     marker: PhantomData<T>,
+}
+
+impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static {
+    fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
+        assert!(index == -1);   // FIXME: 
+
+        unsafe {
+            let expected_typeid = format!("{:?}", TypeId::of::<T>());
+
+            let data_ptr = ffi::lua_touserdata(lua.as_lua().0, -1);
+            if data_ptr.is_null() {
+                return Err(lua);
+            }
+
+            if ffi::lua_getmetatable(lua.as_lua().0, -1) == 0 {
+                return Err(lua);
+            }
+
+            "__typeid".push_to_lua(&mut lua).forget();
+            ffi::lua_gettable(lua.as_lua().0, -2);
+            match <String as LuaRead<_>>::lua_read(&mut lua) {
+                Ok(ref val) if val == &expected_typeid => {},
+                _ => {
+                    return Err(lua);
+                }
+            }
+            ffi::lua_pop(lua.as_lua().0, -2);
+
+            Ok(UserdataOnStack {
+                variable: lua,
+                marker: PhantomData,
+            })
+        }
+    }
 }
 
 impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static {
