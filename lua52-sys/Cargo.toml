@@ -5,7 +5,7 @@ version = "0.0.3"
 authors = ["Pierre Krieger <pierre.krieger1708@gmail.com>"]
 description = "Bindings for Lua 5.2"
 build = "build.rs"
-links = "lua52"
+links = "lua"
 license = "MIT"
 repository = "https://github.com/tomaka/rust-hl-lua"
 
