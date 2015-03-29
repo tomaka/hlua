@@ -41,13 +41,13 @@ impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
 
 /// Iterator that enumerates the content of a Lua table.
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
-pub struct LuaTableIterator<'t, L: 't, K, V> {
+pub struct LuaTableIterator<'t, L: 't, K, V> where L: AsMutLua {
     table: &'t mut LuaTable<L>,
     finished: bool,     // if true, the key is not on the stack anymore
     marker: PhantomData<(K, V)>,
 }
 
-unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V> where L: AsLua {
+unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V> where L: AsMutLua {
     fn as_lua(&self) -> LuaContext {
         self.table.as_lua()
     }

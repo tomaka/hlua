@@ -16,7 +16,7 @@ use std::ptr;
 /// Wraps a type that implements `FnMut` so that it can be used by hlua.
 ///
 /// This is only needed because of a limitation in Rust's inferrence system.
-pub fn function<F, P>(f: F) -> Function<F, P, <F as FnMut<P>>::Output> where F: FnMut<P> {
+pub fn function<F, P>(f: F) -> Function<F, P, <F as FnOnce<P>>::Output> where F: FnMut<P> {
     Function {
         function: f,
         marker: PhantomData,

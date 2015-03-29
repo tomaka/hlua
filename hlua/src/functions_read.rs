@@ -37,7 +37,7 @@ extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *
         return data.buffer.as_ptr() as *const libc::c_char;
     }
 
-    match data.reader.read(data.buffer.as_mut_slice()) {
+    match data.reader.read(&mut data.buffer) {
         Ok(len) =>
             unsafe { (*size) = len as libc::size_t },
         Err(e) => {

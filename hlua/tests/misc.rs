@@ -2,9 +2,10 @@ extern crate hlua;
 
 use hlua::Lua;
 use std::fs::File;
+use std::path::Path;
 
 #[test]
-#[should_fail]
+#[should_panic]
 fn readerrors() {
     let mut lua = Lua::new();
     let file = File::open(&Path::new("/path/to/unexisting/file")).unwrap();

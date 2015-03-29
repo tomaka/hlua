@@ -1,8 +1,8 @@
-#![feature(io, std_misc, core)]
+#![feature(std_misc, core)]
 #![feature(unboxed_closures)]
 #![feature(unsafe_destructor)]
 
-extern crate "lua52-sys" as ffi;
+extern crate lua52_sys as ffi;
 extern crate libc;
 
 use std::ffi::{CStr, CString};
