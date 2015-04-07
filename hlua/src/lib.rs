@@ -1,4 +1,4 @@
-#![feature(std_misc, core)]
+#![feature(core)]
 #![feature(unboxed_closures)]
 #![feature(unsafe_destructor)]
 

@@ -2,7 +2,6 @@ use ffi;
 use libc;
 
 use std::ffi::CString;
-use std::ffi::IntoBytes;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Error as IoError;
@@ -131,7 +130,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 
     /// Builds a new `LuaFunction` from a raw string.
     pub fn load(lua: L, code: &str) -> Result<LuaFunction<PushGuard<L>>, LuaError> {
-        let code = code.into_bytes();
+        let code: Vec<_> = code.bytes().collect();
         let reader = Cursor::new(code);
         LuaFunction::load_from_reader(lua, reader)
     }
