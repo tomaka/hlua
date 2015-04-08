@@ -106,5 +106,5 @@ fn empty_array() {
     }
 
     let mut table: LuaTable<_> = lua.get("a").unwrap();
-    assert_eq!(table.get("b").unwrap(), 3);
+    assert!(3 == table.get("b").unwrap());
 }
