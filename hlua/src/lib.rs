@@ -1,6 +1,5 @@
 #![feature(core)]
 #![feature(unboxed_closures)]
-#![feature(unsafe_destructor)]
 
 extern crate lua52_sys as ffi;
 extern crate libc;
@@ -277,7 +276,6 @@ impl<'lua> Lua<'lua> {
     }
 }
 
-#[unsafe_destructor]
 impl<'lua> Drop for Lua<'lua> {
     fn drop(&mut self) {
         if self.must_be_closed {
@@ -286,7 +284,6 @@ impl<'lua> Drop for Lua<'lua> {
     }
 }
 
-#[unsafe_destructor]
 impl<L> Drop for PushGuard<L> where L: AsMutLua {
     fn drop(&mut self) {
         if self.size != 0 {

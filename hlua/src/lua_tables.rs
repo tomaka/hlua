@@ -160,7 +160,6 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
     }
 }
 
-#[unsafe_destructor]
 impl<'t, L, K, V> Drop for LuaTableIterator<'t, L, K, V> where L: AsMutLua + 't {
     fn drop(&mut self) {
         if !self.finished {
