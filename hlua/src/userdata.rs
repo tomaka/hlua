@@ -167,6 +167,7 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 's
     }
 }
 
+#[allow(mutable_transmutes)]
 impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Reflect {
     type Target = T;
 
