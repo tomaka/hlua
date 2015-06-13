@@ -1,7 +1,6 @@
 [package]
-
 name = "hlua"
-version = "0.1.4"
+version = "0.1.5"
 authors = [ "pierre.krieger1708@gmail.com" ]
 description = "Zero-cost high-level wrapper for Lua"
 repository = "https://github.com/tomaka/hlua"
