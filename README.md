@@ -60,14 +60,14 @@ lua.execute_from_reader::<()>(File::open(&Path::new("script.lua")).unwrap())
 
 #### Writing functions
 
-In order to write a function, you must wrap it around `hlua::function`. This is for the moment a limitation of Rust's inferrence system.
+In order to write a function, you must wrap it around `hlua::functionX` where `X` is the number of parameters. This is for the moment a limitation of Rust's inferrence system.
 
 ```rust
 fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-lua.set("add", hlua::function(add));
+lua.set("add", hlua::function2(add));
 lua.execute::<()>("local c = add(2, 4)");   // calls the `add` function above
 let c: i32 = lua.get("c").unwrap();   // returns 6
 ```
@@ -77,7 +77,7 @@ In Lua, functions are exactly like regular variables.
 You can write regular functions as well as closures:
 
 ```rust
-lua.set("mul", hlua::function(|a: i32, b: i32| a * b));
+lua.set("mul", hlua::function2(|a: i32, b: i32| a * b));
 ```
 
 Note that the lifetime of the Lua context must be equal to or shorter than the lifetime of closures. This is enforced at compile-time.
@@ -163,8 +163,8 @@ fn foo() { }
 fn bar() { }
 
 lua.set("mylib", [
-    ("foo", hlua::function(foo)),
-    ("bar", hlua::function(bar))
+    ("foo", hlua::function0(foo)),
+    ("bar", hlua::function0(bar))
 ]);
 
 lua.execute::<()>("mylib.foo()");
@@ -188,7 +188,7 @@ impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
             |mut metatable| {
                 // you can define all the member functions of Foo here
                 // see the official Lua documentation for metatables
-                metatable.set("__call", hlua::function(|| println!("hello from foo")))
+                metatable.set("__call", hlua::function0(|| println!("hello from foo")))
             })
     }
 }

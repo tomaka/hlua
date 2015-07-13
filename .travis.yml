@@ -1,6 +1,8 @@
 language: rust
 
-rust: nightly
+rust:
+ - beta # TODO: stable
+ - nightly
 
 env:
   global:
