@@ -255,8 +255,8 @@ impl<'lua> Lua<'lua> {
     }
 
     /// Modifies the value of a global variable.
-    pub fn set<I, V>(& mut self, index: I, value: V)
-                         where I: Borrow<str>, for <'a> V: Push<&'a mut Lua<'lua>>
+    pub fn set<I, V>(&mut self, index: I, value: V)
+                         where I: Borrow<str>, for<'a> V: Push<&'a mut Lua<'lua>>
     {
         let index = CString::new(index.borrow()).unwrap();
         value.push_to_lua(self).forget();
