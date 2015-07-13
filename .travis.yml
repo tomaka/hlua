@@ -1,6 +1,13 @@
 language: rust
 
-rust: nightly
+rust:
+ - stable
+ - beta
+ - nightly
+
+matrix:
+  allow_failures:
+    - rust: stable
 
 env:
   global:

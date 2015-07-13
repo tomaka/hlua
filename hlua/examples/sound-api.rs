@@ -10,7 +10,7 @@ fn main() {
         let mut sound_namespace = lua.empty_array("Sound");
 
         // creating the `Sound.new` function
-        sound_namespace.set("new", hlua::function(|| Sound::new()));
+        sound_namespace.set("new", hlua::function0(|| Sound::new()));
     }
 
     lua.execute::<()>(r#"
@@ -38,15 +38,15 @@ implement_lua_push!(Sound, |mut metatable| {
     // when the lua code calls `sound:play()`, it will look for `play` in there
     let mut index = metatable.empty_array("__index");
 
-    index.set("play", hlua::function(|snd: &mut Sound| {
+    index.set("play", hlua::function1(|snd: &mut Sound| {
         snd.play()
     }));
 
-    index.set("stop", hlua::function(|snd: &mut Sound| {
+    index.set("stop", hlua::function1(|snd: &mut Sound| {
         snd.stop()
     }));
 
-    index.set("is_playing", hlua::function(|snd: &Sound| {
+    index.set("is_playing", hlua::function1(|snd: &Sound| {
         snd.is_playing()
     }));
 });
