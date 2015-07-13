@@ -1,8 +1,13 @@
 language: rust
 
 rust:
- - beta # TODO: stable
+ - stable
+ - beta
  - nightly
+
+matrix:
+  allow_failures:
+    - rust: stable
 
 env:
   global:
