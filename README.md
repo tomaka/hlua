@@ -32,7 +32,7 @@ let mut lua = Lua::new();     // mutable is mandatory
 
 ```rust
 lua.set("x", 2);
-lua.execute("x = x + 1").unwrap();
+lua.execute::<()>("x = x + 1").unwrap();
 let x: i32 = lua.get("x").unwrap();  // x is equal to 3
 ```
 
@@ -55,7 +55,7 @@ You can also call `execute_from_reader` which takes a `std::io::Read` as paramet
 For example you can easily execute the content of a file like this:
 
 ```rust
-lua.execute_from_reader(File::open(&Path::new("script.lua")).unwrap())
+lua.execute_from_reader::<()>(File::open(&Path::new("script.lua")).unwrap())
 ```
 
 #### Writing functions
@@ -68,7 +68,7 @@ fn add(a: i32, b: i32) -> i32 {
 }
 
 lua.set("add", hlua::function(add));
-lua.execute("local c = add(2, 4)");   // calls the `add` function above
+lua.execute::<()>("local c = add(2, 4)");   // calls the `add` function above
 let c: i32 = lua.get("c").unwrap();   // returns 6
 ```
 
@@ -129,7 +129,7 @@ table.set("b", "hello");
 You can call Lua functions by reading a `functions_read::LuaFunction`.
 
 ```rust
-lua.execute("
+lua.execute::<()>("
     function get_five() 
         return 5
     end");
@@ -167,7 +167,7 @@ lua.set("mylib", [
     ("bar", hlua::function(bar))
 ]);
 
-lua.execute("mylib.foo()");
+lua.execute::<()>("mylib.foo()");
 ```
 
 #### User data
@@ -196,7 +196,7 @@ impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
 fn main() {
     let mut lua = lua::Lua::new();
     lua.set("foo", Foo);
-    lua.execute("foo()");       // prints "hello from foo"
+    lua.execute::<()>("foo()");       // prints "hello from foo"
 }
 ```
 
