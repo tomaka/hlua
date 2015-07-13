@@ -1,5 +1,5 @@
-use std::any::TypeId;
-use std::marker::{PhantomData, Reflect};
+use std::any::{Any, TypeId};
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::mem;
 use std::ptr;
@@ -47,7 +47,7 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 ///
 pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
                               where F: FnMut(LuaTable<&mut PushGuard<&mut L>>), L: AsMutLua,
-                                    T: Send + 'static + Reflect
+                                    T: Send + 'static + Any
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
 
@@ -97,7 +97,7 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 /// 
 pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
                                 -> Result<&'t mut T, &'c mut InsideCallback>
-                                where T: 'static + Reflect
+                                where T: 'static + Any
 {
     assert!(index == -1);   // FIXME: 
 
@@ -133,7 +133,7 @@ pub struct UserdataOnStack<T, L> {
     marker: PhantomData<T>,
 }
 
-impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static + Reflect {
+impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static + Any {
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
         assert!(index == -1);   // FIXME: 
 
@@ -168,7 +168,7 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 's
 }
 
 #[allow(mutable_transmutes)]
-impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Reflect {
+impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -179,7 +179,7 @@ impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Refle
     }
 }
 
-impl<T, L> DerefMut for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Reflect {
+impl<T, L> DerefMut for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
     fn deref_mut(&mut self) -> &mut T {
         let data = unsafe { ffi::lua_touserdata(self.variable.as_mut_lua().0, -1) };
         let data: &mut T = unsafe { mem::transmute(data) };

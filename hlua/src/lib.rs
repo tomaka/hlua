@@ -1,5 +1,4 @@
 #![feature(core)]
-#![feature(reflect_marker)]
 #![feature(unboxed_closures)]
 
 extern crate lua52_sys as ffi;
