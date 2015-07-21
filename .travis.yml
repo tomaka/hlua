@@ -5,10 +5,6 @@ rust:
  - beta
  - nightly
 
-matrix:
-  allow_failures:
-    - rust: stable
-
 env:
   global:
     - secure: "BzoIUhSxk27LcMIKXcwXlMPs3RrO1J/XileGsWceU1FP4CyXbigmFdEu1Wcm7doEhPsGFvd5ogUc/yTyPhExpmy7aymkwlA5aaKqhOif/u1aHEhcE0oofPoyFNpkm0GR+U+3ExvMmYzJYVddwIXuIADUcV/Dusv4ZQB2Z/ZMtyU="
