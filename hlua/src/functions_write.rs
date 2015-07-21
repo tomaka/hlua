@@ -14,7 +14,7 @@ use std::mem;
 use std::ptr;
 
 macro_rules! impl_function {
-    ($name:ident $(, $p:ident)*) => (
+    ($name:ident, $($p:ident),*) => (
         /// Wraps a type that implements `FnMut` so that it can be used by hlua.
         ///
         /// This is only needed because of a limitation in Rust's inferrence system.
@@ -27,7 +27,7 @@ macro_rules! impl_function {
     )
 }
 
-impl_function!(function0);
+impl_function!(function0,);
 impl_function!(function1, A);
 impl_function!(function2, A, B);
 impl_function!(function3, A, B, C);
