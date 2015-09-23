@@ -162,6 +162,8 @@ quick_error! {
 
         /// There was an IoError while reading the source code to execute.
         ReadError(err: IoError) {
+            from()
+            cause(err)
             display("I/O error: {}", err)
             description("I/O error")
         }
