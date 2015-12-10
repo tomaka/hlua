@@ -210,7 +210,7 @@ To use it, add this to `Cargo.toml`:
 
 ```toml
 [dependencies.rust-hl-lua-modules]
-git = "https://github.com/tomaka/rust-hl-lua"
+git = "https://github.com/tomaka/hlua"
 ```
 
 Then you can use it like this:
