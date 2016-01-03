@@ -33,7 +33,6 @@ fn call_and_read_table() {
 
     let mut f = hlua::LuaFunction::load(&mut lua, "return {1, 2, 3};").unwrap();
 
-    let val: hlua::LuaTable<_> = f.call().unwrap();
-
-
+    let mut val: hlua::LuaTable<_> = f.call().unwrap();
+    assert_eq!(val.get::<u8, _>(2).unwrap(), 2);
 }
