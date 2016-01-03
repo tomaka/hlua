@@ -50,9 +50,8 @@ extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *
 
 impl<L> LuaFunction<L> where L: AsMutLua {
     /// Calls the `LuaFunction`.
-    pub fn call<V>(&mut self) -> Result<V, LuaError>
-                   where V: for<'a> LuaRead<PushGuard<&'a mut L>> +
-                            for<'a> LuaRead<&'a mut L>
+    pub fn call<'a, V>(&'a mut self) -> Result<V, LuaError>
+        where V: LuaRead<PushGuard<&'a mut L>>
     {
         // calling pcall pops the parameters and pushes output
         let (pcall_return_value, pushed_value) = unsafe {
