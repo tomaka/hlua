@@ -26,3 +26,14 @@ fn execution_error() {
     let val: Result<i32, hlua::LuaError> = f.call();
     assert!(val.is_err());
 }
+
+#[test]
+fn call_and_read_table() {
+    let mut lua = hlua::Lua::new();
+
+    let mut f = hlua::LuaFunction::load(&mut lua, "return {1, 2, 3};").unwrap();
+
+    let val: hlua::LuaTable<_> = f.call().unwrap();
+
+
+}
