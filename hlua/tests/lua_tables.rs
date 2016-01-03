@@ -1,7 +1,6 @@
 extern crate hlua;
 
-use hlua::Lua;
-use hlua::LuaTable;
+use hlua::{Lua, LuaTable, PushGuard};
 
 #[test]
 fn iterable() {
@@ -107,4 +106,27 @@ fn empty_array() {
 
     let mut table: LuaTable<_> = lua.get("a").unwrap();
     assert!(3 == table.get("b").unwrap());
+}
+
+#[test]
+fn by_value() {
+    let mut lua = Lua::new();
+
+    {
+        let mut array = lua.empty_array("a");
+        {
+            let mut array2 = array.empty_array("b");
+            array2.set("c", 3);
+        }
+    }
+
+    let table: LuaTable<PushGuard<Lua>> = lua.into_get("a").ok().unwrap();
+    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> = table.into_get("b").ok().unwrap();
+    assert!(3 == table2.get("c").unwrap());
+    let table: LuaTable<PushGuard<Lua>> = table2.into_inner().into_inner();
+    // do it again to make sure the stack is still sane
+    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> = table.into_get("b").ok().unwrap();
+    assert!(3 == table2.get("c").unwrap());
+    let table: LuaTable<PushGuard<Lua>> = table2.into_inner().into_inner();
+    let _lua: Lua = table.into_inner().into_inner();
 }

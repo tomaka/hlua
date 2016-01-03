@@ -47,6 +47,24 @@ impl<L> PushGuard<L> where L: AsMutLua {
         self.size = 0;
         size
     }
+
+    /// Destroys the guard, popping the value. Returns the inner part,
+    /// which returns access when using by-value capture.
+    pub fn into_inner(mut self) -> L {
+        use std::{mem, ptr};
+
+        let mut res;
+        unsafe {
+            res = mem::uninitialized();
+            ptr::copy_nonoverlapping(&self.lua, &mut res, 1);
+            if self.size != 0 {
+                ffi::lua_pop(self.lua.as_mut_lua().0, self.size);
+            }
+        };
+        mem::forget(self);
+
+        res
+    }
 }
 
 /// Trait for objects that have access to a Lua context. When using a context returned by a
@@ -67,19 +85,13 @@ pub unsafe trait AsMutLua: AsLua {
 pub struct LuaContext(*mut ffi::lua_State);
 unsafe impl Send for LuaContext {}
 
-unsafe impl<'a, 'lua> AsLua for &'a Lua<'lua> {
+unsafe impl<'a, 'lua> AsLua for Lua<'lua> {
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
-unsafe impl<'a, 'lua> AsLua for &'a mut Lua<'lua> {
-    fn as_lua(&self) -> LuaContext {
-        self.lua
-    }
-}
-
-unsafe impl<'a, 'lua> AsMutLua for &'a mut Lua<'lua> {
+unsafe impl<'lua> AsMutLua for Lua<'lua> {
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua
     }
@@ -247,6 +259,16 @@ impl<'lua> Lua<'lua> {
         unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
         let guard = PushGuard { lua: self, size: 1 };
         LuaRead::lua_read(guard).ok()
+    }
+
+    /// Reads the value of a global, capturing the context by value.
+    pub fn into_get<V, I>(self, index: I) -> Result<V, PushGuard<Self>>
+        where I: Borrow<str>, V: LuaRead<PushGuard<Lua<'lua>>>
+    {
+        let index = CString::new(index.borrow()).unwrap();
+        unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        let guard = PushGuard { lua: self, size: 1 };
+        LuaRead::lua_read(guard)
     }
 
     /// Modifies the value of a global variable.

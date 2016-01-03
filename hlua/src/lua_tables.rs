@@ -60,6 +60,11 @@ unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V> where L: AsM
 }
 
 impl<L> LuaTable<L> where L: AsMutLua {
+    /// Destroys the LuaTable and returns its inner Lua context. Useful when it takes Lua by value.
+    pub fn into_inner(self) -> L {
+        self.table
+    }
+
     /// Iterates over the elements inside the table.
     pub fn iter<K, V>(&mut self) -> LuaTableIterator<L, K, V> {
         unsafe { ffi::lua_pushnil(self.table.as_mut_lua().0) };
@@ -81,6 +86,18 @@ impl<L> LuaTable<L> where L: AsMutLua {
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
         let guard = PushGuard { lua: me, size: 1 };
         LuaRead::lua_read(guard).ok()
+    }
+
+    /// Loads a value in the table, with the result capturing the table by value.
+    pub fn into_get<'a, R, I>(self, index: I) -> Result<R, PushGuard<Self>>
+        where R: LuaRead<PushGuard<LuaTable<L>>>,
+              I: for<'b> Push<&'b mut LuaTable<L>>
+    {
+        let mut me = self;
+        index.push_to_lua(&mut me).forget();
+        unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
+        let guard = PushGuard { lua: me, size: 1 };
+        LuaRead::lua_read(guard)
     }
 
     /// Inserts or modifies an elements of the table.
