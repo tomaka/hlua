@@ -50,6 +50,14 @@ fn read_booleans() {
 }
 
 #[test]
+fn read_nil() {
+    let mut lua = Lua::new();
+
+    let x: AnyLuaValue = lua.get("distinctly_nil_value").unwrap();
+    assert_eq!(x, AnyLuaValue::LuaNil);
+}
+
+#[test]
 fn push_numbers() {
     let mut lua = Lua::new();
 
@@ -77,4 +85,16 @@ fn push_booleans() {
 
     let x: bool = lua.get("a").unwrap();
     assert_eq!(x, true);
+}
+
+#[test]
+fn push_nil() {
+    let mut lua = Lua::new();
+
+    lua.set("a", AnyLuaValue::LuaNil);
+
+    let x: Option<i32> = lua.get("a");
+    assert!(x.is_none(),
+            "x is a Some value when it should be a None value. X: {:?}",
+            x);
 }
