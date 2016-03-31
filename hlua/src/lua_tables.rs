@@ -84,6 +84,10 @@ impl<L> LuaTable<L> where L: AsMutLua {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
+        if unsafe { ffi::lua_isnil(me.as_lua().0, -1) } {
+            let _guard = PushGuard { lua: me, size: 1 };
+            return None;
+        }
         let guard = PushGuard { lua: me, size: 1 };
         LuaRead::lua_read(guard).ok()
     }
