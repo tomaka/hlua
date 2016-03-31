@@ -96,8 +96,13 @@ impl<L> LuaTable<L> where L: AsMutLua {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         unsafe { ffi::lua_gettable(me.as_mut_lua().0, -2); }
+        let is_nil = unsafe { ffi::lua_isnil(me.as_mut_lua().0, -1) };
         let guard = PushGuard { lua: me, size: 1 };
-        LuaRead::lua_read(guard)
+        if is_nil {
+            Err(guard)
+        } else {
+            LuaRead::lua_read(guard)
+        }
     }
 
     /// Inserts or modifies an elements of the table.

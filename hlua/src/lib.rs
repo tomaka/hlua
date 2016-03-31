@@ -271,8 +271,13 @@ impl<'lua> Lua<'lua> {
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        let is_nil = unsafe { ffi::lua_isnil(self.as_lua().0, -1) };
         let guard = PushGuard { lua: self, size: 1 };
-        LuaRead::lua_read(guard)
+        if is_nil {
+            Err(guard)
+        } else {
+            LuaRead::lua_read(guard)
+        }
     }
 
     /// Modifies the value of a global variable.
