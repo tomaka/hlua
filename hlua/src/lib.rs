@@ -257,6 +257,10 @@ impl<'lua> Lua<'lua> {
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        if unsafe { ffi::lua_isnil(self.as_lua().0, -1) } {
+            let _guard = PushGuard { lua: self, size: 1 };
+            return None;
+        }
         let guard = PushGuard { lua: self, size: 1 };
         LuaRead::lua_read(guard).ok()
     }
