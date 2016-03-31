@@ -50,14 +50,6 @@ fn read_booleans() {
 }
 
 #[test]
-fn read_nil() {
-    let mut lua = Lua::new();
-
-    let x: AnyLuaValue = lua.get("distinctly_nil_value").unwrap();
-    assert_eq!(x, AnyLuaValue::LuaNil);
-}
-
-#[test]
 fn push_numbers() {
     let mut lua = Lua::new();
 
