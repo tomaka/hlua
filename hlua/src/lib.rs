@@ -1,5 +1,6 @@
 extern crate lua52_sys as ffi;
 extern crate libc;
+#[macro_use] extern crate quick_error;
 
 use std::ffi::{CStr, CString};
 use std::io::Read;
@@ -154,21 +155,37 @@ pub trait LuaRead<L>: Sized where L: AsLua {
     fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L>;
 }
 
-/// Error that can happen when executing Lua code.
-#[derive(Debug)]
-pub enum LuaError {
-    /// There was a syntax error when parsing the Lua code.
-    SyntaxError(String),
+quick_error! {
+    /// Error that can happen when executing Lua code.
+    #[derive(Debug)]
+    pub enum LuaError {
+        /// There was a syntax error when parsing the Lua code.
+        SyntaxError(err: String) {
+            display("Syntax error: {}", err)
+            description(&err[..])
+        }
 
-    /// There was an error during execution of the Lua code
-    /// (for example not enough parameters for a function call).
-    ExecutionError(String),
+        /// There was an error during execution of the Lua code
+        /// (for example not enough parameters for a function call).
+        ExecutionError(err: String) {
+            display("Execution error: {}", err)
+            description(&err[..])
+        }
 
-    /// There was an IoError while reading the source code to execute.
-    ReadError(IoError),
+        /// There was an IoError while reading the source code to execute.
+        ReadError(err: IoError) {
+            from()
+            cause(err)
+            display("I/O error: {}", err)
+            description("I/O error")
+        }
 
-    /// The call to `execute` has requested the wrong type of data.
-    WrongType,
+        /// The call to `execute` has requested the wrong type of data.
+        WrongType {
+            description("The call to `execute` has requested \
+                         the wrong type of data")
+        }
+    }
 }
 
 impl<'lua> Lua<'lua> {
