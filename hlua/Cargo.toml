@@ -8,8 +8,8 @@ documentation = "http://tomaka.github.io/hlua/hlua/index.html"
 license = "MIT"
 
 [dependencies]
-libc = "*"
+libc = "0.2"
 
 [dependencies.lua52-sys]
-version = "*"
+version = "0.0.4"
 path = "../lua52-sys"
