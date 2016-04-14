@@ -23,7 +23,14 @@ pub const LUA_ERRERR: c_int = 6;
 
 #[repr(C)]
 #[allow(missing_copy_implementations)]
-pub struct lua_State;
+pub struct lua_State {
+    /// This padding makes sure that there aren't hundreds of improper_ctypes warnings.
+    ///
+    /// These warnings, however, are still correct. The C spec does not account for zero sized structs.
+    /// In C structs that are empty still take up space, for the reason that two different variables
+    /// will always have different addresses.
+    _padding: u8,
+}
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
 
