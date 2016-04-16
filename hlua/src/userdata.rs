@@ -16,7 +16,7 @@ use LuaRead;
 use InsideCallback;
 use LuaTable;
 
-extern fn destructor_wrapper(lua: *mut ffi::lua_State) -> libc::c_int {
+extern "C" fn destructor_wrapper(lua: *mut ffi::lua_State) -> libc::c_int {
     let impl_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
     let imp: fn(*mut ffi::lua_State)->::libc::c_int = unsafe { mem::transmute(impl_raw) };
 
@@ -76,7 +76,7 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
             ffi::lua_pushlightuserdata(lua.as_mut_lua().0, mem::transmute(destructor_impl));
 
             // pushing destructor_wrapper as a closure
-            ffi::lua_pushcclosure(lua.as_mut_lua().0, mem::transmute(destructor_wrapper), 1);
+            ffi::lua_pushcclosure(lua.as_mut_lua().0, destructor_wrapper, 1);
 
             ffi::lua_settable(lua.as_mut_lua().0, -3);
         }
@@ -94,12 +94,12 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
     PushGuard { lua: lua, size: 1 }
 }
 
-/// 
+///
 pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
                                 -> Result<&'t mut T, &'c mut InsideCallback>
                                 where T: 'static + Any
 {
-    assert!(index == -1);   // FIXME: 
+    assert!(index == -1);   // FIXME:
 
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
@@ -135,7 +135,7 @@ pub struct UserdataOnStack<T, L> {
 
 impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static + Any {
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
-        assert!(index == -1);   // FIXME: 
+        assert!(index == -1);   // FIXME:
 
         unsafe {
             let expected_typeid = format!("{:?}", TypeId::of::<T>());
@@ -172,7 +172,7 @@ impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
     type Target = T;
 
     fn deref(&self) -> &T {
-        let me: &mut UserdataOnStack<T, L> = unsafe { mem::transmute(self) };       // FIXME: 
+        let me: &mut UserdataOnStack<T, L> = unsafe { mem::transmute(self) };       // FIXME:
         let data = unsafe { ffi::lua_touserdata(me.variable.as_mut_lua().0, -1) };
         let data: &T = unsafe { mem::transmute(data) };
         data

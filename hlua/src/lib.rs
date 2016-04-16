@@ -81,7 +81,6 @@ pub unsafe trait AsMutLua: AsLua {
 
 /// Opaque type that contains the raw Lua context.
 #[derive(Copy, Clone)]
-#[allow(raw_pointer_derive)]
 pub struct LuaContext(*mut ffi::lua_State);
 unsafe impl Send for LuaContext {}
 
