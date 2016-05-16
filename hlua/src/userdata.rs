@@ -99,17 +99,15 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
                                 -> Result<&'t mut T, &'c mut InsideCallback>
                                 where T: 'static + Any
 {
-    assert!(index == -1);   // FIXME:
-
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
 
-        let data_ptr = ffi::lua_touserdata(lua.as_lua().0, -1);
+        let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
         if data_ptr.is_null() {
             return Err(lua);
         }
 
-        if ffi::lua_getmetatable(lua.as_lua().0, -1) == 0 {
+        if ffi::lua_getmetatable(lua.as_lua().0, index) == 0 {
             return Err(lua);
         }
 
@@ -121,7 +119,7 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
                 return Err(lua);
             }
         }
-        ffi::lua_pop(lua.as_lua().0, -2);
+        ffi::lua_pop(lua.as_lua().0, 2);
 
         Ok(mem::transmute(data_ptr))
     }
@@ -135,17 +133,15 @@ pub struct UserdataOnStack<T, L> {
 
 impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static + Any {
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
-        assert!(index == -1);   // FIXME:
-
         unsafe {
             let expected_typeid = format!("{:?}", TypeId::of::<T>());
 
-            let data_ptr = ffi::lua_touserdata(lua.as_lua().0, -1);
+            let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
             if data_ptr.is_null() {
                 return Err(lua);
             }
 
-            if ffi::lua_getmetatable(lua.as_lua().0, -1) == 0 {
+            if ffi::lua_getmetatable(lua.as_lua().0, index) == 0 {
                 return Err(lua);
             }
 
@@ -157,7 +153,7 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 's
                     return Err(lua);
                 }
             }
-            ffi::lua_pop(lua.as_lua().0, -2);
+            ffi::lua_pop(lua.as_lua().0, 2);
 
             Ok(UserdataOnStack {
                 variable: lua,
