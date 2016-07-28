@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["push_userdata","Pushes an object as a user data."],["read_userdata",""]],"struct":[["UserdataOnStack","Represents a user data located inside the Lua context."]]});

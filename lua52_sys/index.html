@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `lua52_sys` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, lua52_sys">
+
+    <title>lua52_sys - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'lua52_sys', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>lua52_sys</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/lua52_sys/lua52-sys/src/lib.rs.html#1-341' title='goto source code'>[src]</a></span></h1>
+<h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.lua_Debug.html'
+                                  title='lua52_sys::lua_Debug'>lua_Debug</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.lua_State.html'
+                                  title='lua52_sys::lua_State'>lua_State</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUAI_FIRSTPSEUDOIDX.html'
+                                  title='lua52_sys::LUAI_FIRSTPSEUDOIDX'>LUAI_FIRSTPSEUDOIDX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUAI_MAXSTACK.html'
+                                  title='lua52_sys::LUAI_MAXSTACK'>LUAI_MAXSTACK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_ERRERR.html'
+                                  title='lua52_sys::LUA_ERRERR'>LUA_ERRERR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_ERRGCMM.html'
+                                  title='lua52_sys::LUA_ERRGCMM'>LUA_ERRGCMM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_ERRMEM.html'
+                                  title='lua52_sys::LUA_ERRMEM'>LUA_ERRMEM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_ERRRUN.html'
+                                  title='lua52_sys::LUA_ERRRUN'>LUA_ERRRUN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_ERRSYNTAX.html'
+                                  title='lua52_sys::LUA_ERRSYNTAX'>LUA_ERRSYNTAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCCOLLECT.html'
+                                  title='lua52_sys::LUA_GCCOLLECT'>LUA_GCCOLLECT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCCOUNT.html'
+                                  title='lua52_sys::LUA_GCCOUNT'>LUA_GCCOUNT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCCOUNTB.html'
+                                  title='lua52_sys::LUA_GCCOUNTB'>LUA_GCCOUNTB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCGEN.html'
+                                  title='lua52_sys::LUA_GCGEN'>LUA_GCGEN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCINC.html'
+                                  title='lua52_sys::LUA_GCINC'>LUA_GCINC</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCISRUNNING.html'
+                                  title='lua52_sys::LUA_GCISRUNNING'>LUA_GCISRUNNING</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCRESTART.html'
+                                  title='lua52_sys::LUA_GCRESTART'>LUA_GCRESTART</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCSETMAJORINC.html'
+                                  title='lua52_sys::LUA_GCSETMAJORINC'>LUA_GCSETMAJORINC</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCSETPAUSE.html'
+                                  title='lua52_sys::LUA_GCSETPAUSE'>LUA_GCSETPAUSE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCSETSTEPMUL.html'
+                                  title='lua52_sys::LUA_GCSETSTEPMUL'>LUA_GCSETSTEPMUL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCSTEP.html'
+                                  title='lua52_sys::LUA_GCSTEP'>LUA_GCSTEP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_GCSTOP.html'
+                                  title='lua52_sys::LUA_GCSTOP'>LUA_GCSTOP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_HOOKCALL.html'
+                                  title='lua52_sys::LUA_HOOKCALL'>LUA_HOOKCALL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_HOOKCOUNT.html'
+                                  title='lua52_sys::LUA_HOOKCOUNT'>LUA_HOOKCOUNT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_HOOKLINE.html'
+                                  title='lua52_sys::LUA_HOOKLINE'>LUA_HOOKLINE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_HOOKRET.html'
+                                  title='lua52_sys::LUA_HOOKRET'>LUA_HOOKRET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_HOOKTAILRET.html'
+                                  title='lua52_sys::LUA_HOOKTAILRET'>LUA_HOOKTAILRET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_MASKCALL.html'
+                                  title='lua52_sys::LUA_MASKCALL'>LUA_MASKCALL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_MASKCOUNT.html'
+                                  title='lua52_sys::LUA_MASKCOUNT'>LUA_MASKCOUNT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_MASKLINE.html'
+                                  title='lua52_sys::LUA_MASKLINE'>LUA_MASKLINE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_MASKRET.html'
+                                  title='lua52_sys::LUA_MASKRET'>LUA_MASKRET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_MINSTACK.html'
+                                  title='lua52_sys::LUA_MINSTACK'>LUA_MINSTACK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OK.html'
+                                  title='lua52_sys::LUA_OK'>LUA_OK</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPADD.html'
+                                  title='lua52_sys::LUA_OPADD'>LUA_OPADD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPDIV.html'
+                                  title='lua52_sys::LUA_OPDIV'>LUA_OPDIV</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPEQ.html'
+                                  title='lua52_sys::LUA_OPEQ'>LUA_OPEQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPLE.html'
+                                  title='lua52_sys::LUA_OPLE'>LUA_OPLE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPLT.html'
+                                  title='lua52_sys::LUA_OPLT'>LUA_OPLT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPMOD.html'
+                                  title='lua52_sys::LUA_OPMOD'>LUA_OPMOD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPMUL.html'
+                                  title='lua52_sys::LUA_OPMUL'>LUA_OPMUL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPPOW.html'
+                                  title='lua52_sys::LUA_OPPOW'>LUA_OPPOW</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPSUB.html'
+                                  title='lua52_sys::LUA_OPSUB'>LUA_OPSUB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_OPUNM.html'
+                                  title='lua52_sys::LUA_OPUNM'>LUA_OPUNM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_REGISTRYINDEX.html'
+                                  title='lua52_sys::LUA_REGISTRYINDEX'>LUA_REGISTRYINDEX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_RIDX_GLOBALS.html'
+                                  title='lua52_sys::LUA_RIDX_GLOBALS'>LUA_RIDX_GLOBALS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_RIDX_MAINTHREAD.html'
+                                  title='lua52_sys::LUA_RIDX_MAINTHREAD'>LUA_RIDX_MAINTHREAD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TBOOLEAN.html'
+                                  title='lua52_sys::LUA_TBOOLEAN'>LUA_TBOOLEAN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TFUNCTION.html'
+                                  title='lua52_sys::LUA_TFUNCTION'>LUA_TFUNCTION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TLIGHTUSERDATA.html'
+                                  title='lua52_sys::LUA_TLIGHTUSERDATA'>LUA_TLIGHTUSERDATA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TNIL.html'
+                                  title='lua52_sys::LUA_TNIL'>LUA_TNIL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TNONE.html'
+                                  title='lua52_sys::LUA_TNONE'>LUA_TNONE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TNUMBER.html'
+                                  title='lua52_sys::LUA_TNUMBER'>LUA_TNUMBER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TSTRING.html'
+                                  title='lua52_sys::LUA_TSTRING'>LUA_TSTRING</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TTABLE.html'
+                                  title='lua52_sys::LUA_TTABLE'>LUA_TTABLE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TTHREAD.html'
+                                  title='lua52_sys::LUA_TTHREAD'>LUA_TTHREAD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_TUSERDATA.html'
+                                  title='lua52_sys::LUA_TUSERDATA'>LUA_TUSERDATA</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.LUA_YIELD.html'
+                                  title='lua52_sys::LUA_YIELD'>LUA_YIELD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.MULTRET.html'
+                                  title='lua52_sys::MULTRET'>MULTRET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.luaL_openlibs.html'
+                                  title='lua52_sys::luaL_openlibs'>luaL_openlibs</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_absindex.html'
+                                  title='lua52_sys::lua_absindex'>lua_absindex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_arith.html'
+                                  title='lua52_sys::lua_arith'>lua_arith</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_atpanic.html'
+                                  title='lua52_sys::lua_atpanic'>lua_atpanic</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_call.html'
+                                  title='lua52_sys::lua_call'>lua_call</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_callk.html'
+                                  title='lua52_sys::lua_callk'>lua_callk</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_checkstack.html'
+                                  title='lua52_sys::lua_checkstack'>lua_checkstack</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_close.html'
+                                  title='lua52_sys::lua_close'>lua_close</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_compare.html'
+                                  title='lua52_sys::lua_compare'>lua_compare</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_concat.html'
+                                  title='lua52_sys::lua_concat'>lua_concat</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_copy.html'
+                                  title='lua52_sys::lua_copy'>lua_copy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_createtable.html'
+                                  title='lua52_sys::lua_createtable'>lua_createtable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_dump.html'
+                                  title='lua52_sys::lua_dump'>lua_dump</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_error.html'
+                                  title='lua52_sys::lua_error'>lua_error</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gc.html'
+                                  title='lua52_sys::lua_gc'>lua_gc</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getallocf.html'
+                                  title='lua52_sys::lua_getallocf'>lua_getallocf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getctx.html'
+                                  title='lua52_sys::lua_getctx'>lua_getctx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getfenv.html'
+                                  title='lua52_sys::lua_getfenv'>lua_getfenv</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getfield.html'
+                                  title='lua52_sys::lua_getfield'>lua_getfield</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getglobal.html'
+                                  title='lua52_sys::lua_getglobal'>lua_getglobal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gethook.html'
+                                  title='lua52_sys::lua_gethook'>lua_gethook</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gethookcount.html'
+                                  title='lua52_sys::lua_gethookcount'>lua_gethookcount</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gethookmask.html'
+                                  title='lua52_sys::lua_gethookmask'>lua_gethookmask</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getinfo.html'
+                                  title='lua52_sys::lua_getinfo'>lua_getinfo</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getlocal.html'
+                                  title='lua52_sys::lua_getlocal'>lua_getlocal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getmetatable.html'
+                                  title='lua52_sys::lua_getmetatable'>lua_getmetatable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getstack.html'
+                                  title='lua52_sys::lua_getstack'>lua_getstack</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gettable.html'
+                                  title='lua52_sys::lua_gettable'>lua_gettable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_gettop.html'
+                                  title='lua52_sys::lua_gettop'>lua_gettop</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_getupvalue.html'
+                                  title='lua52_sys::lua_getupvalue'>lua_getupvalue</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_insert.html'
+                                  title='lua52_sys::lua_insert'>lua_insert</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isboolean.html'
+                                  title='lua52_sys::lua_isboolean'>lua_isboolean</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_iscfunction.html'
+                                  title='lua52_sys::lua_iscfunction'>lua_iscfunction</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isfunction.html'
+                                  title='lua52_sys::lua_isfunction'>lua_isfunction</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_islightuserdata.html'
+                                  title='lua52_sys::lua_islightuserdata'>lua_islightuserdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isnil.html'
+                                  title='lua52_sys::lua_isnil'>lua_isnil</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isnone.html'
+                                  title='lua52_sys::lua_isnone'>lua_isnone</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isnoneornil.html'
+                                  title='lua52_sys::lua_isnoneornil'>lua_isnoneornil</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isnumber.html'
+                                  title='lua52_sys::lua_isnumber'>lua_isnumber</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isstring.html'
+                                  title='lua52_sys::lua_isstring'>lua_isstring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_istable.html'
+                                  title='lua52_sys::lua_istable'>lua_istable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isthread.html'
+                                  title='lua52_sys::lua_isthread'>lua_isthread</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_isuserdata.html'
+                                  title='lua52_sys::lua_isuserdata'>lua_isuserdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_len.html'
+                                  title='lua52_sys::lua_len'>lua_len</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_load.html'
+                                  title='lua52_sys::lua_load'>lua_load</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_newstate.html'
+                                  title='lua52_sys::lua_newstate'>lua_newstate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_newtable.html'
+                                  title='lua52_sys::lua_newtable'>lua_newtable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_newthread.html'
+                                  title='lua52_sys::lua_newthread'>lua_newthread</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_newuserdata.html'
+                                  title='lua52_sys::lua_newuserdata'>lua_newuserdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_next.html'
+                                  title='lua52_sys::lua_next'>lua_next</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pcall.html'
+                                  title='lua52_sys::lua_pcall'>lua_pcall</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pcallk.html'
+                                  title='lua52_sys::lua_pcallk'>lua_pcallk</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pop.html'
+                                  title='lua52_sys::lua_pop'>lua_pop</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushboolean.html'
+                                  title='lua52_sys::lua_pushboolean'>lua_pushboolean</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushcclosure.html'
+                                  title='lua52_sys::lua_pushcclosure'>lua_pushcclosure</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushcfunction.html'
+                                  title='lua52_sys::lua_pushcfunction'>lua_pushcfunction</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushfstring.html'
+                                  title='lua52_sys::lua_pushfstring'>lua_pushfstring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushglobaltable.html'
+                                  title='lua52_sys::lua_pushglobaltable'>lua_pushglobaltable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushinteger.html'
+                                  title='lua52_sys::lua_pushinteger'>lua_pushinteger</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushlightuserdata.html'
+                                  title='lua52_sys::lua_pushlightuserdata'>lua_pushlightuserdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushlstring.html'
+                                  title='lua52_sys::lua_pushlstring'>lua_pushlstring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushnil.html'
+                                  title='lua52_sys::lua_pushnil'>lua_pushnil</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushnumber.html'
+                                  title='lua52_sys::lua_pushnumber'>lua_pushnumber</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushstring.html'
+                                  title='lua52_sys::lua_pushstring'>lua_pushstring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushthread.html'
+                                  title='lua52_sys::lua_pushthread'>lua_pushthread</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushunsigned.html'
+                                  title='lua52_sys::lua_pushunsigned'>lua_pushunsigned</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_pushvalue.html'
+                                  title='lua52_sys::lua_pushvalue'>lua_pushvalue</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawequal.html'
+                                  title='lua52_sys::lua_rawequal'>lua_rawequal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawget.html'
+                                  title='lua52_sys::lua_rawget'>lua_rawget</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawgeti.html'
+                                  title='lua52_sys::lua_rawgeti'>lua_rawgeti</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawgetp.html'
+                                  title='lua52_sys::lua_rawgetp'>lua_rawgetp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawlen.html'
+                                  title='lua52_sys::lua_rawlen'>lua_rawlen</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawset.html'
+                                  title='lua52_sys::lua_rawset'>lua_rawset</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawseti.html'
+                                  title='lua52_sys::lua_rawseti'>lua_rawseti</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_rawsetp.html'
+                                  title='lua52_sys::lua_rawsetp'>lua_rawsetp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_register.html'
+                                  title='lua52_sys::lua_register'>lua_register</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_remove.html'
+                                  title='lua52_sys::lua_remove'>lua_remove</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_replace.html'
+                                  title='lua52_sys::lua_replace'>lua_replace</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_resume.html'
+                                  title='lua52_sys::lua_resume'>lua_resume</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setallocf.html'
+                                  title='lua52_sys::lua_setallocf'>lua_setallocf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setfenv.html'
+                                  title='lua52_sys::lua_setfenv'>lua_setfenv</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setfield.html'
+                                  title='lua52_sys::lua_setfield'>lua_setfield</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setglobal.html'
+                                  title='lua52_sys::lua_setglobal'>lua_setglobal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_sethook.html'
+                                  title='lua52_sys::lua_sethook'>lua_sethook</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setlocal.html'
+                                  title='lua52_sys::lua_setlocal'>lua_setlocal</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setmetatable.html'
+                                  title='lua52_sys::lua_setmetatable'>lua_setmetatable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_settable.html'
+                                  title='lua52_sys::lua_settable'>lua_settable</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_settop.html'
+                                  title='lua52_sys::lua_settop'>lua_settop</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_setupvalue.html'
+                                  title='lua52_sys::lua_setupvalue'>lua_setupvalue</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_status.html'
+                                  title='lua52_sys::lua_status'>lua_status</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_toboolean.html'
+                                  title='lua52_sys::lua_toboolean'>lua_toboolean</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tocfunction.html'
+                                  title='lua52_sys::lua_tocfunction'>lua_tocfunction</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tointegerx.html'
+                                  title='lua52_sys::lua_tointegerx'>lua_tointegerx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tolstring.html'
+                                  title='lua52_sys::lua_tolstring'>lua_tolstring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tonumberx.html'
+                                  title='lua52_sys::lua_tonumberx'>lua_tonumberx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_topointer.html'
+                                  title='lua52_sys::lua_topointer'>lua_topointer</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tostring.html'
+                                  title='lua52_sys::lua_tostring'>lua_tostring</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tothread.html'
+                                  title='lua52_sys::lua_tothread'>lua_tothread</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_tounsignedx.html'
+                                  title='lua52_sys::lua_tounsignedx'>lua_tounsignedx</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_touserdata.html'
+                                  title='lua52_sys::lua_touserdata'>lua_touserdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_type.html'
+                                  title='lua52_sys::lua_type'>lua_type</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_typename.html'
+                                  title='lua52_sys::lua_typename'>lua_typename</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_upvalueid.html'
+                                  title='lua52_sys::lua_upvalueid'>lua_upvalueid</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_upvalueindex.html'
+                                  title='lua52_sys::lua_upvalueindex'>lua_upvalueindex</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_upvaluejoin.html'
+                                  title='lua52_sys::lua_upvaluejoin'>lua_upvaluejoin</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_version.html'
+                                  title='lua52_sys::lua_version'>lua_version</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_xmove.html'
+                                  title='lua52_sys::lua_xmove'>lua_xmove</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_yield.html'
+                                  title='lua52_sys::lua_yield'>lua_yield</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.lua_yieldk.html'
+                                  title='lua52_sys::lua_yieldk'>lua_yieldk</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Alloc.html'
+                                  title='lua52_sys::lua_Alloc'>lua_Alloc</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_CFunction.html'
+                                  title='lua52_sys::lua_CFunction'>lua_CFunction</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Hook.html'
+                                  title='lua52_sys::lua_Hook'>lua_Hook</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Integer.html'
+                                  title='lua52_sys::lua_Integer'>lua_Integer</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Number.html'
+                                  title='lua52_sys::lua_Number'>lua_Number</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Reader.html'
+                                  title='lua52_sys::lua_Reader'>lua_Reader</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Unsigned.html'
+                                  title='lua52_sys::lua_Unsigned'>lua_Unsigned</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.lua_Writer.html'
+                                  title='lua52_sys::lua_Writer'>lua_Writer</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "lua52_sys";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

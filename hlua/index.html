@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `hlua` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, hlua">
+
+    <title>hlua - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'hlua', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>hlua</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/hlua/hlua/src/lib.rs.html#1-319' title='goto source code'>[src]</a></span></h1>
+<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use functions_read::<a class='struct' href='../hlua/functions_read/struct.LuaFunction.html' title='hlua::functions_read::LuaFunction'>LuaFunction</a>;</code></td></tr><tr><td><code>pub use lua_tables::<a class='struct' href='../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='any/index.html'
+                                  title='hlua::any'>any</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='functions_read/index.html'
+                                  title='hlua::functions_read'>functions_read</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='lua_tables/index.html'
+                                  title='hlua::lua_tables'>lua_tables</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='userdata/index.html'
+                                  title='hlua::userdata'>userdata</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.implement_lua_push!.html'
+                                  title='hlua::implement_lua_push!'>implement_lua_push!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.implement_lua_read!.html'
+                                  title='hlua::implement_lua_read!'>implement_lua_read!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Function.html'
+                                  title='hlua::Function'>Function</a></td>
+                           <td class='docblock short'>
+                                <p>Opaque type containing a Rust function or closure.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.InsideCallback.html'
+                                  title='hlua::InsideCallback'>InsideCallback</a></td>
+                           <td class='docblock short'>
+                                <p>Opaque type that represents the Lua context when inside a callback.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Lua.html'
+                                  title='hlua::Lua'>Lua</a></td>
+                           <td class='docblock short'>
+                                <p>Main object of the library.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LuaContext.html'
+                                  title='hlua::LuaContext'>LuaContext</a></td>
+                           <td class='docblock short'>
+                                <p>Opaque type that contains the raw Lua context.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PushGuard.html'
+                                  title='hlua::PushGuard'>PushGuard</a></td>
+                           <td class='docblock short'>
+                                <p>RAII guard for a value pushed on the stack.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.LuaError.html'
+                                  title='hlua::LuaError'>LuaError</a></td>
+                           <td class='docblock short'>
+                                <p>Error that can happen when executing Lua code.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.AsLua.html'
+                                  title='hlua::AsLua'>AsLua</a></td>
+                           <td class='docblock short'>
+                                <p>Trait for objects that have access to a Lua context. When using a context returned by a
+<code>AsLua</code>, you are not allowed to modify the stack.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.AsMutLua.html'
+                                  title='hlua::AsMutLua'>AsMutLua</a></td>
+                           <td class='docblock short'>
+                                <p>Trait for objects that have access to a Lua context. You are allowed to modify the stack, but
+it must be in the same state as it was when you started.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.LuaRead.html'
+                                  title='hlua::LuaRead'>LuaRead</a></td>
+                           <td class='docblock short'>
+                                <p>Types that can be obtained from a Lua context.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Push.html'
+                                  title='hlua::Push'>Push</a></td>
+                           <td class='docblock short'>
+                                <p>Types that can be given to a Lua context, for example with <code>lua.set()</code> or as a return value
+of a function.</p>
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function0.html'
+                                  title='hlua::function0'>function0</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function1.html'
+                                  title='hlua::function1'>function1</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function10.html'
+                                  title='hlua::function10'>function10</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function2.html'
+                                  title='hlua::function2'>function2</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function3.html'
+                                  title='hlua::function3'>function3</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function4.html'
+                                  title='hlua::function4'>function4</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function5.html'
+                                  title='hlua::function5'>function5</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function6.html'
+                                  title='hlua::function6'>function6</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function7.html'
+                                  title='hlua::function7'>function7</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function8.html'
+                                  title='hlua::function8'>function8</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.function9.html'
+                                  title='hlua::function9'>function9</a></td>
+                           <td class='docblock short'>
+                                <p>Wraps a type that implements <code>FnMut</code> so that it can be used by hlua.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "hlua";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["LuaTable","Represents a table stored in the Lua context."],["LuaTableIterator","Iterator that enumerates the content of a Lua table."]]});

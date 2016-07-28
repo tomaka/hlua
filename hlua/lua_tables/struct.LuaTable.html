@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `LuaTable` struct in crate `hlua`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, LuaTable">
+
+    <title>hlua::lua_tables::LuaTable - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>hlua</a>::<wbr><a href='index.html'>lua_tables</a></p><script>window.sidebarCurrent = {name: 'LuaTable', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>hlua</a>::<wbr><a href='index.html'>lua_tables</a>::<wbr><a class='struct' href=''>LuaTable</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-184' class='srclink' href='../../src/hlua/hlua/src/lua_tables.rs.html#15-18' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct LuaTable&lt;L&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Represents a table stored in the Lua context.</p>
+
+<p>Loading this type mutably borrows the Lua context.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;L&gt; <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt; <span class='where'>where L: <a class='trait' href='../../hlua/trait.AsMutLua.html' title='hlua::AsMutLua'>AsMutLua</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-228' class='srclink' href='../../src/hlua/hlua/src/lua_tables.rs.html#77-169' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.into_inner' class='method'><code>fn <a href='#method.into_inner' class='fnname'>into_inner</a>(self) -&gt; L</code></h4>
+<div class='docblock'><p>Destroys the LuaTable and returns its inner Lua context. Useful when it takes Lua by value.</p>
+</div><h4 id='method.iter' class='method'><code>fn <a href='#method.iter' class='fnname'>iter</a>&lt;K,&nbsp;V&gt;(&amp;mut self) -&gt; <a class='struct' href='../../hlua/lua_tables/struct.LuaTableIterator.html' title='hlua::lua_tables::LuaTableIterator'>LuaTableIterator</a>&lt;L,&nbsp;K,&nbsp;V&gt;</code></h4>
+<div class='docblock'><p>Iterates over the elements inside the table.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>&lt;'a,&nbsp;R,&nbsp;I&gt;(&amp;'a mut self, index: I) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;R&gt; <span class='where'>where R: <a class='trait' href='../../hlua/trait.LuaRead.html' title='hlua::LuaRead'>LuaRead</a>&lt;<a class='struct' href='../../hlua/struct.PushGuard.html' title='hlua::PushGuard'>PushGuard</a>&lt;&amp;'a mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;&gt;, I: for&lt;'b&gt; <a class='trait' href='../../hlua/trait.Push.html' title='hlua::Push'>Push</a>&lt;&amp;'b mut &amp;'a mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;</span></code></h4>
+<div class='docblock'><p>Loads a value in the table given its index.</p>
+</div><h4 id='method.into_get' class='method'><code>fn <a href='#method.into_get' class='fnname'>into_get</a>&lt;'a,&nbsp;R,&nbsp;I&gt;(self, index: I) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;R,&nbsp;<a class='struct' href='../../hlua/struct.PushGuard.html' title='hlua::PushGuard'>PushGuard</a>&lt;Self&gt;&gt; <span class='where'>where R: <a class='trait' href='../../hlua/trait.LuaRead.html' title='hlua::LuaRead'>LuaRead</a>&lt;<a class='struct' href='../../hlua/struct.PushGuard.html' title='hlua::PushGuard'>PushGuard</a>&lt;<a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;&gt;, I: for&lt;'b&gt; <a class='trait' href='../../hlua/trait.Push.html' title='hlua::Push'>Push</a>&lt;&amp;'b mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;</span></code></h4>
+<div class='docblock'><p>Loads a value in the table, with the result capturing the table by value.</p>
+</div><h4 id='method.set' class='method'><code>fn <a href='#method.set' class='fnname'>set</a>&lt;'s,&nbsp;I,&nbsp;V&gt;(&amp;'s mut self, index: I, value: V) <span class='where'>where I: for&lt;'a&gt; <a class='trait' href='../../hlua/trait.Push.html' title='hlua::Push'>Push</a>&lt;&amp;'a mut &amp;'s mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;, V: for&lt;'a&gt; <a class='trait' href='../../hlua/trait.Push.html' title='hlua::Push'>Push</a>&lt;&amp;'a mut &amp;'s mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;</span></code></h4>
+<div class='docblock'><p>Inserts or modifies an elements of the table.</p>
+</div><h4 id='method.empty_array' class='method'><code>fn <a href='#method.empty_array' class='fnname'>empty_array</a>&lt;'s,&nbsp;I&gt;(&amp;'s mut self, index: I) -&gt; <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;<a class='struct' href='../../hlua/struct.PushGuard.html' title='hlua::PushGuard'>PushGuard</a>&lt;&amp;'s mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt;&gt; <span class='where'>where I: for&lt;'a&gt; <a class='trait' href='../../hlua/trait.Push.html' title='hlua::Push'>Push</a>&lt;&amp;'a mut &amp;'s mut <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;&gt; + <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></h4>
+<div class='docblock'><p>Inserts an empty array, then loads it.</p>
+</div><h4 id='method.get_or_create_metatable' class='method'><code>fn <a href='#method.get_or_create_metatable' class='fnname'>get_or_create_metatable</a>(self) -&gt; <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;<a class='struct' href='../../hlua/struct.PushGuard.html' title='hlua::PushGuard'>PushGuard</a>&lt;L&gt;&gt;</code></h4>
+<div class='docblock'><p>Obtains or create the metatable of the table.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;L&gt; <a class='trait' href='../../hlua/trait.AsLua.html' title='hlua::AsLua'>AsLua</a> for <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt; <span class='where'>where L: <a class='trait' href='../../hlua/trait.AsLua.html' title='hlua::AsLua'>AsLua</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-193' class='srclink' href='../../src/hlua/hlua/src/lua_tables.rs.html#35-39' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.as_lua' class='method'><code>fn <a href='../../hlua/trait.AsLua.html#tymethod.as_lua' class='fnname'>as_lua</a>(&amp;self) -&gt; <a class='struct' href='../../hlua/struct.LuaContext.html' title='hlua::LuaContext'>LuaContext</a></code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl&lt;L&gt; <a class='trait' href='../../hlua/trait.AsMutLua.html' title='hlua::AsMutLua'>AsMutLua</a> for <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt; <span class='where'>where L: <a class='trait' href='../../hlua/trait.AsMutLua.html' title='hlua::AsMutLua'>AsMutLua</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-197' class='srclink' href='../../src/hlua/hlua/src/lua_tables.rs.html#41-45' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.as_mut_lua' class='method'><code>fn <a href='../../hlua/trait.AsMutLua.html#tymethod.as_mut_lua' class='fnname'>as_mut_lua</a>(&amp;mut self) -&gt; <a class='struct' href='../../hlua/struct.LuaContext.html' title='hlua::LuaContext'>LuaContext</a></code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl&lt;L&gt; <a class='trait' href='../../hlua/trait.LuaRead.html' title='hlua::LuaRead'>LuaRead</a>&lt;L&gt; for <a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt; <span class='where'>where L: <a class='trait' href='../../hlua/trait.AsMutLua.html' title='hlua::AsMutLua'>AsMutLua</a></span></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-201' class='srclink' href='../../src/hlua/hlua/src/lua_tables.rs.html#47-55' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.lua_read_at_position' class='method'><code>fn <a href='../../hlua/trait.LuaRead.html#tymethod.lua_read_at_position' class='fnname'>lua_read_at_position</a>(lua: L, index: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../hlua/lua_tables/struct.LuaTable.html' title='hlua::lua_tables::LuaTable'>LuaTable</a>&lt;L&gt;,&nbsp;L&gt;</code></h4>
+<div class='docblock'><p>Reads the data from Lua at a given position.</p>
+</div><h4 id='method.lua_read' class='method'><code>fn <a href='../../hlua/trait.LuaRead.html#method.lua_read' class='fnname'>lua_read</a>(lua: L) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;Self,&nbsp;L&gt;</code></h4>
+<div class='docblock'><p>Reads the data from Lua.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "hlua";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
