@@ -31,6 +31,7 @@ unsafe impl<L> AsMutLua for LuaTable<L> where L: AsMutLua {
 
 impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
+        assert!(index < 0); // FIXME:
         if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
             Ok(LuaTable { table: lua, index: index })
         } else {
