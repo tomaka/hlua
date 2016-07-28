@@ -16,6 +16,21 @@ pub struct LuaTable<L> {
     table: L,
     index: i32
 }
+impl<L> LuaTable<L> {
+    /// Return the index on the stack of this table, assuming -(offset - 1)
+    /// items have been pushed to the stack since it was loaded.
+    fn offset(&self, offset: i32) -> i32 {
+        if self.index < 0 {
+            // If this table was indexed from the top of the stack, its current
+            // index will have been pushed down by the newly-pushed items.
+            self.index + offset
+        } else {
+            // If this table was indexed from the bottom of the stack, its
+            // current position will be unchanged.
+            self.index
+        }
+    }
+}
 
 unsafe impl<L> AsLua for LuaTable<L> where L: AsLua {
     fn as_lua(&self) -> LuaContext {
@@ -31,7 +46,6 @@ unsafe impl<L> AsMutLua for LuaTable<L> where L: AsMutLua {
 
 impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
-        assert!(index < 0); // FIXME:
         if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
             Ok(LuaTable { table: lua, index: index })
         } else {
@@ -84,7 +98,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
-        unsafe { ffi::lua_gettable(me.as_mut_lua().0, -1 + me.index); }
+        unsafe { ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1)); }
         if unsafe { ffi::lua_isnil(me.as_lua().0, -1) } {
             let _guard = PushGuard { lua: me, size: 1 };
             return None;
@@ -100,7 +114,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
-        unsafe { ffi::lua_gettable(me.as_mut_lua().0, -1 + me.index); }
+        unsafe { ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1)); }
         let is_nil = unsafe { ffi::lua_isnil(me.as_mut_lua().0, -1) };
         let guard = PushGuard { lua: me, size: 1 };
         if is_nil {
@@ -118,7 +132,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         let mut me = self;
         index.push_to_lua(&mut me).forget();
         value.push_to_lua(&mut me).forget();
-        unsafe { ffi::lua_settable(me.as_mut_lua().0, -2 + me.index); }
+        unsafe { ffi::lua_settable(me.as_mut_lua().0, me.offset(-2)); }
     }
 
     /// Inserts an empty array, then loads it.
@@ -129,7 +143,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         let mut me = self;
         index.clone().push_to_lua(&mut me).forget();
         Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
-        unsafe { ffi::lua_settable(me.as_mut_lua().0, -2 + me.index); }
+        unsafe { ffi::lua_settable(me.as_mut_lua().0, me.offset(-2)); }
 
         me.get(index).unwrap()
     }
@@ -141,7 +155,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
         if result == 0 {
             unsafe {
                 ffi::lua_newtable(self.table.as_mut_lua().0);
-                ffi::lua_setmetatable(self.table.as_mut_lua().0, -1 + self.index);
+                ffi::lua_setmetatable(self.table.as_mut_lua().0, self.offset(-1));
                 let r = ffi::lua_getmetatable(self.table.as_mut_lua().0, self.index);
                 assert!(r != 0);
             }
@@ -167,7 +181,7 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
         }
 
         // this call pushes the next key and value on the stack
-        if unsafe { ffi::lua_next(self.table.as_mut_lua().0, -1 + self.table.index) } == 0 {
+        if unsafe { ffi::lua_next(self.table.as_mut_lua().0, self.table.offset(-1)) } == 0 {
             self.finished = true;
             return None;
         }
