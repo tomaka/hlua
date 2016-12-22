@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::mem;
 
 use ffi;
@@ -103,13 +103,16 @@ impl<'lua, L> Push<L> for String
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
-        let value = CString::new(&self[..]).unwrap();
-        unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
-        let raw_lua = lua.as_lua();
-        PushGuard {
-            lua: lua,
-            size: 1,
-            raw_lua: raw_lua,
+        unsafe {
+            ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
+                                 self.as_bytes().len() as libc::size_t);
+
+            let raw_lua = lua.as_lua();
+            PushGuard {
+                lua: lua,
+                size: 1,
+                raw_lua: raw_lua,
+            }
         }
     }
 }
@@ -137,13 +140,16 @@ impl<'lua, 's, L> Push<L> for &'s str
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
-        let value = CString::new(&self[..]).unwrap();
-        unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
-        let raw_lua = lua.as_lua();
-        PushGuard {
-            lua: lua,
-            size: 1,
-            raw_lua: raw_lua,
+        unsafe {
+            ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
+                                 self.as_bytes().len() as libc::size_t);
+
+            let raw_lua = lua.as_lua();
+            PushGuard {
+                lua: lua,
+                size: 1,
+                raw_lua: raw_lua,
+            }
         }
     }
 }

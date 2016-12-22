@@ -1,7 +1,6 @@
 use ffi;
 use libc;
 
-use std::ffi::CString;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Error as IoError;
@@ -106,11 +105,10 @@ impl<'lua, L> LuaFunction<L>
         };
 
         let (load_return_value, pushed_value) = unsafe {
-            let chunk_name = CString::new("chunk").unwrap();
             let code = ffi::lua_load(lua.as_mut_lua().0,
                                      reader::<R>,
                                      mem::transmute(&readdata),
-                                     chunk_name.as_ptr(),
+                                     b"chunk\0".as_ptr() as *const _,
                                      ptr::null());                         
             let raw_lua = lua.as_lua();
             (code,
@@ -148,8 +146,7 @@ impl<'lua, L> LuaFunction<L>
     /// Builds a new `LuaFunction` from a raw string.
     #[inline]
     pub fn load(lua: L, code: &str) -> Result<LuaFunction<PushGuard<L>>, LuaError> {
-        let code: Vec<_> = code.bytes().collect();
-        let reader = Cursor::new(code);
+        let reader = Cursor::new(code.as_bytes());
         LuaFunction::load_from_reader(lua, reader)
     }
 }
