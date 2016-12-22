@@ -7,6 +7,7 @@ use AsMutLua;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
+#[inline]
 fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
                       where L: AsMutLua, V: for<'b> Push<&'b mut L>, I: Iterator<Item=V>
 {
@@ -32,6 +33,7 @@ fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
     PushGuard { lua: lua, size: 1 }
 }
 
+#[inline]
 fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
                           where L: AsMutLua, V: for<'a> Push<&'a mut L>, I: Iterator<Item=V>
 {
@@ -54,12 +56,14 @@ fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
 }
 
 impl<L, T> Push<L> for Vec<T> where L: AsMutLua, T: for<'a> Push<&'a mut L> {
+    #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_iter(lua, self.into_iter())
     }
 }
 
 impl<'a, L, T> Push<L> for &'a [T] where L: AsMutLua, T: Clone + for<'b> Push<&'b mut L> {
+    #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_iter(lua, self.iter().map(|e| e.clone()))
     }
@@ -69,6 +73,7 @@ impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua,
                                               K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash,
                                               V: for<'a, 'b> Push<&'a mut &'b mut L>
 {
+    #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_rec_iter(lua, self.into_iter())
     }
@@ -77,6 +82,7 @@ impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua,
 impl<L, K> Push<L> for HashSet<K> where L: AsMutLua,
                                         K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash
 {
+    #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         use std::iter;
         push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))

@@ -18,6 +18,7 @@ macro_rules! impl_function {
         /// Wraps a type that implements `FnMut` so that it can be used by hlua.
         ///
         /// This is only needed because of a limitation in Rust's inferrence system.
+        #[inline]
         pub fn $name<Z, R $(, $p)*>(f: Z) -> Function<Z, ($($p,)*), R> where Z: FnMut($($p),*) -> R {
             Function {
                 function: f,
@@ -58,6 +59,7 @@ macro_rules! impl_function_ext {
             type Output = R;
 
             #[allow(non_snake_case)]
+            #[inline]
             fn call_mut(&mut self, _: ()) -> Self::Output {
                 (self.function)()
             }
@@ -68,6 +70,7 @@ macro_rules! impl_function_ext {
                       Z: FnMut() -> R,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
+            #[inline]
             fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
                 unsafe {
                     // pushing the function pointer as a userdata
@@ -90,6 +93,7 @@ macro_rules! impl_function_ext {
             type Output = R;
 
             #[allow(non_snake_case)]
+            #[inline]
             fn call_mut(&mut self, params: ($($p,)*)) -> Self::Output {
                 let ($($p,)*) = params;
                 (self.function)($($p),*)
@@ -102,6 +106,7 @@ macro_rules! impl_function_ext {
                       ($($p,)*): for<'p> LuaRead<&'p mut InsideCallback>,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
+            #[inline]
             fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
                 unsafe {
                     // pushing the function pointer as a userdata
@@ -141,18 +146,21 @@ pub struct InsideCallback {
 }
 
 unsafe impl<'a> AsLua for &'a InsideCallback {
+    #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
 unsafe impl<'a> AsLua for &'a mut InsideCallback {
+    #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
 unsafe impl<'a> AsMutLua for &'a mut InsideCallback {
+    #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua
     }
@@ -163,6 +171,7 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
                          for<'b> Push<&'b mut &'a mut InsideCallback>,
                       E: Debug
 {
+    #[inline]
     fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> PushGuard<&'a mut InsideCallback> {
         match self {
             Ok(val) => val.push_to_lua(lua),
@@ -177,6 +186,7 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
 }
 
 // this function is called when Lua wants to call one of our functions
+#[inline]
 extern fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
                            where T: FunctionExt<P, Output=R>,
                                  P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
