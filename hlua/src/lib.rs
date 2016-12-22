@@ -338,10 +338,13 @@ impl<'lua> Lua<'lua> {
         where I: Borrow<str>,
               for<'a> V: Push<&'a mut Lua<'lua>>
     {
-        let index = CString::new(index.borrow()).unwrap();
-        value.push_to_lua(self).forget();
         unsafe {
-            ffi::lua_setglobal(self.lua.0, index.as_ptr());
+            let mut me = self;
+            ffi::lua_pushglobaltable(me.lua.0);
+            index.borrow().push_to_lua(&mut me).forget();
+            value.push_to_lua(&mut me).forget();
+            ffi::lua_settable(me.lua.0, -3);
+            ffi::lua_pop(me.lua.0, 1);
         }
     }
 
@@ -350,15 +353,17 @@ impl<'lua> Lua<'lua> {
     pub fn empty_array<'a, I>(&'a mut self, index: I) -> LuaTable<PushGuard<&'a mut Lua<'lua>>>
         where I: Borrow<str>
     {
-        // TODO: cleaner implementation
-        let mut me = self;
-        let index2 = CString::new(index.borrow()).unwrap();
-        Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
         unsafe {
-            ffi::lua_setglobal(me.lua.0, index2.as_ptr());
-        }
+            let mut me = self;
+            ffi::lua_pushglobaltable(me.lua.0);
+            index.borrow().push_to_lua(&mut me).forget();
+            ffi::lua_newtable(me.lua.0);
+            ffi::lua_settable(me.lua.0, -3);
+            ffi::lua_pop(me.lua.0, 1);
 
-        me.get(index).unwrap()
+            // TODO: cleaner implementation
+            me.get(index).unwrap()
+        }
     }
 
     /// Loads the array containing the global variables.
