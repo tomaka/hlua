@@ -8,12 +8,14 @@ use LuaRead;
 macro_rules! tuple_impl {
     ($ty:ident) => (
         impl<LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua, $ty: Push<LU> {
+            #[inline]
             fn push_to_lua(self, lua: LU) -> PushGuard<LU> {
                 self.0.push_to_lua(lua)
             }
         }
 
         impl<LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua, $ty: LuaRead<LU> {
+            #[inline]
             fn lua_read_at_position(lua: LU, index: i32) -> Result<($ty,), LU> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
             }
@@ -25,6 +27,7 @@ macro_rules! tuple_impl {
         impl<LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
             Push<LU> for ($first, $($other),+) where LU: AsMutLua
         {
+            #[inline]
             fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
                 match self {
                     ($first, $($other),+) => {
@@ -46,6 +49,7 @@ macro_rules! tuple_impl {
         impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
             LuaRead<LU> for ($first, $($other),+) where LU: AsLua
         {
+            #[inline]
             fn lua_read_at_position(mut lua: LU, index: i32) -> Result<($first, $($other),+), LU> {
                 let mut i = index;
 

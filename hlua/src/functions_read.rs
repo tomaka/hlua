@@ -50,6 +50,7 @@ extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *
 
 impl<L> LuaFunction<L> where L: AsMutLua {
     /// Calls the `LuaFunction`.
+    #[inline]
     pub fn call<'a, V>(&'a mut self) -> Result<V, LuaError>
         where V: LuaRead<PushGuard<&'a mut L>>
     {
@@ -85,6 +86,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
     }
 
     /// Builds a new `LuaFunction` from the code of a reader.
+    #[inline]
     pub fn load_from_reader<R>(mut lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
                                where R: Read
     {
@@ -128,6 +130,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
     }
 
     /// Builds a new `LuaFunction` from a raw string.
+    #[inline]
     pub fn load(lua: L, code: &str) -> Result<LuaFunction<PushGuard<L>>, LuaError> {
         let code: Vec<_> = code.bytes().collect();
         let reader = Cursor::new(code);
@@ -143,6 +146,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 }*/
 
 impl<L> LuaRead<L> for LuaFunction<L> where L: AsMutLua {
+    #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaFunction<L>, L> {
         assert!(index == -1);   // FIXME:
         if unsafe { ffi::lua_isfunction(lua.as_mut_lua().0, -1) } {

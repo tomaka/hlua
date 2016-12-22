@@ -19,6 +19,7 @@ pub struct LuaTable<L> {
 impl<L> LuaTable<L> {
     /// Return the index on the stack of this table, assuming -(offset - 1)
     /// items have been pushed to the stack since it was loaded.
+    #[inline]
     fn offset(&self, offset: i32) -> i32 {
         if self.index < 0 {
             // If this table was indexed from the top of the stack, its current
@@ -33,18 +34,21 @@ impl<L> LuaTable<L> {
 }
 
 unsafe impl<L> AsLua for LuaTable<L> where L: AsLua {
+    #[inline]
     fn as_lua(&self) -> LuaContext {
         self.table.as_lua()
     }
 }
 
 unsafe impl<L> AsMutLua for LuaTable<L> where L: AsMutLua {
+    #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.table.as_mut_lua()
     }
 }
 
 impl<L> LuaRead<L> for LuaTable<L> where L: AsMutLua {
+    #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
         if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
             Ok(LuaTable { table: lua, index: index })
@@ -63,12 +67,14 @@ pub struct LuaTableIterator<'t, L: 't, K, V> where L: AsMutLua {
 }
 
 unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V> where L: AsMutLua {
+    #[inline]
     fn as_lua(&self) -> LuaContext {
         self.table.as_lua()
     }
 }
 
 unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V> where L: AsMutLua {
+    #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.table.as_mut_lua()
     }
@@ -76,11 +82,13 @@ unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V> where L: AsM
 
 impl<L> LuaTable<L> where L: AsMutLua {
     /// Destroys the LuaTable and returns its inner Lua context. Useful when it takes Lua by value.
+    #[inline]
     pub fn into_inner(self) -> L {
         self.table
     }
 
     /// Iterates over the elements inside the table.
+    #[inline]
     pub fn iter<K, V>(&mut self) -> LuaTableIterator<L, K, V> {
         unsafe { ffi::lua_pushnil(self.table.as_mut_lua().0) };
 
@@ -92,6 +100,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     }
 
     /// Loads a value in the table given its index.
+    #[inline]
     pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R>
                          where R: LuaRead<PushGuard<&'a mut LuaTable<L>>>,
                                I: for<'b> Push<&'b mut &'a mut LuaTable<L>>
@@ -108,6 +117,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     }
 
     /// Loads a value in the table, with the result capturing the table by value.
+    #[inline]
     pub fn into_get<'a, R, I>(self, index: I) -> Result<R, PushGuard<Self>>
         where R: LuaRead<PushGuard<LuaTable<L>>>,
               I: for<'b> Push<&'b mut LuaTable<L>>
@@ -125,6 +135,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     }
 
     /// Inserts or modifies an elements of the table.
+    #[inline]
     pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
                          where I: for<'a> Push<&'a mut &'s mut LuaTable<L>>,
                                V: for<'a> Push<&'a mut &'s mut LuaTable<L>>
@@ -136,6 +147,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     }
 
     /// Inserts an empty array, then loads it.
+    #[inline]
     pub fn empty_array<'s, I>(&'s mut self, index: I) -> LuaTable<PushGuard<&'s mut LuaTable<L>>>
                               where I: for<'a> Push<&'a mut &'s mut LuaTable<L>> + Clone
     {
@@ -149,6 +161,7 @@ impl<L> LuaTable<L> where L: AsMutLua {
     }
 
     /// Obtains or create the metatable of the table.
+    #[inline]
     pub fn get_or_create_metatable(mut self) -> LuaTable<PushGuard<L>> {
         let result = unsafe { ffi::lua_getmetatable(self.table.as_mut_lua().0, self.index) };
 
@@ -175,6 +188,7 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
 {
     type Item = Option<(K, V)>;
 
+    #[inline]
     fn next(&mut self) -> Option<Option<(K,V)>> {
         if self.finished {
             return None;
@@ -203,6 +217,7 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
 }
 
 impl<'t, L, K, V> Drop for LuaTableIterator<'t, L, K, V> where L: AsMutLua + 't {
+    #[inline]
     fn drop(&mut self) {
         if !self.finished {
             unsafe { ffi::lua_pop(self.table.table.as_mut_lua().0, 1) }

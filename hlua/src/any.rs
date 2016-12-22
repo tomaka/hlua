@@ -22,6 +22,7 @@ pub enum AnyLuaValue {
 }
 
 impl<L> Push<L> for AnyLuaValue where L: AsMutLua {
+    #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
@@ -38,6 +39,7 @@ impl<L> Push<L> for AnyLuaValue where L: AsMutLua {
 }
 
 impl<L> LuaRead<L> for AnyLuaValue where L: AsLua {
+    #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {
         let lua = match LuaRead::lua_read_at_position(&lua, index) {
             Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
