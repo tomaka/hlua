@@ -182,7 +182,7 @@ This is usually done by redirecting the call to `userdata::push_userdata`.
 ```rust
 struct Foo;
 
-impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua {
+impl<L> hlua::Push<L> for Foo where L: hlua::AsMutLua<'lua> {
     fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
         lua::userdata::push_userdata(self, lua,
             |mut metatable| {

@@ -33,8 +33,8 @@ impl<L> LuaTable<L> {
     }
 }
 
-unsafe impl<L> AsLua for LuaTable<L>
-    where L: AsLua
+unsafe impl<'lua, L> AsLua<'lua> for LuaTable<L>
+    where L: AsLua<'lua>
 {
     #[inline]
     fn as_lua(&self) -> LuaContext {
@@ -42,8 +42,8 @@ unsafe impl<L> AsLua for LuaTable<L>
     }
 }
 
-unsafe impl<L> AsMutLua for LuaTable<L>
-    where L: AsMutLua
+unsafe impl<'lua, L> AsMutLua<'lua> for LuaTable<L>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
@@ -51,8 +51,8 @@ unsafe impl<L> AsMutLua for LuaTable<L>
     }
 }
 
-impl<L> LuaRead<L> for LuaTable<L>
-    where L: AsMutLua
+impl<'lua, L> LuaRead<L> for LuaTable<L>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
@@ -69,16 +69,15 @@ impl<L> LuaRead<L> for LuaTable<L>
 
 /// Iterator that enumerates the content of a Lua table.
 // while the LuaTableIterator is active, the current key is constantly pushed over the table
-pub struct LuaTableIterator<'t, L: 't, K, V>
-    where L: AsMutLua
-{
+pub struct LuaTableIterator<'t, L: 't, K, V> {
     table: &'t mut LuaTable<L>,
     finished: bool, // if true, the key is not on the stack anymore
+    raw_lua: LuaContext,
     marker: PhantomData<(K, V)>,
 }
 
-unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V>
-    where L: AsMutLua
+unsafe impl<'t, 'lua, L, K, V> AsLua<'lua> for LuaTableIterator<'t, L, K, V>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_lua(&self) -> LuaContext {
@@ -86,8 +85,8 @@ unsafe impl<'t, L, K, V> AsLua for LuaTableIterator<'t, L, K, V>
     }
 }
 
-unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V>
-    where L: AsMutLua
+unsafe impl<'t, 'lua, L, K, V> AsMutLua<'lua> for LuaTableIterator<'t, L, K, V>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
@@ -95,8 +94,8 @@ unsafe impl<'t, L, K, V> AsMutLua for LuaTableIterator<'t, L, K, V>
     }
 }
 
-impl<L> LuaTable<L>
-    where L: AsMutLua
+impl<'lua, L> LuaTable<L>
+    where L: AsMutLua<'lua>
 {
     /// Destroys the LuaTable and returns its inner Lua context. Useful when it takes Lua by value.
     #[inline]
@@ -109,9 +108,11 @@ impl<L> LuaTable<L>
     pub fn iter<K, V>(&mut self) -> LuaTableIterator<L, K, V> {
         unsafe { ffi::lua_pushnil(self.table.as_mut_lua().0) };
 
+        let raw_lua = self.table.as_lua();
         LuaTableIterator {
             table: self,
             finished: false,
+            raw_lua: raw_lua,
             marker: PhantomData,
         }
     }
@@ -128,10 +129,12 @@ impl<L> LuaTable<L>
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
         }
         if unsafe { ffi::lua_isnil(me.as_lua().0, -1) } {
-            let _guard = PushGuard { lua: me, size: 1 };
+            let raw_lua = me.as_lua();
+            let _guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
             return None;
         }
-        let guard = PushGuard { lua: me, size: 1 };
+        let raw_lua = me.as_lua();
+        let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
         LuaRead::lua_read(guard).ok()
     }
 
@@ -147,7 +150,8 @@ impl<L> LuaTable<L>
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
         }
         let is_nil = unsafe { ffi::lua_isnil(me.as_mut_lua().0, -1) };
-        let guard = PushGuard { lua: me, size: 1 };
+        let raw_lua = me.as_lua();
+        let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
         if is_nil {
             Err(guard)
         } else {
@@ -199,18 +203,20 @@ impl<L> LuaTable<L>
             }
         }
 
+        let raw_lua = self.as_lua();
         LuaTable {
             table: PushGuard {
                 lua: self.table,
                 size: 1,
+                raw_lua: raw_lua,
             },
             index: -1, // After creating the metatable, it will be on top of the stack.
         }
     }
 }
 
-impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
-    where L: AsMutLua + 't,
+impl<'t, 'lua, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
+    where L: AsMutLua<'lua> + 't,
           K: for<'i, 'j> LuaRead<&'i mut &'j mut LuaTableIterator<'t, L, K, V>> + 'static,
           V: for<'i, 'j> LuaRead<&'i mut &'j mut LuaTableIterator<'t, L, K, V>> + 'static
 {
@@ -244,13 +250,11 @@ impl<'t, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
     }
 }
 
-impl<'t, L, K, V> Drop for LuaTableIterator<'t, L, K, V>
-    where L: AsMutLua + 't
-{
+impl<'t, L, K, V> Drop for LuaTableIterator<'t, L, K, V> {
     #[inline]
     fn drop(&mut self) {
         if !self.finished {
-            unsafe { ffi::lua_pop(self.table.table.as_mut_lua().0, 1) }
+            unsafe { ffi::lua_pop(self.raw_lua.0, 1) }
         }
     }
 }

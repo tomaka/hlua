@@ -8,8 +8,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
 #[inline]
-fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
-    where L: AsMutLua,
+fn push_iter<'lua, L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
+    where L: AsMutLua<'lua>,
           V: for<'b> Push<&'b mut L>,
           I: Iterator<Item = V>
 {
@@ -32,15 +32,17 @@ fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
         }
     }
 
+    let raw_lua = lua.as_lua();
     PushGuard {
         lua: lua,
         size: 1,
+        raw_lua: raw_lua,
     }
 }
 
 #[inline]
-fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
-    where L: AsMutLua,
+fn push_rec_iter<'lua, L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
+    where L: AsMutLua<'lua>,
           V: for<'a> Push<&'a mut L>,
           I: Iterator<Item = V>
 {
@@ -59,14 +61,16 @@ fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
         }
     }
 
+    let raw_lua = lua.as_lua();
     PushGuard {
         lua: lua,
         size: 1,
+        raw_lua: raw_lua,
     }
 }
 
-impl<L, T> Push<L> for Vec<T>
-    where L: AsMutLua,
+impl<'lua, L, T> Push<L> for Vec<T>
+    where L: AsMutLua<'lua>,
           T: for<'a> Push<&'a mut L>
 {
     #[inline]
@@ -75,8 +79,8 @@ impl<L, T> Push<L> for Vec<T>
     }
 }
 
-impl<'a, L, T> Push<L> for &'a [T]
-    where L: AsMutLua,
+impl<'a, 'lua, L, T> Push<L> for &'a [T]
+    where L: AsMutLua<'lua>,
           T: Clone + for<'b> Push<&'b mut L>
 {
     #[inline]
@@ -85,8 +89,8 @@ impl<'a, L, T> Push<L> for &'a [T]
     }
 }
 
-impl<L, K, V> Push<L> for HashMap<K, V>
-    where L: AsMutLua,
+impl<'lua, L, K, V> Push<L> for HashMap<K, V>
+    where L: AsMutLua<'lua>,
           K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash,
           V: for<'a, 'b> Push<&'a mut &'b mut L>
 {
@@ -96,8 +100,8 @@ impl<L, K, V> Push<L> for HashMap<K, V>
     }
 }
 
-impl<L, K> Push<L> for HashSet<K>
-    where L: AsMutLua,
+impl<'lua, L, K> Push<L> for HashSet<K>
+    where L: AsMutLua<'lua>,
           K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash
 {
     #[inline]

@@ -48,9 +48,9 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 ///  - `metatable`: Function that fills the metatable of the object.
 ///
 #[inline]
-pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
+pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
     where F: FnMut(LuaTable<&mut PushGuard<&mut L>>),
-          L: AsMutLua,
+          L: AsMutLua<'lua>,
           T: Send + 'static + Any
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
@@ -88,9 +88,11 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 
         // calling the metatable closure
         {
+            let raw_lua = lua.as_lua();
             let mut guard = PushGuard {
                 lua: &mut lua,
                 size: 1,
+                raw_lua: raw_lua,
             };
             metatable(LuaRead::lua_read(&mut guard).ok().unwrap());
             guard.forget();
@@ -99,9 +101,11 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
         ffi::lua_setmetatable(lua_raw.0, -2);
     }
 
+    let raw_lua = lua.as_lua();
     PushGuard {
         lua: lua,
         size: 1,
+        raw_lua: raw_lua,
     }
 }
 
@@ -144,8 +148,8 @@ pub struct UserdataOnStack<T, L> {
     marker: PhantomData<T>,
 }
 
-impl<T, L> LuaRead<L> for UserdataOnStack<T, L>
-    where L: AsMutLua + AsLua,
+impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
+    where L: AsMutLua<'lua> + AsLua<'lua>,
           T: 'static + Any
 {
     #[inline]
@@ -181,8 +185,8 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L>
 }
 
 #[allow(mutable_transmutes)]
-impl<T, L> Deref for UserdataOnStack<T, L>
-    where L: AsMutLua,
+impl<'lua, T, L> Deref for UserdataOnStack<T, L>
+    where L: AsMutLua<'lua>,
           T: 'static + Any
 {
     type Target = T;
@@ -196,8 +200,8 @@ impl<T, L> Deref for UserdataOnStack<T, L>
     }
 }
 
-impl<T, L> DerefMut for UserdataOnStack<T, L>
-    where L: AsMutLua,
+impl<'lua, T, L> DerefMut for UserdataOnStack<T, L>
+    where L: AsMutLua<'lua>,
           T: 'static + Any
 {
     #[inline]

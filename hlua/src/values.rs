@@ -12,15 +12,16 @@ use PushGuard;
 
 macro_rules! integer_impl(
     ($t:ident) => (
-        impl<L> Push<L> for $t where L: AsMutLua {
+        impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
             #[inline]
             fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
                 unsafe { ffi::lua_pushinteger(lua.as_mut_lua().0, self as ffi::lua_Integer) };
-                PushGuard { lua: lua, size: 1 }
+                let raw_lua = lua.as_lua();
+                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
             }
         }
 
-        impl<L> LuaRead<L> for $t where L: AsLua {
+        impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
@@ -41,15 +42,16 @@ integer_impl!(i32);
 
 macro_rules! unsigned_impl(
     ($t:ident) => (
-        impl<L> Push<L> for $t where L: AsMutLua {
+        impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
             #[inline]
             fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
                 unsafe { ffi::lua_pushunsigned(lua.as_mut_lua().0, self as ffi::lua_Unsigned) };
-                PushGuard { lua: lua, size: 1 }
+                let raw_lua = lua.as_lua();
+                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
             }
         }
 
-        impl<L> LuaRead<L> for $t where L: AsLua {
+        impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
@@ -70,15 +72,16 @@ unsigned_impl!(u32);
 
 macro_rules! numeric_impl(
     ($t:ident) => (
-        impl<L> Push<L> for $t where L: AsMutLua {
+        impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
             #[inline]
             fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
                 unsafe { ffi::lua_pushnumber(lua.as_mut_lua().0, self as f64) };
-                PushGuard { lua: lua, size: 1 }
+                let raw_lua = lua.as_lua();
+                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
             }
         }
 
-        impl<L> LuaRead<L> for $t where L: AsLua {
+        impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
                 let mut success = unsafe { mem::uninitialized() };
@@ -95,22 +98,24 @@ macro_rules! numeric_impl(
 numeric_impl!(f32);
 numeric_impl!(f64);
 
-impl<L> Push<L> for String
-    where L: AsMutLua
+impl<'lua, L> Push<L> for String
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         let value = CString::new(&self[..]).unwrap();
         unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
+        let raw_lua = lua.as_lua();
         PushGuard {
             lua: lua,
             size: 1,
+            raw_lua: raw_lua,
         }
     }
 }
 
-impl<L> LuaRead<L> for String
-    where L: AsLua
+impl<'lua, L> LuaRead<L> for String
+    where L: AsLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<String, L> {
@@ -127,35 +132,39 @@ impl<L> LuaRead<L> for String
     }
 }
 
-impl<'s, L> Push<L> for &'s str
-    where L: AsMutLua
+impl<'lua, 's, L> Push<L> for &'s str
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         let value = CString::new(&self[..]).unwrap();
         unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
+        let raw_lua = lua.as_lua();
         PushGuard {
             lua: lua,
             size: 1,
+            raw_lua: raw_lua,
         }
     }
 }
 
-impl<L> Push<L> for bool
-    where L: AsMutLua
+impl<'lua, L> Push<L> for bool
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         unsafe { ffi::lua_pushboolean(lua.as_mut_lua().0, self.clone() as libc::c_int) };
+        let raw_lua = lua.as_lua();
         PushGuard {
             lua: lua,
             size: 1,
+            raw_lua: raw_lua,
         }
     }
 }
 
-impl<L> LuaRead<L> for bool
-    where L: AsLua
+impl<'lua, L> LuaRead<L> for bool
+    where L: AsLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<bool, L> {
@@ -167,20 +176,23 @@ impl<L> LuaRead<L> for bool
     }
 }
 
-impl<L> Push<L> for ()
-    where L: AsMutLua
+impl<'lua, L> Push<L> for ()
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
+        let raw_lua = lua.as_lua();
+
         PushGuard {
             lua: lua,
             size: 0,
+            raw_lua: raw_lua,
         }
     }
 }
 
-impl<L> LuaRead<L> for ()
-    where L: AsLua
+impl<'lua, L> LuaRead<L> for ()
+    where L: AsLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(_: L, _: i32) -> Result<(), L> {
