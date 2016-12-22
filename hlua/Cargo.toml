@@ -1,6 +1,6 @@
 [package]
 name = "hlua"
-version = "0.1.9"
+version = "0.2.0"
 authors = [ "pierre.krieger1708@gmail.com" ]
 description = "Zero-cost high-level wrapper for Lua"
 repository = "https://github.com/tomaka/hlua"
@@ -11,5 +11,5 @@ license = "MIT"
 libc = "0.2"
 
 [dependencies.lua52-sys]
-version = "0.0.4"
+version = "0.1.0"
 path = "../lua52-sys"
