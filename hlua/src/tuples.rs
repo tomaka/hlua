@@ -7,14 +7,14 @@ use LuaRead;
 
 macro_rules! tuple_impl {
     ($ty:ident) => (
-        impl<LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua, $ty: Push<LU> {
+        impl<'lua, LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: Push<LU> {
             #[inline]
             fn push_to_lua(self, lua: LU) -> PushGuard<LU> {
                 self.0.push_to_lua(lua)
             }
         }
 
-        impl<LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua, $ty: LuaRead<LU> {
+        impl<'lua, LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: LuaRead<LU> {
             #[inline]
             fn lua_read_at_position(lua: LU, index: i32) -> Result<($ty,), LU> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
@@ -24,8 +24,8 @@ macro_rules! tuple_impl {
 
     ($first:ident, $($other:ident),+) => (
         #[allow(non_snake_case)]
-        impl<LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
-            Push<LU> for ($first, $($other),+) where LU: AsMutLua
+        impl<'lua, LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
+            Push<LU> for ($first, $($other),+) where LU: AsMutLua<'lua>
         {
             #[inline]
             fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
@@ -37,7 +37,8 @@ macro_rules! tuple_impl {
                             total += $other.push_to_lua(&mut lua).forget();
                         )+
 
-                        PushGuard { lua: lua, size: total }
+                        let raw_lua = lua.as_lua();
+                        PushGuard { lua: lua, size: total, raw_lua: raw_lua }
                     }
                 }
             }
@@ -46,8 +47,8 @@ macro_rules! tuple_impl {
         // TODO: what if T or U are also tuples? indices won't match
         #[allow(unused_assignments)]
         #[allow(non_snake_case)]
-        impl<LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
-            LuaRead<LU> for ($first, $($other),+) where LU: AsLua
+        impl<'lua, LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
+            LuaRead<LU> for ($first, $($other),+) where LU: AsLua<'lua>
         {
             #[inline]
             fn lua_read_at_position(mut lua: LU, index: i32) -> Result<($first, $($other),+), LU> {

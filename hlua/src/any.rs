@@ -21,11 +21,12 @@ pub enum AnyLuaValue {
     LuaOther,
 }
 
-impl<L> Push<L> for AnyLuaValue
-    where L: AsMutLua
+impl<'lua, L> Push<L> for AnyLuaValue
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+        let raw_lua = lua.as_lua();
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
@@ -38,6 +39,7 @@ impl<L> Push<L> for AnyLuaValue
                 PushGuard {
                     lua: lua,
                     size: 1,
+                    raw_lua: raw_lua,
                 }
             } // Use ffi::lua_pushnil.
             AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other"),
@@ -45,8 +47,8 @@ impl<L> Push<L> for AnyLuaValue
     }
 }
 
-impl<L> LuaRead<L> for AnyLuaValue
-    where L: AsLua
+impl<'lua, L> LuaRead<L> for AnyLuaValue
+    where L: AsLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {

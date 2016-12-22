@@ -4,15 +4,15 @@ extern crate hlua;
 fn readwrite() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> hlua::Push<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::Push<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
             hlua::userdata::push_userdata(self, lua, |_| {})
         }
     }
-    impl<L> hlua::LuaRead<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::LuaRead<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
             let val: Result<hlua::userdata::UserdataOnStack<Foo, _>, _> =
@@ -44,8 +44,8 @@ fn destructor_called() {
         }
     }
 
-    impl<L> hlua::Push<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::Push<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
             hlua::userdata::push_userdata(self, lua, |_| {})
@@ -65,15 +65,15 @@ fn destructor_called() {
 fn type_check() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> hlua::Push<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::Push<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
             hlua::userdata::push_userdata(self, lua, |_| {})
         }
     }
-    impl<L> hlua::LuaRead<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::LuaRead<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
             let val: Result<hlua::userdata::UserdataOnStack<Foo, _>, _> =
@@ -84,15 +84,15 @@ fn type_check() {
 
     #[derive(Clone)]
     struct Bar;
-    impl<L> hlua::Push<L> for Bar
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::Push<L> for Bar
+        where L: hlua::AsMutLua<'lua>
     {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
             hlua::userdata::push_userdata(self, lua, |_| {})
         }
     }
-    impl<L> hlua::LuaRead<L> for Bar
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::LuaRead<L> for Bar
+        where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Bar, L> {
             let val: Result<hlua::userdata::UserdataOnStack<Bar, _>, _> =
@@ -113,8 +113,8 @@ fn type_check() {
 fn metatables() {
     #[derive(Clone)]
     struct Foo;
-    impl<L> hlua::Push<L> for Foo
-        where L: hlua::AsMutLua
+    impl<'lua, L> hlua::Push<L> for Foo
+        where L: hlua::AsMutLua<'lua>
     {
         fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
             hlua::userdata::push_userdata(self, lua, |mut table| {

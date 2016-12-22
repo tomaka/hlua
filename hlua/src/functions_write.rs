@@ -65,9 +65,9 @@ macro_rules! impl_function_ext {
             }
         }
 
-        impl<L, Z, R> Push<L> for Function<Z, (), R>
-                where L: AsMutLua,
-                      Z: FnMut() -> R,
+        impl<'lua, L, Z, R> Push<L> for Function<Z, (), R>
+                where L: AsMutLua<'lua>,
+                      Z: 'lua + FnMut() -> R,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
             #[inline]
@@ -82,7 +82,8 @@ macro_rules! impl_function_ext {
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
                     ffi::lua_pushcclosure(lua.as_mut_lua().0, wrapper, 1);
-                    PushGuard { lua: lua, size: 1 }
+                    let raw_lua = lua.as_lua();
+                    PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
                 }
             }
         }
@@ -100,9 +101,9 @@ macro_rules! impl_function_ext {
             }
         }
 
-        impl<L, Z, R $(,$p: 'static)+> Push<L> for Function<Z, ($($p,)*), R>
-                where L: AsMutLua,
-                      Z: FnMut($($p),*) -> R,
+        impl<'lua, L, Z, R $(,$p: 'static)+> Push<L> for Function<Z, ($($p,)*), R>
+                where L: AsMutLua<'lua>,
+                      Z: 'lua + FnMut($($p),*) -> R,
                       ($($p,)*): for<'p> LuaRead<&'p mut InsideCallback>,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
@@ -118,7 +119,8 @@ macro_rules! impl_function_ext {
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
                     ffi::lua_pushcclosure(lua.as_mut_lua().0, wrapper, 1);
-                    PushGuard { lua: lua, size: 1 }
+                    let raw_lua = lua.as_lua();
+                    PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
                 }
             }
         }
@@ -145,21 +147,21 @@ pub struct InsideCallback {
     lua: LuaContext,
 }
 
-unsafe impl<'a> AsLua for &'a InsideCallback {
+unsafe impl<'a, 'lua> AsLua<'lua> for &'a InsideCallback {
     #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
-unsafe impl<'a> AsLua for &'a mut InsideCallback {
+unsafe impl<'a, 'lua> AsLua<'lua> for &'a mut InsideCallback {
     #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
-unsafe impl<'a> AsMutLua for &'a mut InsideCallback {
+unsafe impl<'a, 'lua> AsMutLua<'lua> for &'a mut InsideCallback {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua

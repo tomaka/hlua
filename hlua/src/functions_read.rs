@@ -49,8 +49,8 @@ extern "C" fn reader<R>(_: *mut ffi::lua_State,
     data.buffer.as_ptr() as *const libc::c_char
 }
 
-impl<L> LuaFunction<L>
-    where L: AsMutLua
+impl<'lua, L> LuaFunction<L>
+    where L: AsMutLua<'lua>
 {
     /// Calls the `LuaFunction`.
     #[inline]
@@ -62,10 +62,12 @@ impl<L> LuaFunction<L>
             // lua_pcall pops the function, so we have to make a copy of it
             ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
             let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO: arguments
+            let raw_lua = self.variable.as_lua();
             (pcall_return_value,
              PushGuard {
                  lua: &mut self.variable,
                  size: 1,
+                 raw_lua: raw_lua,
              })
         };
 
@@ -109,11 +111,13 @@ impl<L> LuaFunction<L>
                                      reader::<R>,
                                      mem::transmute(&readdata),
                                      chunk_name.as_ptr(),
-                                     ptr::null());
+                                     ptr::null());                         
+            let raw_lua = lua.as_lua();
             (code,
              PushGuard {
                  lua: lua,
                  size: 1,
+                 raw_lua: raw_lua,
              })
         };
 
@@ -157,8 +161,8 @@ impl<L> LuaFunction<L>
 // }
 // }
 
-impl<L> LuaRead<L> for LuaFunction<L>
-    where L: AsMutLua
+impl<'lua, L> LuaRead<L> for LuaFunction<L>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaFunction<L>, L> {

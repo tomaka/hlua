@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! implement_lua_push {
     ($ty:ty, $cb:expr) => {
-        impl<L> $crate::Push<L> for $ty where L: $crate::AsMutLua {
+        impl<'lua, L> $crate::Push<L> for $ty where L: $crate::AsMutLua<'lua> {
             #[inline]
             fn push_to_lua(self, lua: L) -> $crate::PushGuard<L> {
                 $crate::userdata::push_userdata(self, lua, $cb)

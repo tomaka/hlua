@@ -34,15 +34,14 @@ pub struct Lua<'lua> {
 }
 
 /// RAII guard for a value pushed on the stack.
-pub struct PushGuard<L>
-    where L: AsMutLua
-{
+pub struct PushGuard<L> {
     lua: L,
     size: i32,
+    raw_lua: LuaContext,
 }
 
-impl<L> PushGuard<L>
-    where L: AsMutLua
+impl<'lua, L> PushGuard<L>
+    where L: AsMutLua<'lua>
 {
     /// Prevents the value from being poped when the `PushGuard` is destroyed, and returns the
     /// number of elements on the stack.
@@ -74,14 +73,14 @@ impl<L> PushGuard<L>
 }
 
 /// Trait for objects that have access to a Lua context. When using a context returned by a
-/// `AsLua`, you are not allowed to modify the stack.
-pub unsafe trait AsLua {
+/// `AsLua<'lua>`, you are not allowed to modify the stack.
+pub unsafe trait AsLua<'lua> {
     fn as_lua(&self) -> LuaContext;
 }
 
 /// Trait for objects that have access to a Lua context. You are allowed to modify the stack, but
 /// it must be in the same state as it was when you started.
-pub unsafe trait AsMutLua: AsLua {
+pub unsafe trait AsMutLua<'lua>: AsLua<'lua> {
     fn as_mut_lua(&mut self) -> LuaContext;
 }
 
@@ -90,22 +89,22 @@ pub unsafe trait AsMutLua: AsLua {
 pub struct LuaContext(*mut ffi::lua_State);
 unsafe impl Send for LuaContext {}
 
-unsafe impl<'a, 'lua> AsLua for Lua<'lua> {
+unsafe impl<'a, 'lua> AsLua<'lua> for Lua<'lua> {
     #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua
     }
 }
 
-unsafe impl<'lua> AsMutLua for Lua<'lua> {
+unsafe impl<'lua> AsMutLua<'lua> for Lua<'lua> {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua
     }
 }
 
-unsafe impl<L> AsLua for PushGuard<L>
-    where L: AsMutLua
+unsafe impl<'lua, L> AsLua<'lua> for PushGuard<L>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_lua(&self) -> LuaContext {
@@ -113,8 +112,8 @@ unsafe impl<L> AsLua for PushGuard<L>
     }
 }
 
-unsafe impl<L> AsMutLua for PushGuard<L>
-    where L: AsMutLua
+unsafe impl<'lua, L> AsMutLua<'lua> for PushGuard<L>
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
@@ -122,8 +121,8 @@ unsafe impl<L> AsMutLua for PushGuard<L>
     }
 }
 
-unsafe impl<'a, L> AsLua for &'a L
-    where L: AsLua
+unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a L
+    where L: AsLua<'lua>
 {
     #[inline]
     fn as_lua(&self) -> LuaContext {
@@ -131,8 +130,8 @@ unsafe impl<'a, L> AsLua for &'a L
     }
 }
 
-unsafe impl<'a, L> AsLua for &'a mut L
-    where L: AsLua
+unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a mut L
+    where L: AsLua<'lua>
 {
     #[inline]
     fn as_lua(&self) -> LuaContext {
@@ -140,8 +139,8 @@ unsafe impl<'a, L> AsLua for &'a mut L
     }
 }
 
-unsafe impl<'a, L> AsMutLua for &'a mut L
-    where L: AsMutLua
+unsafe impl<'a, 'lua, L> AsMutLua<'lua> for &'a mut L
+    where L: AsMutLua<'lua>
 {
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
@@ -151,9 +150,7 @@ unsafe impl<'a, L> AsMutLua for &'a mut L
 
 /// Types that can be given to a Lua context, for example with `lua.set()` or as a return value
 /// of a function.
-pub trait Push<L>
-    where L: AsMutLua
-{
+pub trait Push<L> {
     /// Pushes the value on the top of the stack.
     ///
     /// Must return a guard representing the elements that have been pushed.
@@ -168,9 +165,7 @@ pub trait Push<L>
 ///
 /// Most types that implement `Push` also implement `LuaRead`, but this is not always the case
 /// (for example `&'static str` implements `Push` but not `LuaRead`).
-pub trait LuaRead<L>: Sized
-    where L: AsLua
-{
+pub trait LuaRead<L>: Sized {
     /// Reads the data from Lua.
     #[inline]
     fn lua_read(lua: L) -> Result<Self, L> {
@@ -296,15 +291,19 @@ impl<'lua> Lua<'lua> {
             ffi::lua_getglobal(self.lua.0, index.as_ptr());
         }
         if unsafe { ffi::lua_isnil(self.as_lua().0, -1) } {
+            let raw_lua = self.as_lua();
             let _guard = PushGuard {
                 lua: self,
                 size: 1,
+                raw_lua: raw_lua,
             };
             return None;
         }
+        let raw_lua = self.as_lua();
         let guard = PushGuard {
             lua: self,
             size: 1,
+            raw_lua: raw_lua,
         };
         LuaRead::lua_read(guard).ok()
     }
@@ -320,9 +319,11 @@ impl<'lua> Lua<'lua> {
             ffi::lua_getglobal(self.lua.0, index.as_ptr());
         }
         let is_nil = unsafe { ffi::lua_isnil(self.as_lua().0, -1) };
+        let raw_lua = self.as_lua();
         let guard = PushGuard {
             lua: self,
             size: 1,
+            raw_lua: raw_lua,
         };
         if is_nil {
             Err(guard)
@@ -369,9 +370,11 @@ impl<'lua> Lua<'lua> {
         unsafe {
             ffi::lua_pushglobaltable(self.lua.0);
         }
+        let raw_lua = self.as_lua();
         let guard = PushGuard {
             lua: self,
             size: 1,
+            raw_lua: raw_lua,
         };
         LuaRead::lua_read(guard).ok().unwrap()
     }
@@ -386,14 +389,12 @@ impl<'lua> Drop for Lua<'lua> {
     }
 }
 
-impl<L> Drop for PushGuard<L>
-    where L: AsMutLua
-{
+impl<L> Drop for PushGuard<L> {
     #[inline]
     fn drop(&mut self) {
         if self.size != 0 {
             unsafe {
-                ffi::lua_pop(self.lua.as_mut_lua().0, self.size);
+                ffi::lua_pop(self.raw_lua.0, self.size);
             }
         }
     }
