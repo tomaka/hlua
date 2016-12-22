@@ -26,7 +26,7 @@ The `Lua` struct is the main element of this library. It represents a context in
 let mut lua = Lua::new();     // mutable is mandatory
 ```
 
-**[You can check the documentation here](http://tomaka.github.io/hlua/hlua/index.html)**.
+**[You can check the documentation here](http://docs.rs/hlua)**.
 
 #### Reading and writing variables
 
@@ -202,7 +202,7 @@ fn main() {
 
 ### Creating a Lua module
 
-**Note: doesn't work for the moment**
+**Note: OBSOLETE ; this is still some pre-Rust-1.0 stuff**
 
 This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
 
