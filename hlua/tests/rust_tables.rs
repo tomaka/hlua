@@ -56,3 +56,13 @@ fn write_set() {
 
     assert_eq!(values, set);
 }
+
+#[test]
+fn globals_table() {
+    let mut lua = Lua::new();
+
+    lua.globals_table().set("a", 12);
+
+    let val: i32 = lua.get("a").unwrap();
+    assert_eq!(val, 12);
+}

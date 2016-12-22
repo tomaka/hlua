@@ -300,6 +300,16 @@ impl<'lua> Lua<'lua> {
 
         me.get(index).unwrap()
     }
+
+    /// Loads the array containing the global variables.
+    ///
+    /// In lua, the global variables accessible from the lua code are all part of a table which
+    /// you can load here.
+    pub fn globals_table<'a>(&'a mut self) -> LuaTable<PushGuard<&'a mut Lua<'lua>>> {
+        unsafe { ffi::lua_pushglobaltable(self.lua.0); }
+        let guard = PushGuard { lua: self, size: 1 };
+        LuaRead::lua_read(guard).ok().unwrap()
+    }
 }
 
 impl<'lua> Drop for Lua<'lua> {
