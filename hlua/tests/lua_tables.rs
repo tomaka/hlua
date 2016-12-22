@@ -6,7 +6,7 @@ use hlua::{Lua, LuaTable, PushGuard};
 fn iterable() {
     let mut lua = Lua::new();
 
-    let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+    let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
 
     let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
     let mut counter = 0;
@@ -25,13 +25,14 @@ fn iterable() {
 fn iterable_multipletimes() {
     let mut lua = Lua::new();
 
-    let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+    let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
 
     let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
-    for _ in (0 .. 10) {
+    for _ in (0..10) {
         let table_content: Vec<Option<(u32, u32)>> = table.iter().collect();
-        assert_eq!(table_content, vec![ Some((1,9)), Some((2,8)), Some((3,7)) ]);
+        assert_eq!(table_content,
+                   vec![Some((1, 9)), Some((2, 8)), Some((3, 7))]);
     }
 }
 
@@ -39,7 +40,7 @@ fn iterable_multipletimes() {
 fn get_set() {
     let mut lua = Lua::new();
 
-    let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+    let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
     let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
     let x: i32 = table.get(2).unwrap();
@@ -57,7 +58,7 @@ fn get_set() {
 fn table_over_table() {
     let mut lua = Lua::new();
 
-    let _:() = lua.execute("a = { 9, { 8, 7 }, 6 }").unwrap();
+    let _: () = lua.execute("a = { 9, { 8, 7 }, 6 }").unwrap();
     let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
     let x: i32 = table.get(1).unwrap();
@@ -81,13 +82,15 @@ fn table_over_table() {
 fn metatable() {
     let mut lua = Lua::new();
 
-    let _:() = lua.execute("a = { 9, 8, 7 }").unwrap();
+    let _: () = lua.execute("a = { 9, 8, 7 }").unwrap();
 
     {
         let table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
         let mut metatable = table.get_or_create_metatable();
-        fn handler() -> i32 { 5 };
+        fn handler() -> i32 {
+            5
+        };
         metatable.set("__add".to_string(), hlua::function0(handler));
     }
 
@@ -121,11 +124,13 @@ fn by_value() {
     }
 
     let table: LuaTable<PushGuard<Lua>> = lua.into_get("a").ok().unwrap();
-    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> = table.into_get("b").ok().unwrap();
+    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> =
+        table.into_get("b").ok().unwrap();
     assert!(3 == table2.get("c").unwrap());
     let table: LuaTable<PushGuard<Lua>> = table2.into_inner().into_inner();
     // do it again to make sure the stack is still sane
-    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> = table.into_get("b").ok().unwrap();
+    let mut table2: LuaTable<PushGuard<LuaTable<PushGuard<Lua>>>> =
+        table.into_get("b").ok().unwrap();
     assert!(3 == table2.get("c").unwrap());
     let table: LuaTable<PushGuard<Lua>> = table2.into_inner().into_inner();
     let _lua: Lua = table.into_inner().into_inner();

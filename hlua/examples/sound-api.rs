@@ -23,7 +23,8 @@ fn main() {
         s:stop();
         print("is the sound playing:", s:is_playing());
 
-    "#).unwrap();
+    "#)
+        .unwrap();
 }
 
 // this `Sound` struct is the object that we will use to demonstrate hlua
@@ -38,17 +39,12 @@ implement_lua_push!(Sound, |mut metatable| {
     // when the lua code calls `sound:play()`, it will look for `play` in there
     let mut index = metatable.empty_array("__index");
 
-    index.set("play", hlua::function1(|snd: &mut Sound| {
-        snd.play()
-    }));
+    index.set("play", hlua::function1(|snd: &mut Sound| snd.play()));
 
-    index.set("stop", hlua::function1(|snd: &mut Sound| {
-        snd.stop()
-    }));
+    index.set("stop", hlua::function1(|snd: &mut Sound| snd.stop()));
 
-    index.set("is_playing", hlua::function1(|snd: &Sound| {
-        snd.is_playing()
-    }));
+    index.set("is_playing",
+              hlua::function1(|snd: &Sound| snd.is_playing()));
 });
 
 // this macro implements the require traits so that we can *read* the object back
@@ -56,9 +52,7 @@ implement_lua_read!(Sound);
 
 impl Sound {
     pub fn new() -> Sound {
-        Sound {
-            playing: false
-        }
+        Sound { playing: false }
     }
 
     pub fn play(&mut self) {

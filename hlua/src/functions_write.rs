@@ -167,9 +167,8 @@ unsafe impl<'a> AsMutLua for &'a mut InsideCallback {
 }
 
 impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
-                where T: Push<&'a mut InsideCallback> +
-                         for<'b> Push<&'b mut &'a mut InsideCallback>,
-                      E: Debug
+    where T: Push<&'a mut InsideCallback> + for<'b> Push<&'b mut &'a mut InsideCallback>,
+          E: Debug
 {
     #[inline]
     fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> PushGuard<&'a mut InsideCallback> {
@@ -178,7 +177,9 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
             Err(val) => {
                 let msg = format!("{:?}", val);
                 msg.push_to_lua(&mut lua).forget();
-                unsafe { ffi::lua_error(lua.as_mut_lua().0); }
+                unsafe {
+                    ffi::lua_error(lua.as_mut_lua().0);
+                }
                 unreachable!();
             }
         }
@@ -187,10 +188,10 @@ impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
 
 // this function is called when Lua wants to call one of our functions
 #[inline]
-extern fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
-                           where T: FunctionExt<P, Output=R>,
-                                 P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
-                                 R: for<'p> Push<&'p mut InsideCallback>
+extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
+    where T: FunctionExt<P, Output = R>,
+          P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
+          R: for<'p> Push<&'p mut InsideCallback>
 {
     // loading the object that we want to call from the Lua context
     let data_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
@@ -205,10 +206,12 @@ extern fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
         Err(_) => {
             let err_msg = format!("wrong parameter types for callback function");
             err_msg.push_to_lua(&mut tmp_lua).forget();
-            unsafe { ffi::lua_error(lua); }
+            unsafe {
+                ffi::lua_error(lua);
+            }
             unreachable!()
-        },
-        Ok(a) => a
+        }
+        Ok(a) => a,
     };
 
     let ret_value = data.call_mut(args);

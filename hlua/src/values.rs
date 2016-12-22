@@ -37,7 +37,7 @@ macro_rules! integer_impl(
 integer_impl!(i8);
 integer_impl!(i16);
 integer_impl!(i32);
-//integer_impl!(i64)   // data loss
+// integer_impl!(i64)   // data loss
 
 macro_rules! unsigned_impl(
     ($t:ident) => (
@@ -66,7 +66,7 @@ macro_rules! unsigned_impl(
 unsigned_impl!(u8);
 unsigned_impl!(u16);
 unsigned_impl!(u32);
-//unsigned_impl!(u64);   // data loss
+// unsigned_impl!(u64);   // data loss
 
 macro_rules! numeric_impl(
     ($t:ident) => (
@@ -95,16 +95,23 @@ macro_rules! numeric_impl(
 numeric_impl!(f32);
 numeric_impl!(f64);
 
-impl<L> Push<L> for String where L: AsMutLua {
+impl<L> Push<L> for String
+    where L: AsMutLua
+{
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         let value = CString::new(&self[..]).unwrap();
         unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
-        PushGuard { lua: lua, size: 1 }
+        PushGuard {
+            lua: lua,
+            size: 1,
+        }
     }
 }
 
-impl<L> LuaRead<L> for String where L: AsLua {
+impl<L> LuaRead<L> for String
+    where L: AsLua
+{
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<String, L> {
         let mut size: libc::size_t = unsafe { mem::uninitialized() };
@@ -120,24 +127,36 @@ impl<L> LuaRead<L> for String where L: AsLua {
     }
 }
 
-impl<'s, L> Push<L> for &'s str where L: AsMutLua {
+impl<'s, L> Push<L> for &'s str
+    where L: AsMutLua
+{
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         let value = CString::new(&self[..]).unwrap();
         unsafe { ffi::lua_pushstring(lua.as_mut_lua().0, value.as_ptr()) };
-        PushGuard { lua: lua, size: 1 }
+        PushGuard {
+            lua: lua,
+            size: 1,
+        }
     }
 }
 
-impl<L> Push<L> for bool where L: AsMutLua {
+impl<L> Push<L> for bool
+    where L: AsMutLua
+{
     #[inline]
     fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
         unsafe { ffi::lua_pushboolean(lua.as_mut_lua().0, self.clone() as libc::c_int) };
-        PushGuard { lua: lua, size: 1 }
+        PushGuard {
+            lua: lua,
+            size: 1,
+        }
     }
 }
 
-impl<L> LuaRead<L> for bool where L: AsLua {
+impl<L> LuaRead<L> for bool
+    where L: AsLua
+{
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<bool, L> {
         if unsafe { ffi::lua_isboolean(lua.as_lua().0, index) } != true {
@@ -148,14 +167,21 @@ impl<L> LuaRead<L> for bool where L: AsLua {
     }
 }
 
-impl<L> Push<L> for () where L: AsMutLua {
+impl<L> Push<L> for ()
+    where L: AsMutLua
+{
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
-        PushGuard { lua: lua, size: 0 }
+        PushGuard {
+            lua: lua,
+            size: 0,
+        }
     }
 }
 
-impl<L> LuaRead<L> for () where L: AsLua {
+impl<L> LuaRead<L> for ()
+    where L: AsLua
+{
     #[inline]
     fn lua_read_at_position(_: L, _: i32) -> Result<(), L> {
         Ok(())

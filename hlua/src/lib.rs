@@ -34,12 +34,16 @@ pub struct Lua<'lua> {
 }
 
 /// RAII guard for a value pushed on the stack.
-pub struct PushGuard<L> where L: AsMutLua {
+pub struct PushGuard<L>
+    where L: AsMutLua
+{
     lua: L,
     size: i32,
 }
 
-impl<L> PushGuard<L> where L: AsMutLua {
+impl<L> PushGuard<L>
+    where L: AsMutLua
+{
     /// Prevents the value from being poped when the `PushGuard` is destroyed, and returns the
     /// number of elements on the stack.
     #[inline]
@@ -100,35 +104,45 @@ unsafe impl<'lua> AsMutLua for Lua<'lua> {
     }
 }
 
-unsafe impl<L> AsLua for PushGuard<L> where L: AsMutLua {
+unsafe impl<L> AsLua for PushGuard<L>
+    where L: AsMutLua
+{
     #[inline]
     fn as_lua(&self) -> LuaContext {
         self.lua.as_lua()
     }
 }
 
-unsafe impl<L> AsMutLua for PushGuard<L> where L: AsMutLua {
+unsafe impl<L> AsMutLua for PushGuard<L>
+    where L: AsMutLua
+{
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         self.lua.as_mut_lua()
     }
 }
 
-unsafe impl<'a, L> AsLua for &'a L where L: AsLua {
+unsafe impl<'a, L> AsLua for &'a L
+    where L: AsLua
+{
     #[inline]
     fn as_lua(&self) -> LuaContext {
         (**self).as_lua()
     }
 }
 
-unsafe impl<'a, L> AsLua for &'a mut L where L: AsLua {
+unsafe impl<'a, L> AsLua for &'a mut L
+    where L: AsLua
+{
     #[inline]
     fn as_lua(&self) -> LuaContext {
         (**self).as_lua()
     }
 }
 
-unsafe impl<'a, L> AsMutLua for &'a mut L where L: AsMutLua {
+unsafe impl<'a, L> AsMutLua for &'a mut L
+    where L: AsMutLua
+{
     #[inline]
     fn as_mut_lua(&mut self) -> LuaContext {
         (**self).as_mut_lua()
@@ -137,7 +151,9 @@ unsafe impl<'a, L> AsMutLua for &'a mut L where L: AsMutLua {
 
 /// Types that can be given to a Lua context, for example with `lua.set()` or as a return value
 /// of a function.
-pub trait Push<L> where L: AsMutLua {
+pub trait Push<L>
+    where L: AsMutLua
+{
     /// Pushes the value on the top of the stack.
     ///
     /// Must return a guard representing the elements that have been pushed.
@@ -152,7 +168,9 @@ pub trait Push<L> where L: AsMutLua {
 ///
 /// Most types that implement `Push` also implement `LuaRead`, but this is not always the case
 /// (for example `&'static str` implements `Push` but not `LuaRead`).
-pub trait LuaRead<L>: Sized where L: AsLua {
+pub trait LuaRead<L>: Sized
+    where L: AsLua
+{
     /// Reads the data from Lua.
     #[inline]
     fn lua_read(lua: L) -> Result<Self, L> {
@@ -195,9 +213,11 @@ impl<'lua> Lua<'lua> {
         }
 
         // this alloc function is required to create a lua state.
-        extern "C" fn alloc(_ud: *mut libc::c_void, ptr: *mut libc::c_void, _osize: libc::size_t,
-                            nsize: libc::size_t) -> *mut libc::c_void
-        {
+        extern "C" fn alloc(_ud: *mut libc::c_void,
+                            ptr: *mut libc::c_void,
+                            _osize: libc::size_t,
+                            nsize: libc::size_t)
+                            -> *mut libc::c_void {
             unsafe {
                 if nsize == 0 {
                     libc::free(ptr as *mut libc::c_void);
@@ -249,7 +269,7 @@ impl<'lua> Lua<'lua> {
     /// Executes some Lua code on the context.
     #[inline]
     pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError>
-                          where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
+        where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
     {
         let mut f = try!(functions_read::LuaFunction::load(self, code));
         f.call()
@@ -258,8 +278,8 @@ impl<'lua> Lua<'lua> {
     /// Executes some Lua code on the context.
     #[inline]
     pub fn execute_from_reader<'a, T, R>(&'a mut self, code: R) -> Result<T, LuaError>
-            where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>,
-                  R: Read
+        where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>,
+              R: Read
     {
         let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
         f.call()
@@ -268,27 +288,42 @@ impl<'lua> Lua<'lua> {
     /// Reads the value of a global variable.
     #[inline]
     pub fn get<'l, V, I>(&'l mut self, index: I) -> Option<V>
-                         where I: Borrow<str>, V: LuaRead<PushGuard<&'l mut Lua<'lua>>>
+        where I: Borrow<str>,
+              V: LuaRead<PushGuard<&'l mut Lua<'lua>>>
     {
         let index = CString::new(index.borrow()).unwrap();
-        unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        unsafe {
+            ffi::lua_getglobal(self.lua.0, index.as_ptr());
+        }
         if unsafe { ffi::lua_isnil(self.as_lua().0, -1) } {
-            let _guard = PushGuard { lua: self, size: 1 };
+            let _guard = PushGuard {
+                lua: self,
+                size: 1,
+            };
             return None;
         }
-        let guard = PushGuard { lua: self, size: 1 };
+        let guard = PushGuard {
+            lua: self,
+            size: 1,
+        };
         LuaRead::lua_read(guard).ok()
     }
 
     /// Reads the value of a global, capturing the context by value.
     #[inline]
     pub fn into_get<V, I>(self, index: I) -> Result<V, PushGuard<Self>>
-        where I: Borrow<str>, V: LuaRead<PushGuard<Lua<'lua>>>
+        where I: Borrow<str>,
+              V: LuaRead<PushGuard<Lua<'lua>>>
     {
         let index = CString::new(index.borrow()).unwrap();
-        unsafe { ffi::lua_getglobal(self.lua.0, index.as_ptr()); }
+        unsafe {
+            ffi::lua_getglobal(self.lua.0, index.as_ptr());
+        }
         let is_nil = unsafe { ffi::lua_isnil(self.as_lua().0, -1) };
-        let guard = PushGuard { lua: self, size: 1 };
+        let guard = PushGuard {
+            lua: self,
+            size: 1,
+        };
         if is_nil {
             Err(guard)
         } else {
@@ -299,23 +334,28 @@ impl<'lua> Lua<'lua> {
     /// Modifies the value of a global variable.
     #[inline]
     pub fn set<I, V>(&mut self, index: I, value: V)
-                         where I: Borrow<str>, for<'a> V: Push<&'a mut Lua<'lua>>
+        where I: Borrow<str>,
+              for<'a> V: Push<&'a mut Lua<'lua>>
     {
         let index = CString::new(index.borrow()).unwrap();
         value.push_to_lua(self).forget();
-        unsafe { ffi::lua_setglobal(self.lua.0, index.as_ptr()); }
+        unsafe {
+            ffi::lua_setglobal(self.lua.0, index.as_ptr());
+        }
     }
 
     /// Inserts an empty array, then loads it.
     #[inline]
     pub fn empty_array<'a, I>(&'a mut self, index: I) -> LuaTable<PushGuard<&'a mut Lua<'lua>>>
-                              where I: Borrow<str>
+        where I: Borrow<str>
     {
         // TODO: cleaner implementation
         let mut me = self;
         let index2 = CString::new(index.borrow()).unwrap();
         Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
-        unsafe { ffi::lua_setglobal(me.lua.0, index2.as_ptr()); }
+        unsafe {
+            ffi::lua_setglobal(me.lua.0, index2.as_ptr());
+        }
 
         me.get(index).unwrap()
     }
@@ -326,8 +366,13 @@ impl<'lua> Lua<'lua> {
     /// you can load here.
     #[inline]
     pub fn globals_table<'a>(&'a mut self) -> LuaTable<PushGuard<&'a mut Lua<'lua>>> {
-        unsafe { ffi::lua_pushglobaltable(self.lua.0); }
-        let guard = PushGuard { lua: self, size: 1 };
+        unsafe {
+            ffi::lua_pushglobaltable(self.lua.0);
+        }
+        let guard = PushGuard {
+            lua: self,
+            size: 1,
+        };
         LuaRead::lua_read(guard).ok().unwrap()
     }
 }
@@ -341,11 +386,15 @@ impl<'lua> Drop for Lua<'lua> {
     }
 }
 
-impl<L> Drop for PushGuard<L> where L: AsMutLua {
+impl<L> Drop for PushGuard<L>
+    where L: AsMutLua
+{
     #[inline]
     fn drop(&mut self) {
         if self.size != 0 {
-            unsafe { ffi::lua_pop(self.lua.as_mut_lua().0, self.size); }
+            unsafe {
+                ffi::lua_pop(self.lua.as_mut_lua().0, self.size);
+            }
         }
     }
 }

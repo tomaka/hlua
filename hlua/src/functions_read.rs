@@ -16,18 +16,20 @@ use PushGuard;
 
 ///
 pub struct LuaFunction<L> {
-    variable: L
+    variable: L,
 }
 
 struct ReadData<R> {
     reader: R,
-    buffer: [u8 ; 128],
+    buffer: [u8; 128],
     triggered_error: Option<IoError>,
 }
 
-extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *mut libc::size_t)
-                    -> *const libc::c_char
-                    where R: Read
+extern "C" fn reader<R>(_: *mut ffi::lua_State,
+                        data_raw: *mut libc::c_void,
+                        size: *mut libc::size_t)
+                        -> *const libc::c_char
+    where R: Read
 {
     let data: &mut ReadData<R> = unsafe { mem::transmute(data_raw) };
 
@@ -37,18 +39,19 @@ extern fn reader<R>(_: *mut ffi::lua_State, data_raw: *mut libc::c_void, size: *
     }
 
     match data.reader.read(&mut data.buffer) {
-        Ok(len) =>
-            unsafe { (*size) = len as libc::size_t },
+        Ok(len) => unsafe { (*size) = len as libc::size_t },
         Err(e) => {
             unsafe { (*size) = 0 }
             data.triggered_error = Some(e)
-        },
+        }
     };
 
     data.buffer.as_ptr() as *const libc::c_char
 }
 
-impl<L> LuaFunction<L> where L: AsMutLua {
+impl<L> LuaFunction<L>
+    where L: AsMutLua
+{
     /// Calls the `LuaFunction`.
     #[inline]
     pub fn call<'a, V>(&'a mut self) -> Result<V, LuaError>
@@ -59,14 +62,18 @@ impl<L> LuaFunction<L> where L: AsMutLua {
             // lua_pcall pops the function, so we have to make a copy of it
             ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
             let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, 0, 1, 0);     // TODO: arguments
-            (pcall_return_value, PushGuard { lua: &mut self.variable, size: 1 })
+            (pcall_return_value,
+             PushGuard {
+                 lua: &mut self.variable,
+                 size: 1,
+             })
         };
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
             return match LuaRead::lua_read(pushed_value) {
                 Err(_) => Err(LuaError::WrongType),
-                Ok(x) => Ok(x)
+                Ok(x) => Ok(x),
             };
         }
 
@@ -76,9 +83,9 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         }
 
         if pcall_return_value == ffi::LUA_ERRRUN {
-            let error_msg: String = LuaRead::lua_read(pushed_value).ok().expect("can't find error \
-                                                                                 message at the top of \
-                                                                                 the Lua stack");
+            let error_msg: String = LuaRead::lua_read(pushed_value)
+                .ok()
+                .expect("can't find error message at the top of the Lua stack");
             return Err(LuaError::ExecutionError(error_msg));
         }
 
@@ -88,7 +95,7 @@ impl<L> LuaFunction<L> where L: AsMutLua {
     /// Builds a new `LuaFunction` from the code of a reader.
     #[inline]
     pub fn load_from_reader<R>(mut lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
-                               where R: Read
+        where R: Read
     {
         let readdata = ReadData {
             reader: code,
@@ -98,9 +105,16 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 
         let (load_return_value, pushed_value) = unsafe {
             let chunk_name = CString::new("chunk").unwrap();
-            let code = ffi::lua_load(lua.as_mut_lua().0, reader::<R>, mem::transmute(&readdata),
-                                     chunk_name.as_ptr(), ptr::null());
-            (code, PushGuard { lua: lua, size: 1 })
+            let code = ffi::lua_load(lua.as_mut_lua().0,
+                                     reader::<R>,
+                                     mem::transmute(&readdata),
+                                     chunk_name.as_ptr(),
+                                     ptr::null());
+            (code,
+             PushGuard {
+                 lua: lua,
+                 size: 1,
+             })
         };
 
         if readdata.triggered_error.is_some() {
@@ -109,14 +123,12 @@ impl<L> LuaFunction<L> where L: AsMutLua {
         }
 
         if load_return_value == 0 {
-            return Ok(LuaFunction{
-                variable: pushed_value,
-            });
+            return Ok(LuaFunction { variable: pushed_value });
         }
 
-        let error_msg: String = LuaRead::lua_read(pushed_value).ok().expect("can't find error message \
-                                                                             at the top of the Lua \
-                                                                             stack");
+        let error_msg: String = LuaRead::lua_read(pushed_value)
+            .ok()
+            .expect("can't find error message at the top of the Lua stack");
 
         if load_return_value == ffi::LUA_ERRMEM {
             panic!("LUA_ERRMEM");
@@ -139,13 +151,15 @@ impl<L> LuaFunction<L> where L: AsMutLua {
 }
 
 // TODO: return Result<Ret, ExecutionError> instead
-/*impl<'a, 'lua, Ret: CopyRead> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
-    fn call_mut(&mut self, _: ()) -> Ret {
-        self.call().unwrap()
-    }
-}*/
+// impl<'a, 'lua, Ret: CopyRead> ::std::ops::FnMut<(), Ret> for LuaFunction<'a,'lua> {
+// fn call_mut(&mut self, _: ()) -> Ret {
+// self.call().unwrap()
+// }
+// }
 
-impl<L> LuaRead<L> for LuaFunction<L> where L: AsMutLua {
+impl<L> LuaRead<L> for LuaFunction<L>
+    where L: AsMutLua
+{
     #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaFunction<L>, L> {
         assert!(index == -1);   // FIXME:
