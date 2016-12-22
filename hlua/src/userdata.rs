@@ -19,7 +19,7 @@ use LuaTable;
 #[inline]
 extern "C" fn destructor_wrapper(lua: *mut ffi::lua_State) -> libc::c_int {
     let impl_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
-    let imp: fn(*mut ffi::lua_State)->::libc::c_int = unsafe { mem::transmute(impl_raw) };
+    let imp: fn(*mut ffi::lua_State) -> ::libc::c_int = unsafe { mem::transmute(impl_raw) };
 
     imp(lua)
 }
@@ -49,13 +49,15 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 ///
 #[inline]
 pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
-                              where F: FnMut(LuaTable<&mut PushGuard<&mut L>>), L: AsMutLua,
-                                    T: Send + 'static + Any
+    where F: FnMut(LuaTable<&mut PushGuard<&mut L>>),
+          L: AsMutLua,
+          T: Send + 'static + Any
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
 
-    let lua_data_raw = unsafe { ffi::lua_newuserdata(lua.as_mut_lua().0,
-                                                     mem::size_of_val(&data) as libc::size_t) };
+    let lua_data_raw = unsafe {
+        ffi::lua_newuserdata(lua.as_mut_lua().0, mem::size_of_val(&data) as libc::size_t)
+    };
     let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
     unsafe { ptr::write(lua_data, data) };
 
@@ -86,7 +88,10 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
 
         // calling the metatable closure
         {
-            let mut guard = PushGuard { lua: &mut lua, size: 1 };
+            let mut guard = PushGuard {
+                lua: &mut lua,
+                size: 1,
+            };
             metatable(LuaRead::lua_read(&mut guard).ok().unwrap());
             guard.forget();
         }
@@ -94,14 +99,18 @@ pub fn push_userdata<L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuar
         ffi::lua_setmetatable(lua_raw.0, -2);
     }
 
-    PushGuard { lua: lua, size: 1 }
+    PushGuard {
+        lua: lua,
+        size: 1,
+    }
 }
 
 ///
 #[inline]
-pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
+pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
+                                index: i32)
                                 -> Result<&'t mut T, &'c mut InsideCallback>
-                                where T: 'static + Any
+    where T: 'static + Any
 {
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
@@ -118,7 +127,7 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback, index: i32)
         "__typeid".push_to_lua(&mut lua).forget();
         ffi::lua_gettable(lua.as_lua().0, -2);
         match <String as LuaRead<_>>::lua_read(&mut lua) {
-            Ok(ref val) if val == &expected_typeid => {},
+            Ok(ref val) if val == &expected_typeid => {}
             _ => {
                 return Err(lua);
             }
@@ -135,7 +144,10 @@ pub struct UserdataOnStack<T, L> {
     marker: PhantomData<T>,
 }
 
-impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 'static + Any {
+impl<T, L> LuaRead<L> for UserdataOnStack<T, L>
+    where L: AsMutLua + AsLua,
+          T: 'static + Any
+{
     #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
         unsafe {
@@ -153,7 +165,7 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 's
             "__typeid".push_to_lua(&mut lua).forget();
             ffi::lua_gettable(lua.as_lua().0, -2);
             match <String as LuaRead<_>>::lua_read(&mut lua) {
-                Ok(ref val) if val == &expected_typeid => {},
+                Ok(ref val) if val == &expected_typeid => {}
                 _ => {
                     return Err(lua);
                 }
@@ -169,7 +181,10 @@ impl<T, L> LuaRead<L> for UserdataOnStack<T, L> where L: AsMutLua + AsLua, T: 's
 }
 
 #[allow(mutable_transmutes)]
-impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
+impl<T, L> Deref for UserdataOnStack<T, L>
+    where L: AsMutLua,
+          T: 'static + Any
+{
     type Target = T;
 
     #[inline]
@@ -181,7 +196,10 @@ impl<T, L> Deref for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
     }
 }
 
-impl<T, L> DerefMut for UserdataOnStack<T, L> where L: AsMutLua, T: 'static + Any {
+impl<T, L> DerefMut for UserdataOnStack<T, L>
+    where L: AsMutLua,
+          T: 'static + Any
+{
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
         let data = unsafe { ffi::lua_touserdata(self.variable.as_mut_lua().0, -1) };

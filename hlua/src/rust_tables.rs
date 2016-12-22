@@ -9,12 +9,14 @@ use std::hash::Hash;
 
 #[inline]
 fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
-                      where L: AsMutLua, V: for<'b> Push<&'b mut L>, I: Iterator<Item=V>
+    where L: AsMutLua,
+          V: for<'b> Push<&'b mut L>,
+          I: Iterator<Item = V>
 {
     // creating empty table
     unsafe { ffi::lua_newtable(lua.as_mut_lua().0) };
 
-    for (elem, index) in iterator.zip((1 ..)) {
+    for (elem, index) in iterator.zip((1..)) {
         let size = elem.push_to_lua(&mut lua).forget();
 
         match size {
@@ -24,18 +26,23 @@ fn push_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
                 index.push_to_lua(&mut lua).forget();
                 unsafe { ffi::lua_insert(lua.as_mut_lua().0, -2) }
                 unsafe { ffi::lua_settable(lua.as_mut_lua().0, -3) }
-            },
+            }
             2 => unsafe { ffi::lua_settable(lua.as_mut_lua().0, -3) },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
-    PushGuard { lua: lua, size: 1 }
+    PushGuard {
+        lua: lua,
+        size: 1,
+    }
 }
 
 #[inline]
 fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
-                          where L: AsMutLua, V: for<'a> Push<&'a mut L>, I: Iterator<Item=V>
+    where L: AsMutLua,
+          V: for<'a> Push<&'a mut L>,
+          I: Iterator<Item = V>
 {
     let (nrec, _) = iterator.size_hint();
 
@@ -48,30 +55,40 @@ fn push_rec_iter<L, V, I>(mut lua: L, iterator: I) -> PushGuard<L>
         match size {
             0 => continue,
             2 => unsafe { ffi::lua_settable(lua.as_mut_lua().0, -3) },
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
-    PushGuard { lua: lua, size: 1 }
+    PushGuard {
+        lua: lua,
+        size: 1,
+    }
 }
 
-impl<L, T> Push<L> for Vec<T> where L: AsMutLua, T: for<'a> Push<&'a mut L> {
+impl<L, T> Push<L> for Vec<T>
+    where L: AsMutLua,
+          T: for<'a> Push<&'a mut L>
+{
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_iter(lua, self.into_iter())
     }
 }
 
-impl<'a, L, T> Push<L> for &'a [T] where L: AsMutLua, T: Clone + for<'b> Push<&'b mut L> {
+impl<'a, L, T> Push<L> for &'a [T]
+    where L: AsMutLua,
+          T: Clone + for<'b> Push<&'b mut L>
+{
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
         push_iter(lua, self.iter().map(|e| e.clone()))
     }
 }
 
-impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua,
-                                              K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash,
-                                              V: for<'a, 'b> Push<&'a mut &'b mut L>
+impl<L, K, V> Push<L> for HashMap<K, V>
+    where L: AsMutLua,
+          K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash,
+          V: for<'a, 'b> Push<&'a mut &'b mut L>
 {
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {
@@ -79,8 +96,9 @@ impl<L, K, V> Push<L> for HashMap<K, V> where L: AsMutLua,
     }
 }
 
-impl<L, K> Push<L> for HashSet<K> where L: AsMutLua,
-                                        K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash
+impl<L, K> Push<L> for HashSet<K>
+    where L: AsMutLua,
+          K: for<'a, 'b> Push<&'a mut &'b mut L> + Eq + Hash
 {
     #[inline]
     fn push_to_lua(self, lua: L) -> PushGuard<L> {

@@ -12,7 +12,7 @@ fn write() {
     let mut table: LuaTable<_> = lua.get("a").unwrap();
 
     let values: Vec<(i32, i32)> = table.iter().filter_map(|e| e).collect();
-    assert_eq!(values, vec!( (1, 9), (2, 8), (3, 7) ));
+    assert_eq!(values, vec![(1, 9), (2, 8), (3, 7)]);
 }
 
 #[test]
@@ -48,11 +48,13 @@ fn write_set() {
 
     let mut table: LuaTable<_> = lua.get("a").unwrap();
 
-    let values: HashSet<i32> = table.iter().filter_map(|e| e)
-                                           .map(|(elem, set): (i32, bool)| {
-        assert!(set);
-        elem
-    }).collect();
+    let values: HashSet<i32> = table.iter()
+        .filter_map(|e| e)
+        .map(|(elem, set): (i32, bool)| {
+            assert!(set);
+            elem
+        })
+        .collect();
 
     assert_eq!(values, set);
 }

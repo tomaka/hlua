@@ -35,7 +35,7 @@ fn read_i32s() {
 
 #[test]
 fn write_i32s() {
-    // TODO: 
+    // TODO:
 
     let mut lua = Lua::new();
 
