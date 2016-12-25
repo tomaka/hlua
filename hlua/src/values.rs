@@ -13,11 +13,13 @@ use PushGuard;
 macro_rules! integer_impl(
     ($t:ident) => (
         impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
+            type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
                 unsafe { ffi::lua_pushinteger(lua.as_mut_lua().0, self as ffi::lua_Integer) };
                 let raw_lua = lua.as_lua();
-                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
+                Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
 
@@ -43,11 +45,13 @@ integer_impl!(i32);
 macro_rules! unsigned_impl(
     ($t:ident) => (
         impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
+            type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
                 unsafe { ffi::lua_pushunsigned(lua.as_mut_lua().0, self as ffi::lua_Unsigned) };
                 let raw_lua = lua.as_lua();
-                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
+                Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
 
@@ -73,11 +77,13 @@ unsigned_impl!(u32);
 macro_rules! numeric_impl(
     ($t:ident) => (
         impl<'lua, L> Push<L> for $t where L: AsMutLua<'lua> {
+            type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
                 unsafe { ffi::lua_pushnumber(lua.as_mut_lua().0, self as f64) };
                 let raw_lua = lua.as_lua();
-                PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
+                Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
 
@@ -101,18 +107,20 @@ numeric_impl!(f64);
 impl<'lua, L> Push<L> for String
     where L: AsMutLua<'lua>
 {
+    type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
     #[inline]
-    fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
         unsafe {
             ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
                                  self.as_bytes().len() as libc::size_t);
 
             let raw_lua = lua.as_lua();
-            PushGuard {
+            Ok(PushGuard {
                 lua: lua,
                 size: 1,
                 raw_lua: raw_lua,
-            }
+            })
         }
     }
 }
@@ -138,18 +146,20 @@ impl<'lua, L> LuaRead<L> for String
 impl<'lua, 's, L> Push<L> for &'s str
     where L: AsMutLua<'lua>
 {
+    type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
     #[inline]
-    fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
         unsafe {
             ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
                                  self.as_bytes().len() as libc::size_t);
 
             let raw_lua = lua.as_lua();
-            PushGuard {
+            Ok(PushGuard {
                 lua: lua,
                 size: 1,
                 raw_lua: raw_lua,
-            }
+            })
         }
     }
 }
@@ -157,15 +167,17 @@ impl<'lua, 's, L> Push<L> for &'s str
 impl<'lua, L> Push<L> for bool
     where L: AsMutLua<'lua>
 {
+    type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
     #[inline]
-    fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
         unsafe { ffi::lua_pushboolean(lua.as_mut_lua().0, self.clone() as libc::c_int) };
         let raw_lua = lua.as_lua();
-        PushGuard {
+        Ok(PushGuard {
             lua: lua,
             size: 1,
             raw_lua: raw_lua,
-        }
+        })
     }
 }
 
@@ -185,15 +197,17 @@ impl<'lua, L> LuaRead<L> for bool
 impl<'lua, L> Push<L> for ()
     where L: AsMutLua<'lua>
 {
+    type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
     #[inline]
-    fn push_to_lua(self, lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, ((), L)> {
         let raw_lua = lua.as_lua();
 
-        PushGuard {
+        Ok(PushGuard {
             lua: lua,
             size: 0,
             raw_lua: raw_lua,
-        }
+        })
     }
 }
 

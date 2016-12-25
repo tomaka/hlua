@@ -157,6 +157,9 @@ unsafe impl<'a, 'lua, L> AsMutLua<'lua> for &'a mut L
 /// Types that can be given to a Lua context, for example with `lua.set()` or as a return value
 /// of a function.
 pub trait Push<L> {
+    /// Error that can happen when pushing a value.
+    type Err;
+
     /// Pushes the value on the top of the stack.
     ///
     /// Must return a guard representing the elements that have been pushed.
@@ -164,7 +167,7 @@ pub trait Push<L> {
     /// You can implement this for any type you want by redirecting to call to
     /// another implementation (for example `5.push_to_lua`) or by calling
     /// `userdata::push_userdata`.
-    fn push_to_lua(self, lua: L) -> PushGuard<L>;
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Self::Err, L)>;
 }
 
 /// Types that can be obtained from a Lua context.
@@ -451,8 +454,14 @@ impl<'lua> Lua<'lua> {
         unsafe {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
-            index.borrow().push_to_lua(&mut me).forget();
-            value.push_to_lua(&mut me).forget();
+            match index.borrow().push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
+            match value.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_settable(me.lua.0, -3);
             ffi::lua_pop(me.lua.0, 1);
         }
@@ -495,7 +504,10 @@ impl<'lua> Lua<'lua> {
         unsafe {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
-            index.borrow().push_to_lua(&mut me).forget();
+            match index.borrow().push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_newtable(me.lua.0);
             ffi::lua_settable(me.lua.0, -3);
             ffi::lua_pop(me.lua.0, 1);

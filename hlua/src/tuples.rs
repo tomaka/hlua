@@ -8,8 +8,10 @@ use LuaRead;
 macro_rules! tuple_impl {
     ($ty:ident) => (
         impl<'lua, LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: Push<LU> {
+            type Err = <$ty as Push<LU>>::Err;
+
             #[inline]
-            fn push_to_lua(self, lua: LU) -> PushGuard<LU> {
+            fn push_to_lua(self, lua: LU) -> Result<PushGuard<LU>, (Self::Err, LU)> {
                 self.0.push_to_lua(lua)
             }
         }
@@ -27,18 +29,26 @@ macro_rules! tuple_impl {
         impl<'lua, LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
             Push<LU> for ($first, $($other),+) where LU: AsMutLua<'lua>
         {
+            type Err = ();      // TODO: wrong
+
             #[inline]
-            fn push_to_lua(self, mut lua: LU) -> PushGuard<LU> {
+            fn push_to_lua(self, mut lua: LU) -> Result<PushGuard<LU>, (Self::Err, LU)> {
                 match self {
                     ($first, $($other),+) => {
-                        let mut total = $first.push_to_lua(&mut lua).forget();
+                        let mut total = match $first.push_to_lua(&mut lua) {
+                            Ok(pushed) => pushed.forget(),
+                            Err(_) => panic!()      // TODO: wrong
+                        };
 
                         $(
-                            total += $other.push_to_lua(&mut lua).forget();
+                            total += match $other.push_to_lua(&mut lua) {
+                                Ok(pushed) => pushed.forget(),
+                                Err(_) => panic!()      // TODO: wrong
+                            };
                         )+
 
                         let raw_lua = lua.as_lua();
-                        PushGuard { lua: lua, size: total, raw_lua: raw_lua }
+                        Ok(PushGuard { lua: lua, size: total, raw_lua: raw_lua })
                     }
                 }
             }

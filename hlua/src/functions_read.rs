@@ -17,8 +17,10 @@ use PushGuard;
 pub struct LuaCode<'a>(&'a str);
 
 impl<'lua, 'c, L> Push<L> for LuaCode<'c> where L: AsMutLua<'lua> {
+    type Err = LuaError;
+
     #[inline]
-    fn push_to_lua(self, lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (LuaError, L)> {
         LuaCodeFromReader(Cursor::new(self.0.as_bytes())).push_to_lua(lua)
     }
 }
@@ -29,8 +31,10 @@ impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
     where L: AsMutLua<'lua>,
           R: Read
 {
+    type Err = LuaError;
+
     #[inline]
-    fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (LuaError, L)> {
         struct ReadData<R> {
             reader: R,
             buffer: [u8; 128],
@@ -84,14 +88,14 @@ impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
 
         if readdata.triggered_error.is_some() {
             let error = readdata.triggered_error.unwrap();
-            panic!()    // TODO: return Err(LuaError::ReadError(error));
+            return Err((LuaError::ReadError(error), pushed_value.into_inner()));
         }
 
         if load_return_value == 0 {
-            return pushed_value;
+            return Ok(pushed_value);
         }
 
-        let error_msg: String = LuaRead::lua_read(pushed_value)
+        let error_msg: String = LuaRead::lua_read(&pushed_value)
             .ok()
             .expect("can't find error message at the top of the Lua stack");
 
@@ -100,7 +104,7 @@ impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
         }
 
         if load_return_value == ffi::LUA_ERRSYNTAX {
-            panic!() // TODO: return Err(LuaError::SyntaxError(error_msg));
+            return Err((LuaError::SyntaxError(error_msg), pushed_value.into_inner()));
         }
 
         panic!("Unknown error while calling lua_load");
@@ -162,8 +166,10 @@ impl<'lua, L> LuaFunction<L>
     pub fn load_from_reader<R>(lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
         where R: Read
     {
-        let pushed = LuaCodeFromReader(code).push_to_lua(lua);
-        Ok(LuaFunction { variable: pushed })
+        match LuaCodeFromReader(code).push_to_lua(lua) {
+            Ok(pushed) => Ok(LuaFunction { variable: pushed }),
+            Err((err, _)) => Err(err),
+        }
     }
 
     /// Builds a new `LuaFunction` from a raw string.
