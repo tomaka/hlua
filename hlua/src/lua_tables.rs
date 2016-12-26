@@ -298,6 +298,10 @@ impl<'lua, L> LuaTable<L>
     /// - If non-nil, the `__add`, `__mul`, `__sub`, `__div`, `__unm`, `__pow` and `__concat`
     ///   entries correspond to operators `+`, `*`, `-`, `/`, `-` (unary), `^` and `..`. Their
     ///   signature is `(a, b) -> result`.
+    /// - If non-nil, the `__gc` entry is called whenever the garbage collector is about to drop
+    ///   the object. Its signature is simply `(obj)`. Remember that usercode is able to modify
+    ///   the metatable as well, so there is no strong guarantee that this is actually going to be
+    ///   called.
     ///
     /// Interestingly enough, a metatable can also have a metatable. For example if you try to
     /// access a non-existing field in a table, Lua will look for the `__index` function in its
