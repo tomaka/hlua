@@ -19,9 +19,15 @@ macro_rules! impl_function {
     ($name:ident, $($p:ident),*) => (
         /// Wraps a type that implements `FnMut` so that it can be used by hlua.
         ///
-        /// This is only needed because of a limitation in Rust's inferrence system.
+        /// This is needed because of a limitation in Rust's inferrence system. Even though in
+        /// practice functions and closures always have a fixed number of parameters, the `FnMut`
+        /// trait of Rust was designed so that it allows calling the same closure with a varying
+        /// number of parameters. The consequence however is that there is no way of inferring
+        /// with the trait alone many parameters a function or closure expects.
         #[inline]
-        pub fn $name<Z, R $(, $p)*>(f: Z) -> Function<Z, ($($p,)*), R> where Z: FnMut($($p),*) -> R {
+        pub fn $name<Z, R $(, $p)*>(f: Z) -> Function<Z, ($($p,)*), R>
+            where Z: FnMut($($p),*) -> R
+        {
             Function {
                 function: f,
                 marker: PhantomData,
@@ -49,6 +55,8 @@ pub struct Function<F, P, R> {
 }
 
 /// Trait implemented on `Function` to mimic `FnMut`.
+///
+/// We could in theory use the `FnMut` trait instead of this one, but it is still unstable.
 pub trait FunctionExt<P> {
     type Output;
 
