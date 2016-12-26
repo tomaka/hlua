@@ -223,11 +223,11 @@ pub trait LuaRead<L>: Sized {
     /// Reads the data from Lua.
     #[inline]
     fn lua_read(lua: L) -> Result<Self, L> {
-        LuaRead::lua_read_at_position(lua, -1)
+        LuaRead::lua_read_at_position(lua, -1, 1)
     }
 
     /// Reads the data from Lua at a given position.
-    fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L>;
+    fn lua_read_at_position(lua: L, index: i32, size: u32) -> Result<Self, L>;
 }
 
 /// Error that can happen when executing Lua code.

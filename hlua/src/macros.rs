@@ -19,26 +19,28 @@ macro_rules! implement_lua_read {
     ($ty:ty) => {
         impl<'s, 'c> hlua::LuaRead<&'c mut hlua::InsideCallback> for &'s mut $ty {
             #[inline]
-            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s mut $ty, &'c mut hlua::InsideCallback> {
+            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32, size: u32) -> Result<&'s mut $ty, &'c mut hlua::InsideCallback> {
                 // FIXME:
+                if size != 1 { return Err(lua); }
                 unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
             }
         }
 
         impl<'s, 'c> hlua::LuaRead<&'c mut hlua::InsideCallback> for &'s $ty {
             #[inline]
-            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s $ty, &'c mut hlua::InsideCallback> {
+            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32, size: u32) -> Result<&'s $ty, &'c mut hlua::InsideCallback> {
                 // FIXME:
+                if size != 1 { return Err(lua); }
                 unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
             }
         }
 
         impl<'s, 'b, 'c> hlua::LuaRead<&'b mut &'c mut hlua::InsideCallback> for &'s mut $ty {
             #[inline]
-            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32) -> Result<&'s mut $ty, &'b mut &'c mut hlua::InsideCallback> {
+            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32, size: u32) -> Result<&'s mut $ty, &'b mut &'c mut hlua::InsideCallback> {
                 let ptr_lua = lua as *mut &mut hlua::InsideCallback;
                 let deref_lua = unsafe { ::std::ptr::read(ptr_lua) };
-                let res = Self::lua_read_at_position(deref_lua, index);
+                let res = Self::lua_read_at_position(deref_lua, index, size);
                 match res {
                     Ok(x) => Ok(x),
                     _ => Err(lua)
@@ -48,10 +50,10 @@ macro_rules! implement_lua_read {
 
         impl<'s, 'b, 'c> hlua::LuaRead<&'b mut &'c mut hlua::InsideCallback> for &'s $ty {
             #[inline]
-            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32) -> Result<&'s $ty, &'b mut &'c mut hlua::InsideCallback> {
+            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32, size: u32) -> Result<&'s $ty, &'b mut &'c mut hlua::InsideCallback> {
                 let ptr_lua = lua as *mut &mut hlua::InsideCallback;
                 let deref_lua = unsafe { ::std::ptr::read(ptr_lua) };
-                let res = Self::lua_read_at_position(deref_lua, index);
+                let res = Self::lua_read_at_position(deref_lua, index, size);
                 match res {
                     Ok(x) => Ok(x),
                     _ => Err(lua)

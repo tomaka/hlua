@@ -165,8 +165,11 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
           T: 'static + Any
 {
     #[inline]
-    fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
+    fn lua_read_at_position(mut lua: L, index: i32, size: u32) -> Result<UserdataOnStack<T, L>, L>
+    {
         unsafe {
+            if size != 1 { return Err(lua); }
+
             let expected_typeid = format!("{:?}", TypeId::of::<T>());
 
             let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);

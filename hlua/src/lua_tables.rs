@@ -75,7 +75,9 @@ impl<'lua, L> LuaRead<L> for LuaTable<L>
     where L: AsMutLua<'lua>
 {
     #[inline]
-    fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaTable<L>, L> {
+    fn lua_read_at_position(mut lua: L, index: i32, size: u32) -> Result<LuaTable<L>, L> {
+        if size != 1 { return Err(lua); }
+
         if unsafe { ffi::lua_istable(lua.as_mut_lua().0, index) } {
             Ok(LuaTable {
                 table: lua,
@@ -414,8 +416,8 @@ impl<'t, 'lua, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
 
             // Reading the key and value.
             let mut me = self;
-            let key = LuaRead::lua_read_at_position(&mut me, -2).ok();
-            let value = LuaRead::lua_read_at_position(&mut me, -1).ok();
+            let key = LuaRead::lua_read_at_position(&mut me, -2, 1).ok();
+            let value = LuaRead::lua_read_at_position(&mut me, -1, 1).ok();
 
             // Removing the value, leaving only the key on the top of the stack.
             ffi::lua_pop(me.table.as_mut_lua().0, 1);
@@ -445,7 +447,9 @@ mod tests {
     use Lua;
     use LuaTable;
     use PushGuard;
+    use AnyLuaValue;
     use function0;
+    use function2;
 
     #[test]
     fn iterable() {
@@ -533,10 +537,10 @@ mod tests {
             let table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
             let mut metatable = table.get_or_create_metatable();
-            fn handler() -> i32 {
+            fn handler(_: AnyLuaValue, _: AnyLuaValue) -> i32 {
                 5
             };
-            metatable.set("__add".to_string(), function0(handler));
+            metatable.set("__add".to_string(), function2(handler));
         }
 
         let r: i32 = lua.execute("return a + a").unwrap();

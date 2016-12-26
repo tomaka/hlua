@@ -19,9 +19,9 @@ fn readwrite() {
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
+        fn lua_read_at_position(lua: L, index: i32, size: u32) -> Result<Foo, L> {
             let val: Result<hlua::UserdataOnStack<Foo, _>, _> =
-                hlua::LuaRead::lua_read_at_position(lua, index);
+                hlua::LuaRead::lua_read_at_position(lua, index, size);
             val.map(|d| d.clone())
         }
     }
@@ -90,9 +90,9 @@ fn type_check() {
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
+        fn lua_read_at_position(lua: L, index: i32, size: u32) -> Result<Foo, L> {
             let val: Result<hlua::UserdataOnStack<Foo, _>, _> =
-                hlua::LuaRead::lua_read_at_position(lua, index);
+                hlua::LuaRead::lua_read_at_position(lua, index, size);
             val.map(|d| d.clone())
         }
     }
@@ -114,9 +114,9 @@ fn type_check() {
     impl<'lua, L> hlua::LuaRead<L> for Bar
         where L: hlua::AsMutLua<'lua>
     {
-        fn lua_read_at_position(lua: L, index: i32) -> Result<Bar, L> {
+        fn lua_read_at_position(lua: L, index: i32, size: u32) -> Result<Bar, L> {
             let val: Result<hlua::UserdataOnStack<Bar, _>, _> =
-                hlua::LuaRead::lua_read_at_position(lua, index);
+                hlua::LuaRead::lua_read_at_position(lua, index, size);
             val.map(|d| d.clone())
         }
     }

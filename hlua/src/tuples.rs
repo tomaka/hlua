@@ -23,8 +23,8 @@ macro_rules! tuple_impl {
 
         impl<'lua, LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: LuaRead<LU> {
             #[inline]
-            fn lua_read_at_position(lua: LU, index: i32) -> Result<($ty,), LU> {
-                LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
+            fn lua_read_at_position(lua: LU, index: i32, size: u32) -> Result<($ty,), LU> {
+                LuaRead::lua_read_at_position(lua, index, size).map(|v| (v,))
             }
         }
     );
@@ -59,17 +59,18 @@ macro_rules! tuple_impl {
             }
         }
 
-        // TODO: what if T or U are also tuples? indices won't match
         #[allow(unused_assignments)]
         #[allow(non_snake_case)]
         impl<'lua, LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
             LuaRead<LU> for ($first, $($other),+) where LU: AsLua<'lua>
         {
             #[inline]
-            fn lua_read_at_position(mut lua: LU, index: i32) -> Result<($first, $($other),+), LU> {
+            fn lua_read_at_position(mut lua: LU, index: i32, size: u32)
+                                    -> Result<($first, $($other),+), LU>
+            {
                 let mut i = index;
 
-                let $first: $first = match LuaRead::lua_read_at_position(&mut lua, i) {
+                let $first: $first = match LuaRead::lua_read_at_position(&mut lua, i, 1) {
                     Ok(v) => v,
                     Err(_) => return Err(lua)
                 };
@@ -77,15 +78,18 @@ macro_rules! tuple_impl {
                 i += 1;
 
                 $(
-                    let $other: $other = match LuaRead::lua_read_at_position(&mut lua, i) {
+                    let $other: $other = match LuaRead::lua_read_at_position(&mut lua, i, 1) {
                         Ok(v) => v,
                         Err(_) => return Err(lua)
                     };
                     i += 1;
                 )+
 
-                Ok(($first, $($other),+))
+                if i - index != size as i32 {
+                    return Err(lua);
+                }
 
+                Ok(($first, $($other),+))
             }
         }
 
