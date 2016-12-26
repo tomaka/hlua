@@ -12,6 +12,7 @@ pub use functions_write::{Function, InsideCallback};
 pub use functions_write::{function0, function1, function2, function3, function4, function5};
 pub use functions_write::{function6, function7, function8, function9, function10};
 pub use lua_functions::LuaFunction;
+pub use lua_functions::LuaFunctionCallError;
 pub use lua_functions::{LuaCode, LuaCodeFromReader};
 pub use lua_tables::LuaTable;
 pub use lua_tables::LuaTableIterator;
