@@ -7,22 +7,26 @@ use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
+pub use any::AnyLuaValue;
 pub use functions_read::LuaFunction;
+pub use functions_read::{LuaCode, LuaCodeFromReader};
 pub use functions_write::{Function, InsideCallback};
 pub use functions_write::{function0, function1, function2, function3, function4, function5};
 pub use functions_write::{function6, function7, function8, function9, function10};
 pub use lua_tables::LuaTable;
-pub mod any;
-pub mod functions_read;
-pub mod lua_tables;
-pub mod userdata;
+pub use lua_tables::LuaTableIterator;
+pub use userdata::UserdataOnStack;
+pub use userdata::{push_userdata, read_userdata};
 
+mod any;
+mod functions_read;
 mod functions_write;
+mod lua_tables;
 mod macros;
 mod rust_tables;
+mod userdata;
 mod values;
 mod tuples;
-
 
 /// Main object of the library.
 ///
@@ -574,7 +578,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// ```
     /// use hlua::Lua;
-    /// use hlua::any::AnyLuaValue;
+    /// use hlua::AnyLuaValue;
     ///
     /// let mut lua = Lua::new();
     /// {
