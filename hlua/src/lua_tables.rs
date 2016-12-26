@@ -7,6 +7,7 @@ use AsLua;
 use AsMutLua;
 use Push;
 use PushGuard;
+use PushOne;
 use LuaRead;
 use Void;
 
@@ -122,12 +123,12 @@ impl<'lua, L> LuaTable<L>
     #[inline]
     pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R>
         where R: LuaRead<PushGuard<&'a mut LuaTable<L>>>,
-              I: for<'b> Push<&'b mut &'a mut LuaTable<L>>
+              I: for<'b> PushOne<&'b mut &'a mut LuaTable<L>>
     {
         unsafe {
             let mut me = self;
             match index.push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err(_) => unreachable!()
             };
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
@@ -146,12 +147,12 @@ impl<'lua, L> LuaTable<L>
     #[inline]
     pub fn into_get<'a, R, I>(self, index: I) -> Result<R, PushGuard<Self>>
         where R: LuaRead<PushGuard<LuaTable<L>>>,
-              I: for<'b> Push<&'b mut LuaTable<L>>
+              I: for<'b> PushOne<&'b mut LuaTable<L>>
     {
         unsafe {
             let mut me = self;
             match index.push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err(_) => unreachable!()
             };
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
@@ -169,8 +170,8 @@ impl<'lua, L> LuaTable<L>
     /// Inserts or modifies an elements of the table.
     #[inline]
     pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
-        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>,
-              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>
+        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Void>,
+              V: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Void>
     {
         match self.checked_set(index, value) {
             Ok(()) => (),
@@ -181,19 +182,19 @@ impl<'lua, L> LuaTable<L>
     /// Inserts or modifies an elements of the table.
     #[inline]
     pub fn checked_set<'s, I, V, E>(&'s mut self, index: I, value: V) -> Result<(), E>
-        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>,        // TODO: different err type
-              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>
+        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = E>,        // TODO: different err type
+              V: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = E>
     {
         unsafe {
             let mut me = self;
 
             match index.push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err((err, _)) => return Err(err),       // FIXME: panic safety
             };
 
             match value.push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err((err, _)) => return Err(err),       // FIXME: panic safety
             };
 
@@ -205,13 +206,13 @@ impl<'lua, L> LuaTable<L>
     /// Inserts an empty array, then loads it.
     #[inline]
     pub fn empty_array<'s, I>(&'s mut self, index: I) -> LuaTable<PushGuard<&'s mut LuaTable<L>>>
-        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>> + Clone
+        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>> + Clone
     {
         // TODO: cleaner implementation
         unsafe {
             let mut me = self;
             match index.clone().push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err(_) => panic!()      // TODO:
             };
 

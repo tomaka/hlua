@@ -5,6 +5,7 @@ use AsMutLua;
 
 use Push;
 use PushGuard;
+use PushOne;
 use LuaRead;
 use Void;
 
@@ -48,6 +49,11 @@ impl<'lua, L> Push<L> for AnyLuaValue
             AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other"),
         }
     }
+}
+
+impl<'lua, L> PushOne<L> for AnyLuaValue
+    where L: AsMutLua<'lua>
+{
 }
 
 impl<'lua, L> LuaRead<L> for AnyLuaValue

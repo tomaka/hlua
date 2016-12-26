@@ -7,6 +7,7 @@ use LuaContext;
 use LuaRead;
 use Push;
 use PushGuard;
+use PushOne;
 use Void;
 
 use std::marker::PhantomData;
@@ -90,6 +91,13 @@ macro_rules! impl_function_ext {
                 }
             }
         }
+
+        impl<'lua, L, Z, R> PushOne<L> for Function<Z, (), R>
+                where L: AsMutLua<'lua>,
+                      Z: 'lua + FnMut() -> R,
+                      R: for<'a> Push<&'a mut InsideCallback> + 'static
+        {
+        }
     );
 
     ($($p:ident),+) => (
@@ -128,6 +136,14 @@ macro_rules! impl_function_ext {
                     Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
                 }
             }
+        }
+
+        impl<'lua, L, Z, R $(,$p: 'static)+> PushOne<L> for Function<Z, ($($p,)*), R>
+                where L: AsMutLua<'lua>,
+                      Z: 'lua + FnMut($($p),*) -> R,
+                      ($($p,)*): for<'p> LuaRead<&'p mut InsideCallback>,
+                      R: for<'a> Push<&'a mut InsideCallback> + 'static
+        {
         }
     )
 }
@@ -196,6 +212,12 @@ impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
             }
         }
     }
+}
+
+impl<'a, T, E, P> PushOne<&'a mut InsideCallback> for Result<T, E>
+    where T: PushOne<&'a mut InsideCallback, Err = P> + for<'b> PushOne<&'b mut &'a mut InsideCallback, Err = P>,
+          E: Debug
+{
 }
 
 // this function is called when Lua wants to call one of our functions

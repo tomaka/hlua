@@ -170,6 +170,19 @@ pub trait Push<L> {
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Self::Err, L)>;
 }
 
+/// Extension trait for `Push`. Guarantees that only one element will be pushed.
+///
+/// This should be implemented on most types that implement `Push`, except for tuples.
+///
+/// > **Note**: Implementing this trait on a type that pushes multiple elements will most likely
+/// > result in panics.
+//
+// Note for the implementation: since this trait is not unsafe, it is mostly a hint. Functions can
+// require this trait if they only accept one pushed element, but they must also add a runtime
+// assertion to make sure that only one element was actually pushed.
+pub trait PushOne<L>: Push<L> {
+}
+
 /// Type that cannot be instantiated.
 ///
 /// Will be replaced with `!` eventually (https://github.com/rust-lang/rust/issues/35121).
@@ -455,7 +468,7 @@ impl<'lua> Lua<'lua> {
     #[inline]
     pub fn set<I, V>(&mut self, index: I, value: V)
         where I: Borrow<str>,
-              for<'a> V: Push<&'a mut Lua<'lua>, Err = Void>
+              for<'a> V: PushOne<&'a mut Lua<'lua>, Err = Void>
     {
         match self.checked_set(index, value) {
             Ok(_) => (),
@@ -468,17 +481,17 @@ impl<'lua> Lua<'lua> {
     #[inline]
     pub fn checked_set<I, V, E>(&mut self, index: I, value: V) -> Result<(), E>
         where I: Borrow<str>,
-              for<'a> V: Push<&'a mut Lua<'lua>, Err = E>
+              for<'a> V: PushOne<&'a mut Lua<'lua>, Err = E>
     {
         unsafe {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
             match index.borrow().push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { debug_assert_eq!(pushed.size, 1); pushed.forget() },
                 Err(_) => unreachable!()
             };
             match value.push_to_lua(&mut me) {
-                Ok(pushed) => pushed.forget(),
+                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
                 Err((err, lua)) => {
                     ffi::lua_pop(lua.lua.0, 2);
                     return Err(err);

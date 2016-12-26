@@ -13,6 +13,7 @@ use LuaRead;
 use LuaError;
 use Push;
 use PushGuard;
+use PushOne;
 
 pub struct LuaCode<'a>(&'a str);
 
@@ -23,6 +24,9 @@ impl<'lua, 'c, L> Push<L> for LuaCode<'c> where L: AsMutLua<'lua> {
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (LuaError, L)> {
         LuaCodeFromReader(Cursor::new(self.0.as_bytes())).push_to_lua(lua)
     }
+}
+
+impl<'lua, 'c, L> PushOne<L> for LuaCode<'c> where L: AsMutLua<'lua> {
 }
 
 pub struct LuaCodeFromReader<R>(R);
@@ -109,6 +113,12 @@ impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
 
         panic!("Unknown error while calling lua_load");
     }
+}
+
+impl<'lua, L, R> PushOne<L> for LuaCodeFromReader<R>
+    where L: AsMutLua<'lua>,
+          R: Read
+{
 }
 
 ///
