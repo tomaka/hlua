@@ -2,9 +2,9 @@
 macro_rules! implement_lua_push {
     ($ty:ty, $cb:expr) => {
         impl<'lua, L> $crate::Push<L> for $ty where L: $crate::AsMutLua<'lua> {
-            type Err = ();      // TODO: use ! instead
+            type Err = $crate::Void;      // TODO: use ! instead
             #[inline]
-            fn push_to_lua(self, lua: L) -> Result<$crate::PushGuard<L>, ((), L)> {
+            fn push_to_lua(self, lua: L) -> Result<$crate::PushGuard<L>, ($crate::Void, L)> {
                 Ok($crate::userdata::push_userdata(self, lua, $cb))
             }
         }

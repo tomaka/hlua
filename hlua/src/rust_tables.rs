@@ -3,6 +3,7 @@ use ffi;
 use Push;
 use PushGuard;
 use AsMutLua;
+use Void;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -109,10 +110,10 @@ impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
           K: for<'a, 'b> Push<&'a mut &'b mut L, Err = E> + Eq + Hash,
           V: for<'a, 'b> Push<&'a mut &'b mut L, Err = E>
 {
-    type Err = ();      // TODO: can't use E because pushing tuples
+    type Err = Void;      // TODO: can't use E because pushing tuples
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, ((), L)>  {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)>  {
         push_rec_iter(lua, self.into_iter())
     }
 }
@@ -121,10 +122,10 @@ impl<'lua, L, K, E> Push<L> for HashSet<K>
     where L: AsMutLua<'lua>,
           K: for<'a, 'b> Push<&'a mut &'b mut L, Err = E> + Eq + Hash
 {
-    type Err = ();      // TODO: can't use E because pushing tuples
+    type Err = Void;      // TODO: can't use E because pushing tuples
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, ((), L)> {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
         push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))
     }
 }

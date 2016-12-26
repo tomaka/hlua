@@ -4,6 +4,7 @@ use AsLua;
 use Push;
 use PushGuard;
 use LuaRead;
+use Void;
 
 macro_rules! tuple_impl {
     ($ty:ident) => (
@@ -29,7 +30,7 @@ macro_rules! tuple_impl {
         impl<'lua, LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
             Push<LU> for ($first, $($other),+) where LU: AsMutLua<'lua>
         {
-            type Err = ();      // TODO: wrong
+            type Err = Void;      // TODO: wrong
 
             #[inline]
             fn push_to_lua(self, mut lua: LU) -> Result<PushGuard<LU>, (Self::Err, LU)> {

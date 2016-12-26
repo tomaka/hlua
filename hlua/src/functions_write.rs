@@ -7,6 +7,7 @@ use LuaContext;
 use LuaRead;
 use Push;
 use PushGuard;
+use Void;
 
 use std::marker::PhantomData;
 use std::fmt::Debug;
@@ -70,10 +71,10 @@ macro_rules! impl_function_ext {
                       Z: 'lua + FnMut() -> R,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
-            type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+            type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
                 unsafe {
                     // pushing the function pointer as a userdata
                     let lua_data = ffi::lua_newuserdata(lua.as_mut_lua().0,
@@ -109,10 +110,10 @@ macro_rules! impl_function_ext {
                       ($($p,)*): for<'p> LuaRead<&'p mut InsideCallback>,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
-            type Err = ();      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+            type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, ((), L)> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
                 unsafe {
                     // pushing the function pointer as a userdata
                     let lua_data = ffi::lua_newuserdata(lua.as_mut_lua().0,

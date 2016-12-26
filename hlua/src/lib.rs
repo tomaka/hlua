@@ -170,6 +170,12 @@ pub trait Push<L> {
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Self::Err, L)>;
 }
 
+/// Type that cannot be instantiated.
+///
+/// Will be replaced with `!` eventually (https://github.com/rust-lang/rust/issues/35121).
+#[derive(Debug, Copy, Clone)]
+pub enum Void {}
+
 /// Types that can be obtained from a Lua context.
 ///
 /// Most types that implement `Push` also implement `LuaRead`, but this is not always the case
