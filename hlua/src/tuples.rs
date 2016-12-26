@@ -2,6 +2,7 @@ use AsMutLua;
 use AsLua;
 
 use Push;
+use PushOne;
 use PushGuard;
 use LuaRead;
 use Void;
@@ -15,6 +16,9 @@ macro_rules! tuple_impl {
             fn push_to_lua(self, lua: LU) -> Result<PushGuard<LU>, (Self::Err, LU)> {
                 self.0.push_to_lua(lua)
             }
+        }
+
+        impl<'lua, LU, $ty> PushOne<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: PushOne<LU> {
         }
 
         impl<'lua, LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: LuaRead<LU> {
