@@ -76,18 +76,20 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
     where L: AsLua<'lua>
 {
     #[inline]
-    fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+    fn lua_read_at_position(lua: L, index: i32, size: u32) -> Result<AnyLuaValue, L> {
+        if size != 1 { return Err(lua); }
+
+        let lua = match LuaRead::lua_read_at_position(&lua, index, size) {
             Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
             Err(lua) => lua,
         };
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+        let lua = match LuaRead::lua_read_at_position(&lua, index, size) {
             Ok(v) => return Ok(AnyLuaValue::LuaBoolean(v)),
             Err(lua) => lua,
         };
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+        let lua = match LuaRead::lua_read_at_position(&lua, index, size) {
             Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
             Err(lua) => lua,
         };

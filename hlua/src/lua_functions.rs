@@ -289,7 +289,8 @@ impl<'lua, L> LuaRead<L> for LuaFunction<L>
     where L: AsMutLua<'lua>
 {
     #[inline]
-    fn lua_read_at_position(mut lua: L, index: i32) -> Result<LuaFunction<L>, L> {
+    fn lua_read_at_position(mut lua: L, index: i32, size: u32) -> Result<LuaFunction<L>, L> {
+        if size != 1 { return Err(lua); }
         assert!(index == -1);   // FIXME:
         if unsafe { ffi::lua_isfunction(lua.as_mut_lua().0, -1) } {
             Ok(LuaFunction { variable: lua })
