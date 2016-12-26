@@ -10,7 +10,7 @@ Add this to the `Cargo.toml` file of your project
 
 ```toml
 [dependencies]
-hlua = "0.1"
+hlua = "0.2"
 ```
 
 ### How to use it?
@@ -134,7 +134,7 @@ lua.execute::<()>("
         return 5
     end");
 
-let get_five: functions_read::LuaFunction = lua.get("get_five").unwrap();
+let get_five: hlua::LuaFunction<_> = lua.get("get_five").unwrap();
 let value: i32 = get_five.call().unwrap();
 assert_eq!(value, 5);
 ```
