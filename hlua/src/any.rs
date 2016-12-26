@@ -35,7 +35,23 @@ impl<'lua, L> Push<L> for AnyLuaValue
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
-            AnyLuaValue::LuaArray(_val) => unimplemented!(),//val.push_to_lua(lua),   // FIXME: reached recursion limit during monomorphization
+            AnyLuaValue::LuaArray(val) => {
+                // Pushing a `Vec<(AnyLuaValue, AnyLuaValue)>` on a `L` requires calling the
+                // function that pushes a `AnyLuaValue` on a `&mut L`, which in turns requires
+                // calling the function that pushes a `AnyLuaValue` on a `&mut &mut L`, and so on.
+                // In order to avoid this infinite recursion, we push the array on a
+                // `&mut AsMutLua` instead.
+
+                // We also need to destroy and recreate the push guard, otherwise the type parameter
+                // doesn't match.
+                let size = val.push_no_err(&mut lua as &mut AsMutLua<'lua>).forget();
+
+                Ok(PushGuard {
+                    lua: lua,
+                    size: size,
+                    raw_lua: raw_lua,
+                })
+            },
             AnyLuaValue::LuaNil => {
                 unsafe {
                     ffi::lua_pushnil(lua.as_mut_lua().0);
