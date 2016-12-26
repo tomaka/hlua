@@ -317,15 +317,30 @@ mod tests {
     #[test]
     fn syntax_error() {
         let mut lua = Lua::new();
-        assert!(LuaFunction::load(&mut lua, "azerazer").is_err());
+        match LuaFunction::load(&mut lua, "azerazer") {
+            Err(LuaError::SyntaxError(_)) => (),
+            _ => panic!()
+        };
     }
 
     #[test]
     fn execution_error() {
         let mut lua = Lua::new();
         let mut f = LuaFunction::load(&mut lua, "return a:hello()").unwrap();
-        let val: Result<i32, LuaError> = f.call();
-        assert!(val.is_err());
+        match f.call::<()>() {
+            Err(LuaError::ExecutionError(_)) => (),
+            _ => panic!()
+        };
+    }
+
+    #[test]
+    fn wrong_type() {
+        let mut lua = Lua::new();
+        let mut f = LuaFunction::load(&mut lua, "return 12").unwrap();
+        match f.call::<LuaFunction<_>>() {
+            Err(LuaError::WrongType) => (),
+            _ => panic!()
+        };
     }
 
     #[test]
@@ -335,4 +350,16 @@ mod tests {
         let mut val: LuaTable<_> = f.call().unwrap();
         assert_eq!(val.get::<u8, _>(2).unwrap(), 2);
     }
+
+    #[test]
+    fn lua_function_returns_function() {
+        let mut lua = Lua::new();
+        lua.execute::<()>("function foo() return 5 end").unwrap();
+        let mut bar = LuaFunction::load(&mut lua, "return foo;").unwrap();
+        let mut foo: LuaFunction<_> = bar.call().unwrap();
+        let val: i32 = foo.call().unwrap();
+        assert_eq!(val, 5);
+    }
+
+    // TODO: test for reading error
 }
