@@ -144,6 +144,8 @@ impl<'lua, L> LuaTable<L>
             // Because of a weird borrow error, we need to push the index by borrowing `&mut &mut L`
             // instead of `&mut L`. `self` matches `&mut L`, so in theory we could do `&mut self`.
             // But in practice `self` isn't mutable, so we need to move it into `me` first.
+            // TODO: remove this by simplifying the PushOne requirement ; however this is complex
+            //       because of the empty_array method
             let mut me = self;
 
             index.push_no_err(&mut me).assert_one_and_forget();
@@ -167,21 +169,18 @@ impl<'lua, L> LuaTable<L>
     /// Loads a value in the table, with the result capturing the table by value.
     // TODO: doc
     #[inline]
-    pub fn into_get<'a, R, I>(self, index: I) -> Result<R, PushGuard<Self>>
+    pub fn into_get<R, I>(mut self, index: I) -> Result<R, PushGuard<Self>>
         where R: LuaRead<PushGuard<LuaTable<L>>>,
               I: for<'b> PushOne<&'b mut LuaTable<L>, Err = Void>
     {
         unsafe {
-            // Because of a weird borrow error, we need to push the index by borrowing `&mut &mut L`
-            // instead of `&mut L`. `self` matches `&mut L`, so in theory we could do `&mut self`.
-            // But in practice `self` isn't mutable, so we need to move it into `me` first.
-            let mut me = self;
+            index.push_no_err(&mut self).assert_one_and_forget();
 
-            index.push_no_err(&mut me).assert_one_and_forget();
-            ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
-            let raw_lua = me.as_lua();
+            ffi::lua_gettable(self.as_mut_lua().0, self.offset(-1));
+
+            let raw_lua = self.as_lua();
             let guard = PushGuard {
-                lua: me,
+                lua: self,
                 size: 1,
                 raw_lua: raw_lua,
             };
@@ -200,9 +199,9 @@ impl<'lua, L> LuaTable<L>
     /// (which is the case for most types).
     // TODO: doc
     #[inline]
-    pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
-        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Void>,
-              V: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Void>
+    pub fn set<I, V>(&mut self, index: I, value: V)
+        where I: for<'r> PushOne<&'r mut LuaTable<L>, Err = Void>,
+              V: for<'r, 's> PushOne<&'r mut PushGuard<&'s mut LuaTable<L>>, Err = Void>
     {
         match self.checked_set(index, value) {
             Ok(()) => (),
@@ -216,40 +215,37 @@ impl<'lua, L> LuaTable<L>
     /// limited set of types. You are encouraged to use the `set` method if writing cannot fail.
     // TODO: doc
     #[inline]
-    pub fn checked_set<'s, I, V, Ke, Ve>(&'s mut self, index: I, value: V)
-                                         -> Result<(), CheckedSetError<Ke, Ve>>
-        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Ke>,
-              V: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Ve>
+    pub fn checked_set<I, V, Ke, Ve>(&mut self, index: I, value: V)
+                                     -> Result<(), CheckedSetError<Ke, Ve>>
+        where I: for<'r> PushOne<&'r mut LuaTable<L>, Err = Ke>,
+              V: for<'r, 's> PushOne<&'r mut PushGuard<&'s mut LuaTable<L>>, Err = Ve>
     {
         unsafe {
-            // Because of a weird borrow error, we need to push the index and the value by
-            // borrowing `&mut &mut L` instead of `&mut L`. `self` matches `&mut L`, so in theory
-            // we could do `&mut self`. But in practice `self` isn't mutable, so we need to move
-            // it into `me` first.
-            let mut me = self;
+            let raw_lua = self.as_mut_lua().0;
+            let my_offset = self.offset(-2);
 
-            match index.push_to_lua(&mut me) {
-                Ok(pushed) => {
-                    assert_eq!(pushed.size, 1);
-                    pushed.forget()
+            let mut guard = match index.push_to_lua(self) {
+                Ok(guard) => {
+                    assert_eq!(guard.size, 1);
+                    guard
                 }
                 Err((err, _)) => {
                     return Err(CheckedSetError::KeyPushError(err));
                 }
             };
 
-            match value.push_to_lua(&mut me) {
+            match value.push_to_lua(&mut guard) {
                 Ok(pushed) => {
                     assert_eq!(pushed.size, 1);
                     pushed.forget()
                 }
                 Err((err, lua)) => {
-                    ffi::lua_pop(lua.as_mut_lua().0, 1);        // Poping the key.
                     return Err(CheckedSetError::ValuePushError(err));
                 }
             };
 
-            ffi::lua_settable(me.as_mut_lua().0, me.offset(-2));
+            guard.forget();
+            ffi::lua_settable(raw_lua, my_offset);
             Ok(())
         }
     }

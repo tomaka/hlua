@@ -512,6 +512,7 @@ impl<'lua> Lua<'lua> {
               for<'a> V: PushOne<&'a mut Lua<'lua>, Err = E>
     {
         unsafe {
+            // TODO: can be simplified
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
             match index.borrow().push_to_lua(&mut me) {
