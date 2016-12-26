@@ -102,6 +102,7 @@ pub unsafe trait AsLua<'lua> {
 /// it must be in the same state as it was when you started.
 // TODO: the lifetime should be an associated lifetime instead
 pub unsafe trait AsMutLua<'lua>: AsLua<'lua> {
+    /// Returns the raw Lua context.
     fn as_mut_lua(&mut self) -> LuaContext;
 }
 

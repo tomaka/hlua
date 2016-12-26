@@ -41,14 +41,14 @@ impl<L> LuaTable<L> {
     // table is.
     #[inline]
     fn offset(&self, offset: i32) -> i32 {
-        if self.index < 0 {
+        if self.index >= 0 || self.index == ffi::LUA_REGISTRYINDEX {
+            // If this table is the registry or was indexed from the bottom of the stack, its
+            // current position will be unchanged.
+            self.index
+        } else {
             // If this table was indexed from the top of the stack, its current
             // index will have been pushed down by the newly-pushed items.
             self.index + offset
-        } else {
-            // If this table was indexed from the bottom of the stack, its
-            // current position will be unchanged.
-            self.index
         }
     }
 }
@@ -347,6 +347,30 @@ impl<'lua, L> LuaTable<L>
             }
         }
     }
+
+    /// Builds the `LuaTable` that yields access to the registry.
+    ///
+    /// The registry is a special table available from anywhere and that is not directly
+    /// accessible from Lua code. It can be used to store whatever you want to keep in memory.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use hlua::Lua;
+    /// use hlua::LuaTable;
+    ///
+    /// let mut lua = Lua::new();
+    ///
+    /// let mut table = LuaTable::registry(&mut lua);
+    /// table.set(3, "hello");
+    /// ```
+    #[inline]
+    pub fn registry(lua: L) -> LuaTable<L> {
+        LuaTable {
+            table: lua,
+            index: ffi::LUA_REGISTRYINDEX,
+        }
+    }
 }
 
 /// Error returned by the `checked_set` function.
@@ -579,5 +603,24 @@ mod tests {
         assert!(3 == table2.get("c").unwrap());
         let table: LuaTable<PushGuard<Lua>> = table2.into_inner().into_inner();
         let _lua: Lua = table.into_inner().into_inner();
+    }
+
+    #[test]
+    fn registry() {
+        let mut lua = Lua::new();
+
+        let mut table = LuaTable::registry(&mut lua);
+        table.set(3, "hello");
+        let y: String = table.get(3).unwrap();
+        assert_eq!(y, "hello");
+    }
+
+    #[test]
+    fn registry_metatable() {
+        let mut lua = Lua::new();
+
+        let mut registry = LuaTable::registry(&mut lua);
+        let mut metatable = registry.get_or_create_metatable();
+        metatable.set(3, "hello");
     }
 }
