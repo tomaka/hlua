@@ -10,7 +10,7 @@ Add this to the `Cargo.toml` file of your project
 
 ```toml
 [dependencies]
-hlua = "0.2"
+hlua = "0.3"
 ```
 
 ### How to use it?
