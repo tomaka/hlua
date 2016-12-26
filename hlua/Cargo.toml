@@ -3,8 +3,9 @@ name = "hlua"
 version = "0.2.0"
 authors = [ "pierre.krieger1708@gmail.com" ]
 description = "Zero-cost high-level wrapper for Lua"
+keywords = ["lua"]
 repository = "https://github.com/tomaka/hlua"
-documentation = "http://tomaka.github.io/hlua/hlua/index.html"
+documentation = "http://docs.rs/hlua"
 license = "MIT"
 
 [dependencies]
