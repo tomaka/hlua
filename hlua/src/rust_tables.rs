@@ -2,6 +2,7 @@ use ffi;
 
 use Push;
 use PushGuard;
+use PushOne;
 use AsMutLua;
 use Void;
 
@@ -92,6 +93,12 @@ impl<'lua, L, T, E> Push<L> for Vec<T>
     }
 }
 
+impl<'lua, L, T, E> PushOne<L> for Vec<T>
+    where L: AsMutLua<'lua>,
+          T: for<'a> Push<&'a mut L, Err = E>
+{
+}
+
 impl<'a, 'lua, L, T, E> Push<L> for &'a [T]
     where L: AsMutLua<'lua>,
           T: Clone + for<'b> Push<&'b mut L, Err = E>
@@ -104,11 +111,17 @@ impl<'a, 'lua, L, T, E> Push<L> for &'a [T]
     }
 }
 
+impl<'a, 'lua, L, T, E> PushOne<L> for &'a [T]
+    where L: AsMutLua<'lua>,
+          T: Clone + for<'b> Push<&'b mut L, Err = E>
+{
+}
+
 // TODO: use an enum for the error to allow different error types for K and V
 impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
     where L: AsMutLua<'lua>,
-          K: for<'a, 'b> Push<&'a mut &'b mut L, Err = E> + Eq + Hash,
-          V: for<'a, 'b> Push<&'a mut &'b mut L, Err = E>
+          K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash,
+          V: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E>
 {
     type Err = Void;      // TODO: can't use E because pushing tuples
 
@@ -118,9 +131,16 @@ impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
     }
 }
 
+impl<'lua, L, K, V, E> PushOne<L> for HashMap<K, V>
+    where L: AsMutLua<'lua>,
+          K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash,
+          V: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E>
+{
+}
+
 impl<'lua, L, K, E> Push<L> for HashSet<K>
     where L: AsMutLua<'lua>,
-          K: for<'a, 'b> Push<&'a mut &'b mut L, Err = E> + Eq + Hash
+          K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash
 {
     type Err = Void;      // TODO: can't use E because pushing tuples
 
@@ -128,4 +148,10 @@ impl<'lua, L, K, E> Push<L> for HashSet<K>
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
         push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))
     }
+}
+
+impl<'lua, L, K, E> PushOne<L> for HashSet<K>
+    where L: AsMutLua<'lua>,
+          K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash
+{
 }

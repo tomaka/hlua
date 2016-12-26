@@ -9,6 +9,7 @@ use AsMutLua;
 use LuaRead;
 use Push;
 use PushGuard;
+use PushOne;
 use Void;
 
 macro_rules! integer_impl(
@@ -22,6 +23,9 @@ macro_rules! integer_impl(
                 let raw_lua = lua.as_lua();
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
+        }
+        
+        impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
         }
 
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
@@ -55,6 +59,9 @@ macro_rules! unsigned_impl(
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
+        
+        impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
+        }
 
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
@@ -86,6 +93,9 @@ macro_rules! numeric_impl(
                 let raw_lua = lua.as_lua();
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
+        }
+        
+        impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
         }
 
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
@@ -124,6 +134,11 @@ impl<'lua, L> Push<L> for String
             })
         }
     }
+}
+
+impl<'lua, L> PushOne<L> for String
+    where L: AsMutLua<'lua>
+{
 }
 
 impl<'lua, L> LuaRead<L> for String
@@ -165,6 +180,11 @@ impl<'lua, 's, L> Push<L> for &'s str
     }
 }
 
+impl<'lua, 's, L> PushOne<L> for &'s str
+    where L: AsMutLua<'lua>
+{
+}
+
 impl<'lua, L> Push<L> for bool
     where L: AsMutLua<'lua>
 {
@@ -180,6 +200,11 @@ impl<'lua, L> Push<L> for bool
             raw_lua: raw_lua,
         })
     }
+}
+
+impl<'lua, L> PushOne<L> for bool
+    where L: AsMutLua<'lua>
+{
 }
 
 impl<'lua, L> LuaRead<L> for bool
