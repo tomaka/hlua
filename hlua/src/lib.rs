@@ -455,7 +455,20 @@ impl<'lua> Lua<'lua> {
     #[inline]
     pub fn set<I, V>(&mut self, index: I, value: V)
         where I: Borrow<str>,
-              for<'a> V: Push<&'a mut Lua<'lua>>
+              for<'a> V: Push<&'a mut Lua<'lua>, Err = Void>
+    {
+        match self.checked_set(index, value) {
+            Ok(_) => (),
+            Err(_) => unreachable!()
+        }
+    }
+
+    /// Modifies the value of a global variable.
+    // TODO: docs
+    #[inline]
+    pub fn checked_set<I, V, E>(&mut self, index: I, value: V) -> Result<(), E>
+        where I: Borrow<str>,
+              for<'a> V: Push<&'a mut Lua<'lua>, Err = E>
     {
         unsafe {
             let mut me = self;
@@ -466,10 +479,14 @@ impl<'lua> Lua<'lua> {
             };
             match value.push_to_lua(&mut me) {
                 Ok(pushed) => pushed.forget(),
-                Err(_) => unreachable!()
+                Err((err, lua)) => {
+                    ffi::lua_pop(lua.lua.0, 2);
+                    return Err(err);
+                }
             };
             ffi::lua_settable(me.lua.0, -3);
             ffi::lua_pop(me.lua.0, 1);
+            Ok(())
         }
     }
 

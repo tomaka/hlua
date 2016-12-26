@@ -8,6 +8,7 @@ use AsMutLua;
 use Push;
 use PushGuard;
 use LuaRead;
+use Void;
 
 /// Represents a table stored in the Lua context.
 ///
@@ -168,23 +169,36 @@ impl<'lua, L> LuaTable<L>
     /// Inserts or modifies an elements of the table.
     #[inline]
     pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
-        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>>,
-              V: for<'a> Push<&'a mut &'s mut LuaTable<L>>
+        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>,
+              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>
+    {
+        match self.checked_set(index, value) {
+            Ok(()) => (),
+            Err(_) => unreachable!()
+        }
+    }
+
+    /// Inserts or modifies an elements of the table.
+    #[inline]
+    pub fn checked_set<'s, I, V, E>(&'s mut self, index: I, value: V) -> Result<(), E>
+        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>,        // TODO: different err type
+              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>
     {
         unsafe {
             let mut me = self;
 
             match index.push_to_lua(&mut me) {
                 Ok(pushed) => pushed.forget(),
-                Err(_) => panic!()      // TODO:
+                Err((err, _)) => return Err(err),       // FIXME: panic safety
             };
 
             match value.push_to_lua(&mut me) {
                 Ok(pushed) => pushed.forget(),
-                Err(_) => panic!()      // TODO:
+                Err((err, _)) => return Err(err),       // FIXME: panic safety
             };
 
             ffi::lua_settable(me.as_mut_lua().0, me.offset(-2));
+            Ok(())
         }
     }
 
