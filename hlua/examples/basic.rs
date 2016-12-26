@@ -1,5 +1,8 @@
 extern crate hlua;
 
+// To see the generated assembly, run:
+// cargo rustc --release --example basic -- --emit=asm
+
 fn main() {
     let mut lua = hlua::Lua::new();
 
