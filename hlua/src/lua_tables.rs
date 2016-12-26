@@ -8,6 +8,7 @@ use AsMutLua;
 use Push;
 use PushGuard;
 use LuaRead;
+use Void;
 
 /// Represents a table stored in the Lua context.
 ///
@@ -123,19 +124,22 @@ impl<'lua, L> LuaTable<L>
         where R: LuaRead<PushGuard<&'a mut LuaTable<L>>>,
               I: for<'b> Push<&'b mut &'a mut LuaTable<L>>
     {
-        let mut me = self;
-        index.push_to_lua(&mut me).forget();
         unsafe {
+            let mut me = self;
+            match index.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
-        }
-        if unsafe { ffi::lua_isnil(me.as_lua().0, -1) } {
+            if unsafe { ffi::lua_isnil(me.as_lua().0, -1) } {
+                let raw_lua = me.as_lua();
+                let _guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
+                return None;
+            }
             let raw_lua = me.as_lua();
-            let _guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
-            return None;
+            let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
+            LuaRead::lua_read(guard).ok()
         }
-        let raw_lua = me.as_lua();
-        let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
-        LuaRead::lua_read(guard).ok()
     }
 
     /// Loads a value in the table, with the result capturing the table by value.
@@ -144,32 +148,57 @@ impl<'lua, L> LuaTable<L>
         where R: LuaRead<PushGuard<LuaTable<L>>>,
               I: for<'b> Push<&'b mut LuaTable<L>>
     {
-        let mut me = self;
-        index.push_to_lua(&mut me).forget();
         unsafe {
+            let mut me = self;
+            match index.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_gettable(me.as_mut_lua().0, me.offset(-1));
-        }
-        let is_nil = unsafe { ffi::lua_isnil(me.as_mut_lua().0, -1) };
-        let raw_lua = me.as_lua();
-        let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
-        if is_nil {
-            Err(guard)
-        } else {
-            LuaRead::lua_read(guard)
+            let is_nil = ffi::lua_isnil(me.as_mut_lua().0, -1);
+            let raw_lua = me.as_lua();
+            let guard = PushGuard { lua: me, size: 1, raw_lua: raw_lua };
+            if is_nil {
+                Err(guard)
+            } else {
+                LuaRead::lua_read(guard)
+            }
         }
     }
 
     /// Inserts or modifies an elements of the table.
     #[inline]
     pub fn set<'s, I, V>(&'s mut self, index: I, value: V)
-        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>>,
-              V: for<'a> Push<&'a mut &'s mut LuaTable<L>>
+        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>,
+              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = Void>
     {
-        let mut me = self;
-        index.push_to_lua(&mut me).forget();
-        value.push_to_lua(&mut me).forget();
+        match self.checked_set(index, value) {
+            Ok(()) => (),
+            Err(_) => unreachable!()
+        }
+    }
+
+    /// Inserts or modifies an elements of the table.
+    #[inline]
+    pub fn checked_set<'s, I, V, E>(&'s mut self, index: I, value: V) -> Result<(), E>
+        where I: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>,        // TODO: different err type
+              V: for<'a> Push<&'a mut &'s mut LuaTable<L>, Err = E>
+    {
         unsafe {
+            let mut me = self;
+
+            match index.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err((err, _)) => return Err(err),       // FIXME: panic safety
+            };
+
+            match value.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err((err, _)) => return Err(err),       // FIXME: panic safety
+            };
+
             ffi::lua_settable(me.as_mut_lua().0, me.offset(-2));
+            Ok(())
         }
     }
 
@@ -179,14 +208,22 @@ impl<'lua, L> LuaTable<L>
         where I: for<'a> Push<&'a mut &'s mut LuaTable<L>> + Clone
     {
         // TODO: cleaner implementation
-        let mut me = self;
-        index.clone().push_to_lua(&mut me).forget();
-        Vec::<u8>::with_capacity(0).push_to_lua(&mut me).forget();
         unsafe {
-            ffi::lua_settable(me.as_mut_lua().0, me.offset(-2));
-        }
+            let mut me = self;
+            match index.clone().push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => panic!()      // TODO:
+            };
 
-        me.get(index).unwrap()
+            match Vec::<u8>::with_capacity(0).push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => panic!()      // TODO:
+            };
+
+            ffi::lua_settable(me.as_mut_lua().0, me.offset(-2));
+
+            me.get(index).unwrap()
+        }
     }
 
     /// Obtains or create the metatable of the table.

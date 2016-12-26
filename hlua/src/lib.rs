@@ -157,6 +157,9 @@ unsafe impl<'a, 'lua, L> AsMutLua<'lua> for &'a mut L
 /// Types that can be given to a Lua context, for example with `lua.set()` or as a return value
 /// of a function.
 pub trait Push<L> {
+    /// Error that can happen when pushing a value.
+    type Err;
+
     /// Pushes the value on the top of the stack.
     ///
     /// Must return a guard representing the elements that have been pushed.
@@ -164,8 +167,14 @@ pub trait Push<L> {
     /// You can implement this for any type you want by redirecting to call to
     /// another implementation (for example `5.push_to_lua`) or by calling
     /// `userdata::push_userdata`.
-    fn push_to_lua(self, lua: L) -> PushGuard<L>;
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Self::Err, L)>;
 }
+
+/// Type that cannot be instantiated.
+///
+/// Will be replaced with `!` eventually (https://github.com/rust-lang/rust/issues/35121).
+#[derive(Debug, Copy, Clone)]
+pub enum Void {}
 
 /// Types that can be obtained from a Lua context.
 ///
@@ -446,15 +455,38 @@ impl<'lua> Lua<'lua> {
     #[inline]
     pub fn set<I, V>(&mut self, index: I, value: V)
         where I: Borrow<str>,
-              for<'a> V: Push<&'a mut Lua<'lua>>
+              for<'a> V: Push<&'a mut Lua<'lua>, Err = Void>
+    {
+        match self.checked_set(index, value) {
+            Ok(_) => (),
+            Err(_) => unreachable!()
+        }
+    }
+
+    /// Modifies the value of a global variable.
+    // TODO: docs
+    #[inline]
+    pub fn checked_set<I, V, E>(&mut self, index: I, value: V) -> Result<(), E>
+        where I: Borrow<str>,
+              for<'a> V: Push<&'a mut Lua<'lua>, Err = E>
     {
         unsafe {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
-            index.borrow().push_to_lua(&mut me).forget();
-            value.push_to_lua(&mut me).forget();
+            match index.borrow().push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
+            match value.push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err((err, lua)) => {
+                    ffi::lua_pop(lua.lua.0, 2);
+                    return Err(err);
+                }
+            };
             ffi::lua_settable(me.lua.0, -3);
             ffi::lua_pop(me.lua.0, 1);
+            Ok(())
         }
     }
 
@@ -495,7 +527,10 @@ impl<'lua> Lua<'lua> {
         unsafe {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
-            index.borrow().push_to_lua(&mut me).forget();
+            match index.borrow().push_to_lua(&mut me) {
+                Ok(pushed) => pushed.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_newtable(me.lua.0);
             ffi::lua_settable(me.lua.0, -3);
             ffi::lua_pop(me.lua.0, 1);

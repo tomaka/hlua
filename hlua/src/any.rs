@@ -6,6 +6,7 @@ use AsMutLua;
 use Push;
 use PushGuard;
 use LuaRead;
+use Void;
 
 /// Represents any value that can be stored by Lua
 #[derive(Clone, Debug, PartialEq)]
@@ -24,8 +25,10 @@ pub enum AnyLuaValue {
 impl<'lua, L> Push<L> for AnyLuaValue
     where L: AsMutLua<'lua>
 {
+    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
     #[inline]
-    fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         let raw_lua = lua.as_lua();
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
@@ -36,11 +39,11 @@ impl<'lua, L> Push<L> for AnyLuaValue
                 unsafe {
                     ffi::lua_pushnil(lua.as_mut_lua().0);
                 }
-                PushGuard {
+                Ok(PushGuard {
                     lua: lua,
                     size: 1,
                     raw_lua: raw_lua,
-                }
+                })
             } // Use ffi::lua_pushnil.
             AnyLuaValue::LuaOther => panic!("can't push a AnyLuaValue of type Other"),
         }

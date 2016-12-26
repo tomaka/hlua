@@ -68,13 +68,22 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> Pu
         ffi::lua_newtable(lua.as_mut_lua().0);
 
         // index "__typeid" corresponds to the hash of the TypeId of T
-        "__typeid".push_to_lua(&mut lua).forget();
-        typeid.push_to_lua(&mut lua).forget();
+        match "__typeid".push_to_lua(&mut lua) {
+            Ok(p) => p.forget(),
+            Err(_) => unreachable!()
+        };
+        match typeid.push_to_lua(&mut lua) {
+            Ok(p) => p.forget(),
+            Err(_) => unreachable!()
+        };
         ffi::lua_settable(lua.as_mut_lua().0, -3);
 
         // index "__gc" call the object's destructor
         {
-            "__gc".push_to_lua(&mut lua).forget();
+            match "__gc".push_to_lua(&mut lua) {
+                Ok(p) => p.forget(),
+                Err(_) => unreachable!()
+            };
 
             // pushing destructor_impl as a lightuserdata
             let destructor_impl: fn(*mut ffi::lua_State) -> libc::c_int = destructor_impl::<T>;
@@ -128,7 +137,10 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
             return Err(lua);
         }
 
-        "__typeid".push_to_lua(&mut lua).forget();
+        match "__typeid".push_to_lua(&mut lua) {
+            Ok(p) => p.forget(),
+            Err(_) => unreachable!()
+        };
         ffi::lua_gettable(lua.as_lua().0, -2);
         match <String as LuaRead<_>>::lua_read(&mut lua) {
             Ok(ref val) if val == &expected_typeid => {}
@@ -166,7 +178,10 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
                 return Err(lua);
             }
 
-            "__typeid".push_to_lua(&mut lua).forget();
+            match "__typeid".push_to_lua(&mut lua) {
+                Ok(p) => p.forget(),
+                Err(_) => unreachable!()
+            };
             ffi::lua_gettable(lua.as_lua().0, -2);
             match <String as LuaRead<_>>::lua_read(&mut lua) {
                 Ok(ref val) if val == &expected_typeid => {}

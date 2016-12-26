@@ -7,8 +7,9 @@ fn readwrite() {
     impl<'lua, L> hlua::Push<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |_| {})
+        type Err = hlua::Void;
+        fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
+            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Foo
@@ -47,8 +48,9 @@ fn destructor_called() {
     impl<'lua, L> hlua::Push<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |_| {})
+        type Err = hlua::Void;
+        fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
+            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
         }
     }
 
@@ -68,8 +70,9 @@ fn type_check() {
     impl<'lua, L> hlua::Push<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |_| {})
+        type Err = hlua::Void;
+        fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
+            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Foo
@@ -87,8 +90,9 @@ fn type_check() {
     impl<'lua, L> hlua::Push<L> for Bar
         where L: hlua::AsMutLua<'lua>
     {
-        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |_| {})
+        type Err = hlua::Void;
+        fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
+            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Bar
@@ -116,11 +120,12 @@ fn metatables() {
     impl<'lua, L> hlua::Push<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
-        fn push_to_lua(self, lua: L) -> hlua::PushGuard<L> {
-            hlua::userdata::push_userdata(self, lua, |mut table| {
+        type Err = hlua::Void;
+        fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
+            Ok(hlua::userdata::push_userdata(self, lua, |mut table| {
                 table.set("__index".to_string(),
                           vec![("test".to_string(), hlua::function0(|| 5))]);
-            })
+            }))
         }
     }
 

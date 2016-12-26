@@ -11,41 +11,109 @@ use AsMutLua;
 
 use LuaRead;
 use LuaError;
+use Push;
 use PushGuard;
+
+pub struct LuaCode<'a>(&'a str);
+
+impl<'lua, 'c, L> Push<L> for LuaCode<'c> where L: AsMutLua<'lua> {
+    type Err = LuaError;
+
+    #[inline]
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (LuaError, L)> {
+        LuaCodeFromReader(Cursor::new(self.0.as_bytes())).push_to_lua(lua)
+    }
+}
+
+pub struct LuaCodeFromReader<R>(R);
+
+impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
+    where L: AsMutLua<'lua>,
+          R: Read
+{
+    type Err = LuaError;
+
+    #[inline]
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (LuaError, L)> {
+        struct ReadData<R> {
+            reader: R,
+            buffer: [u8; 128],
+            triggered_error: Option<IoError>,
+        }
+
+        extern "C" fn reader<R>(_: *mut ffi::lua_State,
+                                data_raw: *mut libc::c_void,
+                                size: *mut libc::size_t)
+                                -> *const libc::c_char
+            where R: Read
+        {
+            let data: &mut ReadData<R> = unsafe { mem::transmute(data_raw) };
+
+            if data.triggered_error.is_some() {
+                unsafe { (*size) = 0 }
+                return data.buffer.as_ptr() as *const libc::c_char;
+            }
+
+            match data.reader.read(&mut data.buffer) {
+                Ok(len) => unsafe { (*size) = len as libc::size_t },
+                Err(e) => {
+                    unsafe { (*size) = 0 }
+                    data.triggered_error = Some(e)
+                }
+            };
+
+            data.buffer.as_ptr() as *const libc::c_char
+        }
+
+        let readdata = ReadData {
+            reader: self.0,
+            buffer: unsafe { ::std::mem::uninitialized() },
+            triggered_error: None,
+        };
+
+        let (load_return_value, pushed_value) = unsafe {
+            let code = ffi::lua_load(lua.as_mut_lua().0,
+                                     reader::<R>,
+                                     mem::transmute(&readdata),
+                                     b"chunk\0".as_ptr() as *const _,
+                                     ptr::null());                         
+            let raw_lua = lua.as_lua();
+            (code,
+             PushGuard {
+                 lua: lua,
+                 size: 1,
+                 raw_lua: raw_lua,
+             })
+        };
+
+        if readdata.triggered_error.is_some() {
+            let error = readdata.triggered_error.unwrap();
+            return Err((LuaError::ReadError(error), pushed_value.into_inner()));
+        }
+
+        if load_return_value == 0 {
+            return Ok(pushed_value);
+        }
+
+        let error_msg: String = LuaRead::lua_read(&pushed_value)
+            .ok()
+            .expect("can't find error message at the top of the Lua stack");
+
+        if load_return_value == ffi::LUA_ERRMEM {
+            panic!("LUA_ERRMEM");
+        }
+
+        if load_return_value == ffi::LUA_ERRSYNTAX {
+            return Err((LuaError::SyntaxError(error_msg), pushed_value.into_inner()));
+        }
+
+        panic!("Unknown error while calling lua_load");
+    }
+}
 
 ///
 pub struct LuaFunction<L> {
     variable: L,
-}
-
-struct ReadData<R> {
-    reader: R,
-    buffer: [u8; 128],
-    triggered_error: Option<IoError>,
-}
-
-extern "C" fn reader<R>(_: *mut ffi::lua_State,
-                        data_raw: *mut libc::c_void,
-                        size: *mut libc::size_t)
-                        -> *const libc::c_char
-    where R: Read
-{
-    let data: &mut ReadData<R> = unsafe { mem::transmute(data_raw) };
-
-    if data.triggered_error.is_some() {
-        unsafe { (*size) = 0 }
-        return data.buffer.as_ptr() as *const libc::c_char;
-    }
-
-    match data.reader.read(&mut data.buffer) {
-        Ok(len) => unsafe { (*size) = len as libc::size_t },
-        Err(e) => {
-            unsafe { (*size) = 0 }
-            data.triggered_error = Some(e)
-        }
-    };
-
-    data.buffer.as_ptr() as *const libc::c_char
 }
 
 impl<'lua, L> LuaFunction<L>
@@ -95,52 +163,13 @@ impl<'lua, L> LuaFunction<L>
 
     /// Builds a new `LuaFunction` from the code of a reader.
     #[inline]
-    pub fn load_from_reader<R>(mut lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
+    pub fn load_from_reader<R>(lua: L, code: R) -> Result<LuaFunction<PushGuard<L>>, LuaError>
         where R: Read
     {
-        let readdata = ReadData {
-            reader: code,
-            buffer: unsafe { ::std::mem::uninitialized() },
-            triggered_error: None,
-        };
-
-        let (load_return_value, pushed_value) = unsafe {
-            let code = ffi::lua_load(lua.as_mut_lua().0,
-                                     reader::<R>,
-                                     mem::transmute(&readdata),
-                                     b"chunk\0".as_ptr() as *const _,
-                                     ptr::null());                         
-            let raw_lua = lua.as_lua();
-            (code,
-             PushGuard {
-                 lua: lua,
-                 size: 1,
-                 raw_lua: raw_lua,
-             })
-        };
-
-        if readdata.triggered_error.is_some() {
-            let error = readdata.triggered_error.unwrap();
-            return Err(LuaError::ReadError(error));
+        match LuaCodeFromReader(code).push_to_lua(lua) {
+            Ok(pushed) => Ok(LuaFunction { variable: pushed }),
+            Err((err, _)) => Err(err),
         }
-
-        if load_return_value == 0 {
-            return Ok(LuaFunction { variable: pushed_value });
-        }
-
-        let error_msg: String = LuaRead::lua_read(pushed_value)
-            .ok()
-            .expect("can't find error message at the top of the Lua stack");
-
-        if load_return_value == ffi::LUA_ERRMEM {
-            panic!("LUA_ERRMEM");
-        }
-
-        if load_return_value == ffi::LUA_ERRSYNTAX {
-            return Err(LuaError::SyntaxError(error_msg));
-        }
-
-        panic!("Unknown error while calling lua_load");
     }
 
     /// Builds a new `LuaFunction` from a raw string.

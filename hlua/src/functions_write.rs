@@ -7,6 +7,7 @@ use LuaContext;
 use LuaRead;
 use Push;
 use PushGuard;
+use Void;
 
 use std::marker::PhantomData;
 use std::fmt::Debug;
@@ -70,8 +71,10 @@ macro_rules! impl_function_ext {
                       Z: 'lua + FnMut() -> R,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
+            type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
                 unsafe {
                     // pushing the function pointer as a userdata
                     let lua_data = ffi::lua_newuserdata(lua.as_mut_lua().0,
@@ -83,7 +86,7 @@ macro_rules! impl_function_ext {
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
                     ffi::lua_pushcclosure(lua.as_mut_lua().0, wrapper, 1);
                     let raw_lua = lua.as_lua();
-                    PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
+                    Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
                 }
             }
         }
@@ -107,8 +110,10 @@ macro_rules! impl_function_ext {
                       ($($p,)*): for<'p> LuaRead<&'p mut InsideCallback>,
                       R: for<'a> Push<&'a mut InsideCallback> + 'static
         {
+            type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
             #[inline]
-            fn push_to_lua(self, mut lua: L) -> PushGuard<L> {
+            fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
                 unsafe {
                     // pushing the function pointer as a userdata
                     let lua_data = ffi::lua_newuserdata(lua.as_mut_lua().0,
@@ -120,7 +125,7 @@ macro_rules! impl_function_ext {
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
                     ffi::lua_pushcclosure(lua.as_mut_lua().0, wrapper, 1);
                     let raw_lua = lua.as_lua();
-                    PushGuard { lua: lua, size: 1, raw_lua: raw_lua }
+                    Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
                 }
             }
         }
@@ -168,21 +173,26 @@ unsafe impl<'a, 'lua> AsMutLua<'lua> for &'a mut InsideCallback {
     }
 }
 
-impl<'a, T, E> Push<&'a mut InsideCallback> for Result<T, E>
-    where T: Push<&'a mut InsideCallback> + for<'b> Push<&'b mut &'a mut InsideCallback>,
+impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
+    where T: Push<&'a mut InsideCallback, Err = P> + for<'b> Push<&'b mut &'a mut InsideCallback, Err = P>,
           E: Debug
 {
+    type Err = P;
+
     #[inline]
-    fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> PushGuard<&'a mut InsideCallback> {
-        match self {
-            Ok(val) => val.push_to_lua(lua),
-            Err(val) => {
-                let msg = format!("{:?}", val);
-                msg.push_to_lua(&mut lua).forget();
-                unsafe {
+    fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
+        unsafe {
+            match self {
+                Ok(val) => val.push_to_lua(lua),
+                Err(val) => {
+                    let msg = format!("{:?}", val);
+                    match msg.push_to_lua(&mut lua) {
+                        Ok(pushed) => pushed.forget(),
+                        Err(_) => unreachable!()
+                    };
                     ffi::lua_error(lua.as_mut_lua().0);
+                    unreachable!();
                 }
-                unreachable!();
             }
         }
     }
@@ -207,7 +217,10 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     let args = match LuaRead::lua_read_at_position(&mut tmp_lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
         Err(_) => {
             let err_msg = format!("wrong parameter types for callback function");
-            err_msg.push_to_lua(&mut tmp_lua).forget();
+            match err_msg.push_to_lua(&mut tmp_lua) {
+                Ok(p) => p.forget(),
+                Err(_) => unreachable!()
+            };
             unsafe {
                 ffi::lua_error(lua);
             }
@@ -219,6 +232,9 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     let ret_value = data.call_mut(args);
 
     // pushing back the result of the function on the stack
-    let nb = ret_value.push_to_lua(&mut tmp_lua).forget();
+    let nb = match ret_value.push_to_lua(&mut tmp_lua) {
+        Ok(p) => p.forget(),
+        Err(_) => panic!()      // TODO: wrong
+    };
     nb as libc::c_int
 }
