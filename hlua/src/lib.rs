@@ -144,7 +144,7 @@ unsafe impl<'lua, L> AsMutLua<'lua> for PushGuard<L>
     }
 }
 
-unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a L
+unsafe impl<'a, 'lua, L: ?Sized> AsLua<'lua> for &'a L
     where L: AsLua<'lua>
 {
     #[inline]
@@ -153,7 +153,7 @@ unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a L
     }
 }
 
-unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a mut L
+unsafe impl<'a, 'lua, L: ?Sized> AsLua<'lua> for &'a mut L
     where L: AsLua<'lua>
 {
     #[inline]
@@ -162,7 +162,7 @@ unsafe impl<'a, 'lua, L> AsLua<'lua> for &'a mut L
     }
 }
 
-unsafe impl<'a, 'lua, L> AsMutLua<'lua> for &'a mut L
+unsafe impl<'a, 'lua, L: ?Sized> AsMutLua<'lua> for &'a mut L
     where L: AsMutLua<'lua>
 {
     #[inline]
