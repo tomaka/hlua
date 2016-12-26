@@ -5,7 +5,7 @@ macro_rules! implement_lua_push {
             type Err = $crate::Void;      // TODO: use ! instead
             #[inline]
             fn push_to_lua(self, lua: L) -> Result<$crate::PushGuard<L>, ($crate::Void, L)> {
-                Ok($crate::userdata::push_userdata(self, lua, $cb))
+                Ok($crate::push_userdata(self, lua, $cb))
             }
         }
     };
@@ -18,7 +18,7 @@ macro_rules! implement_lua_read {
             #[inline]
             fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s mut $ty, &'c mut hlua::InsideCallback> {
                 // FIXME:
-                unsafe { ::std::mem::transmute($crate::userdata::read_userdata::<$ty>(lua, index)) }
+                unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
             }
         }
 
@@ -26,7 +26,7 @@ macro_rules! implement_lua_read {
             #[inline]
             fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s $ty, &'c mut hlua::InsideCallback> {
                 // FIXME:
-                unsafe { ::std::mem::transmute($crate::userdata::read_userdata::<$ty>(lua, index)) }
+                unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
             }
         }
 

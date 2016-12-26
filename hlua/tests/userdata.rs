@@ -9,14 +9,14 @@ fn readwrite() {
     {
         type Err = hlua::Void;
         fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
-            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
+            Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
-            let val: Result<hlua::userdata::UserdataOnStack<Foo, _>, _> =
+            let val: Result<hlua::UserdataOnStack<Foo, _>, _> =
                 hlua::LuaRead::lua_read_at_position(lua, index);
             val.map(|d| d.clone())
         }
@@ -50,7 +50,7 @@ fn destructor_called() {
     {
         type Err = hlua::Void;
         fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
-            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
+            Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
 
@@ -72,14 +72,14 @@ fn type_check() {
     {
         type Err = hlua::Void;
         fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
-            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
+            Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Foo, L> {
-            let val: Result<hlua::userdata::UserdataOnStack<Foo, _>, _> =
+            let val: Result<hlua::UserdataOnStack<Foo, _>, _> =
                 hlua::LuaRead::lua_read_at_position(lua, index);
             val.map(|d| d.clone())
         }
@@ -92,14 +92,14 @@ fn type_check() {
     {
         type Err = hlua::Void;
         fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
-            Ok(hlua::userdata::push_userdata(self, lua, |_| {}))
+            Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
     impl<'lua, L> hlua::LuaRead<L> for Bar
         where L: hlua::AsMutLua<'lua>
     {
         fn lua_read_at_position(lua: L, index: i32) -> Result<Bar, L> {
-            let val: Result<hlua::userdata::UserdataOnStack<Bar, _>, _> =
+            let val: Result<hlua::UserdataOnStack<Bar, _>, _> =
                 hlua::LuaRead::lua_read_at_position(lua, index);
             val.map(|d| d.clone())
         }
@@ -122,7 +122,7 @@ fn metatables() {
     {
         type Err = hlua::Void;
         fn push_to_lua(self, lua: L) -> Result<hlua::PushGuard<L>, (hlua::Void, L)> {
-            Ok(hlua::userdata::push_userdata(self, lua, |mut table| {
+            Ok(hlua::push_userdata(self, lua, |mut table| {
                 table.set("__index".to_string(),
                           vec![("test".to_string(), hlua::function0(|| 5))]);
             }))
