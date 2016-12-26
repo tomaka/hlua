@@ -298,3 +298,41 @@ impl<'lua, L> LuaRead<L> for LuaFunction<L>
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use Lua;
+    use LuaError;
+    use LuaFunction;
+    use LuaTable;
+
+    #[test]
+    fn basic() {
+        let mut lua = Lua::new();
+        let mut f = LuaFunction::load(&mut lua, "return 5;").unwrap();
+        let val: i32 = f.call().unwrap();
+        assert_eq!(val, 5);
+    }
+
+    #[test]
+    fn syntax_error() {
+        let mut lua = Lua::new();
+        assert!(LuaFunction::load(&mut lua, "azerazer").is_err());
+    }
+
+    #[test]
+    fn execution_error() {
+        let mut lua = Lua::new();
+        let mut f = LuaFunction::load(&mut lua, "return a:hello()").unwrap();
+        let val: Result<i32, LuaError> = f.call();
+        assert!(val.is_err());
+    }
+
+    #[test]
+    fn call_and_read_table() {
+        let mut lua = Lua::new();
+        let mut f = LuaFunction::load(&mut lua, "return {1, 2, 3};").unwrap();
+        let mut val: LuaTable<_> = f.call().unwrap();
+        assert_eq!(val.get::<u8, _>(2).unwrap(), 2);
+    }
+}
