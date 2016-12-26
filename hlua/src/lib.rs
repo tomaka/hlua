@@ -8,19 +8,19 @@ use std::borrow::Borrow;
 use std::marker::PhantomData;
 
 pub use any::AnyLuaValue;
-pub use functions_read::LuaFunction;
-pub use functions_read::{LuaCode, LuaCodeFromReader};
 pub use functions_write::{Function, InsideCallback};
 pub use functions_write::{function0, function1, function2, function3, function4, function5};
 pub use functions_write::{function6, function7, function8, function9, function10};
+pub use lua_functions::LuaFunction;
+pub use lua_functions::{LuaCode, LuaCodeFromReader};
 pub use lua_tables::LuaTable;
 pub use lua_tables::LuaTableIterator;
 pub use userdata::UserdataOnStack;
 pub use userdata::{push_userdata, read_userdata};
 
 mod any;
-mod functions_read;
 mod functions_write;
+mod lua_functions;
 mod lua_tables;
 mod macros;
 mod rust_tables;
@@ -356,7 +356,7 @@ impl<'lua> Lua<'lua> {
     pub fn execute<'a, T>(&'a mut self, code: &str) -> Result<T, LuaError>
         where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>
     {
-        let mut f = try!(functions_read::LuaFunction::load(self, code));
+        let mut f = try!(lua_functions::LuaFunction::load(self, code));
         f.call()
     }
 
@@ -384,7 +384,7 @@ impl<'lua> Lua<'lua> {
         where T: for<'g> LuaRead<PushGuard<&'g mut PushGuard<&'a mut Lua<'lua>>>>,
               R: Read
     {
-        let mut f = try!(functions_read::LuaFunction::load_from_reader(self, code));
+        let mut f = try!(lua_functions::LuaFunction::load_from_reader(self, code));
         f.call()
     }
 
