@@ -31,6 +31,12 @@ mod tuples;
 /// Main object of the library.
 ///
 /// The lifetime parameter corresponds to the lifetime of the content of the Lua context.
+///
+/// # About panic safety
+///
+/// This type isn't panic safe. This means that if a panic happens while you were using the `Lua`,
+/// then it will probably stay in a corrupt state. Trying to use the `Lua` again will most likely
+/// result in another panic but shouldn't result in unsafety.
 pub struct Lua<'lua> {
     lua: LuaContext,
     must_be_closed: bool,
@@ -50,6 +56,12 @@ pub struct PushGuard<L> {
 impl<'lua, L> PushGuard<L>
     where L: AsMutLua<'lua>
 {
+    #[inline]
+    fn assert_one_and_forget(self) -> i32 {
+        assert_eq!(self.size, 1);
+        self.forget()
+    }
+
     /// Prevents the value from being poped when the `PushGuard` is destroyed, and returns the
     /// number of elements on the stack.
     #[inline]
@@ -172,6 +184,16 @@ pub trait Push<L> {
     /// another implementation (for example `5.push_to_lua`) or by calling
     /// `userdata::push_userdata`.
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Self::Err, L)>;
+
+    /// Same as `push_to_lua` but can only succeed and is only available if `Err` is `Void`.
+    // TODO: when https://github.com/rust-lang/rust/issues/20041 is fixed, use `Self::Err == Void`
+    #[inline]
+    fn push_no_err(self, lua: L) -> PushGuard<L> where Self: Sized, Self: Push<L, Err = Void> {
+        match self.push_to_lua(lua) {
+            Ok(p) => p,
+            Err(_) => unreachable!()
+        }
+    }
 }
 
 /// Extension trait for `Push`. Guarantees that only one element will be pushed.
