@@ -123,7 +123,8 @@ impl<'lua, L> Push<L> for String
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         unsafe {
-            ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
+            ffi::lua_pushlstring(lua.as_mut_lua().0,
+                                 self.as_bytes().as_ptr() as *const _,
                                  self.as_bytes().len() as libc::size_t);
 
             let raw_lua = lua.as_lua();
@@ -136,10 +137,7 @@ impl<'lua, L> Push<L> for String
     }
 }
 
-impl<'lua, L> PushOne<L> for String
-    where L: AsMutLua<'lua>
-{
-}
+impl<'lua, L> PushOne<L> for String where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for String
     where L: AsLua<'lua>
@@ -167,7 +165,8 @@ impl<'lua, 's, L> Push<L> for &'s str
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         unsafe {
-            ffi::lua_pushlstring(lua.as_mut_lua().0, self.as_bytes().as_ptr() as *const _,
+            ffi::lua_pushlstring(lua.as_mut_lua().0,
+                                 self.as_bytes().as_ptr() as *const _,
                                  self.as_bytes().len() as libc::size_t);
 
             let raw_lua = lua.as_lua();
@@ -180,10 +179,7 @@ impl<'lua, 's, L> Push<L> for &'s str
     }
 }
 
-impl<'lua, 's, L> PushOne<L> for &'s str
-    where L: AsMutLua<'lua>
-{
-}
+impl<'lua, 's, L> PushOne<L> for &'s str where L: AsMutLua<'lua> {}
 
 impl<'lua, L> Push<L> for bool
     where L: AsMutLua<'lua>
@@ -202,10 +198,7 @@ impl<'lua, L> Push<L> for bool
     }
 }
 
-impl<'lua, L> PushOne<L> for bool
-    where L: AsMutLua<'lua>
-{
-}
+impl<'lua, L> PushOne<L> for bool where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for bool
     where L: AsLua<'lua>

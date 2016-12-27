@@ -70,11 +70,11 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> Pu
         // index "__typeid" corresponds to the hash of the TypeId of T
         match "__typeid".push_to_lua(&mut lua) {
             Ok(p) => p.forget(),
-            Err(_) => unreachable!()
+            Err(_) => unreachable!(),
         };
         match typeid.push_to_lua(&mut lua) {
             Ok(p) => p.forget(),
-            Err(_) => unreachable!()
+            Err(_) => unreachable!(),
         };
         ffi::lua_settable(lua.as_mut_lua().0, -3);
 
@@ -82,7 +82,7 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> Pu
         {
             match "__gc".push_to_lua(&mut lua) {
                 Ok(p) => p.forget(),
-                Err(_) => unreachable!()
+                Err(_) => unreachable!(),
             };
 
             // pushing destructor_impl as a lightuserdata
@@ -139,7 +139,7 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
 
         match "__typeid".push_to_lua(&mut lua) {
             Ok(p) => p.forget(),
-            Err(_) => unreachable!()
+            Err(_) => unreachable!(),
         };
         ffi::lua_gettable(lua.as_lua().0, -2);
         match <String as LuaRead<_>>::lua_read(&mut lua) {
@@ -180,7 +180,7 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
 
             match "__typeid".push_to_lua(&mut lua) {
                 Ok(p) => p.forget(),
-                Err(_) => unreachable!()
+                Err(_) => unreachable!(),
             };
             ffi::lua_gettable(lua.as_lua().0, -2);
             match <String as LuaRead<_>>::lua_read(&mut lua) {
