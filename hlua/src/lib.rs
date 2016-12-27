@@ -18,6 +18,7 @@ pub use lua_tables::LuaTable;
 pub use lua_tables::LuaTableIterator;
 pub use userdata::UserdataOnStack;
 pub use userdata::{push_userdata, read_userdata};
+pub use values::StringInLua;
 
 mod any;
 mod functions_write;
