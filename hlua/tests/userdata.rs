@@ -12,10 +12,7 @@ fn readwrite() {
             Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
-    impl<'lua, L> hlua::PushOne<L> for Foo
-        where L: hlua::AsMutLua<'lua>
-    {
-    }
+    impl<'lua, L> hlua::PushOne<L> for Foo where L: hlua::AsMutLua<'lua> {}
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
@@ -57,10 +54,7 @@ fn destructor_called() {
             Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
-    impl<'lua, L> hlua::PushOne<L> for Foo
-        where L: hlua::AsMutLua<'lua>
-    {
-    }
+    impl<'lua, L> hlua::PushOne<L> for Foo where L: hlua::AsMutLua<'lua> {}
 
     {
         let mut lua = hlua::Lua::new();
@@ -83,10 +77,7 @@ fn type_check() {
             Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
-    impl<'lua, L> hlua::PushOne<L> for Foo
-        where L: hlua::AsMutLua<'lua>
-    {
-    }
+    impl<'lua, L> hlua::PushOne<L> for Foo where L: hlua::AsMutLua<'lua> {}
     impl<'lua, L> hlua::LuaRead<L> for Foo
         where L: hlua::AsMutLua<'lua>
     {
@@ -107,10 +98,7 @@ fn type_check() {
             Ok(hlua::push_userdata(self, lua, |_| {}))
         }
     }
-    impl<'lua, L> hlua::PushOne<L> for Bar
-        where L: hlua::AsMutLua<'lua>
-    {
-    }
+    impl<'lua, L> hlua::PushOne<L> for Bar where L: hlua::AsMutLua<'lua> {}
     impl<'lua, L> hlua::LuaRead<L> for Bar
         where L: hlua::AsMutLua<'lua>
     {
@@ -144,10 +132,7 @@ fn metatables() {
             }))
         }
     }
-    impl<'lua, L> hlua::PushOne<L> for Foo
-        where L: hlua::AsMutLua<'lua>
-    {
-    }
+    impl<'lua, L> hlua::PushOne<L> for Foo where L: hlua::AsMutLua<'lua> {}
 
     let mut lua = hlua::Lua::new();
 

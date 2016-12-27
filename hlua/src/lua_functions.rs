@@ -265,7 +265,7 @@ impl<'lua, L> LuaFunction<L>
             ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
             let num_pushed = match args.push_to_lua(self) {
                 Ok(g) => g.forget(),
-                Err((err, _)) => return Err(LuaFunctionCallError::PushError(err))
+                Err((err, _)) => return Err(LuaFunctionCallError::PushError(err)),
             };
             let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, num_pushed, 1, 0);     // TODO: num ret values
 
@@ -415,7 +415,7 @@ mod tests {
         let mut lua = Lua::new();
         match LuaFunction::load(&mut lua, "azerazer") {
             Err(LuaError::SyntaxError(_)) => (),
-            _ => panic!()
+            _ => panic!(),
         };
     }
 
@@ -425,7 +425,7 @@ mod tests {
         let mut f = LuaFunction::load(&mut lua, "return a:hello()").unwrap();
         match f.call::<()>() {
             Err(LuaError::ExecutionError(_)) => (),
-            _ => panic!()
+            _ => panic!(),
         };
     }
 
@@ -435,7 +435,7 @@ mod tests {
         let mut f = LuaFunction::load(&mut lua, "return 12").unwrap();
         match f.call::<LuaFunction<_>>() {
             Err(LuaError::WrongType) => (),
-            _ => panic!()
+            _ => panic!(),
         };
     }
 

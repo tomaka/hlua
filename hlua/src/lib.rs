@@ -190,10 +190,13 @@ pub trait Push<L> {
     /// Same as `push_to_lua` but can only succeed and is only available if `Err` is `Void`.
     // TODO: when https://github.com/rust-lang/rust/issues/20041 is fixed, use `Self::Err == Void`
     #[inline]
-    fn push_no_err(self, lua: L) -> PushGuard<L> where Self: Sized, Self: Push<L, Err = Void> {
+    fn push_no_err(self, lua: L) -> PushGuard<L>
+        where Self: Sized,
+              Self: Push<L, Err = Void>
+    {
         match self.push_to_lua(lua) {
             Ok(p) => p,
-            Err(_) => unreachable!()
+            Err(_) => unreachable!(),
         }
     }
 }
@@ -204,12 +207,10 @@ pub trait Push<L> {
 ///
 /// > **Note**: Implementing this trait on a type that pushes multiple elements will most likely
 /// > result in panics.
-//
 // Note for the implementation: since this trait is not unsafe, it is mostly a hint. Functions can
 // require this trait if they only accept one pushed element, but they must also add a runtime
 // assertion to make sure that only one element was actually pushed.
-pub trait PushOne<L>: Push<L> {
-}
+pub trait PushOne<L>: Push<L> {}
 
 /// Type that cannot be instantiated.
 ///
@@ -500,7 +501,7 @@ impl<'lua> Lua<'lua> {
     {
         match self.checked_set(index, value) {
             Ok(_) => (),
-            Err(_) => unreachable!()
+            Err(_) => unreachable!(),
         }
     }
 
@@ -516,11 +517,17 @@ impl<'lua> Lua<'lua> {
             let mut me = self;
             ffi::lua_pushglobaltable(me.lua.0);
             match index.borrow().push_to_lua(&mut me) {
-                Ok(pushed) => { debug_assert_eq!(pushed.size, 1); pushed.forget() },
-                Err(_) => unreachable!()
+                Ok(pushed) => {
+                    debug_assert_eq!(pushed.size, 1);
+                    pushed.forget()
+                }
+                Err(_) => unreachable!(),
             };
             match value.push_to_lua(&mut me) {
-                Ok(pushed) => { assert_eq!(pushed.size, 1); pushed.forget() },
+                Ok(pushed) => {
+                    assert_eq!(pushed.size, 1);
+                    pushed.forget()
+                }
                 Err((err, lua)) => {
                     ffi::lua_pop(lua.lua.0, 2);
                     return Err(err);
@@ -571,7 +578,7 @@ impl<'lua> Lua<'lua> {
             ffi::lua_pushglobaltable(me.lua.0);
             match index.borrow().push_to_lua(&mut me) {
                 Ok(pushed) => pushed.forget(),
-                Err(_) => unreachable!()
+                Err(_) => unreachable!(),
             };
             ffi::lua_newtable(me.lua.0);
             ffi::lua_settable(me.lua.0, -3);

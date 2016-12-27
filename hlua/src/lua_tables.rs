@@ -215,7 +215,9 @@ impl<'lua, L> LuaTable<L>
     /// limited set of types. You are encouraged to use the `set` method if writing cannot fail.
     // TODO: doc
     #[inline]
-    pub fn checked_set<I, V, Ke, Ve>(&mut self, index: I, value: V)
+    pub fn checked_set<I, V, Ke, Ve>(&mut self,
+                                     index: I,
+                                     value: V)
                                      -> Result<(), CheckedSetError<Ke, Ve>>
         where I: for<'r> PushOne<&'r mut LuaTable<L>, Err = Ke>,
               V: for<'r, 's> PushOne<&'r mut PushGuard<&'s mut LuaTable<L>>, Err = Ve>
@@ -386,7 +388,6 @@ pub enum CheckedSetError<K, V> {
 /// Iterator that enumerates the content of a Lua table.
 ///
 /// See `LuaTable::iter` for more info.
-//
 // Implementation note: While the LuaTableIterator is active, the current key is constantly
 // pushed over the table. The destructor takes care of removing it.
 pub struct LuaTableIterator<'t, L: 't, K, V> {
@@ -498,7 +499,7 @@ mod tests {
 
         let mut table = lua.get::<LuaTable<_>, _>("a").unwrap();
 
-        for _ in 0 .. 10 {
+        for _ in 0..10 {
             let table_content: Vec<Option<(u32, u32)>> = table.iter().collect();
             assert_eq!(table_content,
                     vec![Some((1, 9)), Some((2, 8)), Some((3, 7))]);

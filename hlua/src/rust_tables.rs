@@ -31,7 +31,7 @@ fn push_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<L>, 
                 let index = index as u32;
                 match index.push_to_lua(&mut lua) {
                     Ok(pushed) => pushed.forget(),
-                    Err(_) => unreachable!()
+                    Err(_) => unreachable!(),
                 };
                 unsafe { ffi::lua_insert(lua.as_mut_lua().0, -2) }
                 unsafe { ffi::lua_settable(lua.as_mut_lua().0, -3) }
@@ -63,7 +63,7 @@ fn push_rec_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<
     for elem in iterator {
         let size = match elem.push_to_lua(&mut lua) {
             Ok(pushed) => pushed.forget(),
-            Err((err, lua)) => panic!()     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
+            Err((err, lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
         };
 
         match size {
@@ -88,7 +88,7 @@ impl<'lua, L, T, E> Push<L> for Vec<T>
     type Err = E;
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)>  {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)> {
         push_iter(lua, self.into_iter())
     }
 }
@@ -106,7 +106,7 @@ impl<'a, 'lua, L, T, E> Push<L> for &'a [T]
     type Err = E;
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)>  {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)> {
         push_iter(lua, self.iter().map(|e| e.clone()))
     }
 }
@@ -126,7 +126,7 @@ impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
     type Err = Void;      // TODO: can't use E because pushing tuples
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)>  {
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
         push_rec_iter(lua, self.into_iter())
     }
 }

@@ -249,7 +249,7 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
             let err_msg = format!("wrong parameter types for callback function");
             match err_msg.push_to_lua(&mut tmp_lua) {
                 Ok(p) => p.forget(),
-                Err(_) => unreachable!()
+                Err(_) => unreachable!(),
             };
             unsafe {
                 ffi::lua_error(lua);
@@ -264,7 +264,7 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     // pushing back the result of the function on the stack
     let nb = match ret_value.push_to_lua(&mut tmp_lua) {
         Ok(p) => p.forget(),
-        Err(_) => panic!()      // TODO: wrong
+        Err(_) => panic!(),      // TODO: wrong
     };
     nb as libc::c_int
 }
@@ -384,7 +384,7 @@ mod tests {
             let mut lua = Lua::new();
 
             lua.set("inc", function0(|| a += 1));
-            for _ in 0 .. 15 {
+            for _ in 0..15 {
                 lua.execute::<()>("inc()").unwrap();
             }
         }

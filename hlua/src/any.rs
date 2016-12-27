@@ -51,7 +51,7 @@ impl<'lua, L> Push<L> for AnyLuaValue
                     size: size,
                     raw_lua: raw_lua,
                 })
-            },
+            }
             AnyLuaValue::LuaNil => {
                 unsafe {
                     ffi::lua_pushnil(lua.as_mut_lua().0);
@@ -67,10 +67,7 @@ impl<'lua, L> Push<L> for AnyLuaValue
     }
 }
 
-impl<'lua, L> PushOne<L> for AnyLuaValue
-    where L: AsMutLua<'lua>
-{
-}
+impl<'lua, L> PushOne<L> for AnyLuaValue where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for AnyLuaValue
     where L: AsLua<'lua>
