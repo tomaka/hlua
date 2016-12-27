@@ -9,5 +9,5 @@ name = "rust_hl_lua_modules"
 crate_type = ["dylib"]
 plugin = true
 
-[dependencies.rust-hl-lua]
-path = "../rust-hl-lua"
+[dependencies.hlua]
+path = "../hlua"
