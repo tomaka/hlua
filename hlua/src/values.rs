@@ -1,5 +1,6 @@
 use std::ffi::CStr;
 use std::mem;
+use std::ops::Deref;
 
 use ffi;
 use libc;
@@ -181,6 +182,67 @@ impl<'lua, 's, L> Push<L> for &'s str
 
 impl<'lua, 's, L> PushOne<L> for &'s str where L: AsMutLua<'lua> {}
 
+/// String on the Lua stack.
+///
+/// It is faster -but less convenient- to read a `StringInLua` rather than a `String` because you
+/// avoid any allocation.
+///
+/// The `StringInLua` derefs to `str`.
+///
+/// # Example
+///
+/// ```
+/// let mut lua = hlua::Lua::new();
+/// lua.set("a", "hello");
+///
+/// let s: hlua::StringInLua<_> = lua.get("a").unwrap();
+/// println!("{}", &*s);    // Prints "hello".
+/// ```
+#[derive(Debug)]
+pub struct StringInLua<L> {
+    lua: L,
+    c_str_raw: *const libc::c_char,
+}
+
+impl<'lua, L> LuaRead<L> for StringInLua<L>
+    where L: AsLua<'lua>
+{
+    #[inline]
+    fn lua_read_at_position(lua: L, index: i32) -> Result<StringInLua<L>, L> {
+        unsafe {
+            let mut size: libc::size_t = mem::uninitialized();
+            let c_str_raw = ffi::lua_tolstring(lua.as_lua().0, index, &mut size);
+            if c_str_raw.is_null() {
+                return Err(lua);
+            }
+
+            match CStr::from_ptr(c_str_raw).to_str() {
+                Ok(_) => (),
+                Err(_) => return Err(lua)
+            };
+
+            Ok(StringInLua {
+                lua: lua,
+                c_str_raw: c_str_raw,
+            })
+        }
+    }
+}
+
+impl<L> Deref for StringInLua<L> {
+    type Target = str;
+
+    #[inline]
+    fn deref(&self) -> &str {
+        unsafe {
+            match CStr::from_ptr(self.c_str_raw).to_str() {
+                Ok(s) => s,
+                Err(_) => unreachable!()        // Checked earlier
+            }
+        }
+    }
+}
+
 impl<'lua, L> Push<L> for bool
     where L: AsMutLua<'lua>
 {
@@ -242,6 +304,7 @@ impl<'lua, L> LuaRead<L> for ()
 #[cfg(test)]
 mod tests {
     use Lua;
+    use StringInLua;
 
     #[test]
     fn read_i32s() {
@@ -355,5 +418,22 @@ mod tests {
 
         let y: Option<i32> = lua.get("b");
         assert!(y.is_none());
+    }
+
+    #[test]
+    fn string_on_lua() {
+        let mut lua = Lua::new();
+
+        lua.set("a", "aaa");
+        {
+            let x: StringInLua<_> = lua.get("a").unwrap();
+            assert_eq!(&*x, "aaa");
+        }
+        
+        lua.set("a", 18);
+        {
+            let x: StringInLua<_> = lua.get("a").unwrap();
+            assert_eq!(&*x, "18");
+        }
     }
 }
