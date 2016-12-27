@@ -1,4 +1,4 @@
-extern crate lua52_sys as ffi;
+extern crate lua53_sys as ffi;
 extern crate libc;
 
 use std::ffi::{CStr, CString};

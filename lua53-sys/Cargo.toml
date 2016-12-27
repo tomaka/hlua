@@ -1,0 +1,16 @@
+[package]
+name = "lua53-sys"
+version = "0.1.0"
+authors = ["Pierre Krieger <pierre.krieger1708@gmail.com>"]
+description = "Bindings for Lua 5.3"
+build = "build.rs"
+links = "lua"
+license = "MIT"
+repository = "https://github.com/tomaka/rust-hl-lua"
+
+[build-dependencies]
+pkg-config = "0.3"
+gcc = "0.3"
+
+[dependencies]
+libc = "0.2"
