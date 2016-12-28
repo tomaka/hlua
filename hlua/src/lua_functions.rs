@@ -444,7 +444,7 @@ mod tests {
         let mut lua = Lua::new();
         let mut f = LuaFunction::load(&mut lua, "return {1, 2, 3};").unwrap();
         let mut val: LuaTable<_> = f.call().unwrap();
-        assert_eq!(val.get::<u8, _>(2).unwrap(), 2);
+        assert_eq!(val.get::<u8, _, _>(2).unwrap(), 2);
     }
 
     #[test]

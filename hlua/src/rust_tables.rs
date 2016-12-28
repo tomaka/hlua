@@ -4,6 +4,7 @@ use Push;
 use PushGuard;
 use PushOne;
 use AsMutLua;
+use TuplePushError;
 use Void;
 
 use std::collections::{HashMap, HashSet};
@@ -123,11 +124,15 @@ impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
           K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash,
           V: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E>
 {
-    type Err = Void;      // TODO: can't use E because pushing tuples
+    type Err = E;
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
-        push_rec_iter(lua, self.into_iter())
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)> {
+        match push_rec_iter(lua, self.into_iter()) {
+            Ok(g) => Ok(g),
+            Err((TuplePushError::First(err), lua)) => Err((err, lua)),
+            Err((TuplePushError::Other(err), lua)) => Err((err, lua)),
+        }
     }
 }
 
@@ -142,11 +147,15 @@ impl<'lua, L, K, E> Push<L> for HashSet<K>
     where L: AsMutLua<'lua>,
           K: for<'a, 'b> PushOne<&'a mut &'b mut L, Err = E> + Eq + Hash
 {
-    type Err = Void;      // TODO: can't use E because pushing tuples
+    type Err = E;
 
     #[inline]
-    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
-        push_rec_iter(lua, self.into_iter().zip(iter::repeat(true)))
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)> {
+        match push_rec_iter(lua, self.into_iter().zip(iter::repeat(true))) {
+            Ok(g) => Ok(g),
+            Err((TuplePushError::First(err), lua)) => Err((err, lua)),
+            Err((TuplePushError::Other(_), lua)) => unreachable!(),
+        }
     }
 }
 

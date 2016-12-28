@@ -125,20 +125,21 @@ impl<'lua, L> LuaTable<L>
     ///
     /// let mut table = lua.get::<hlua::LuaTable<_>, _>("a").unwrap();
     ///
-    /// assert_eq!(table.get::<i32, _>(1).unwrap(), 9);
-    /// assert_eq!(table.get::<i32, _>(3).unwrap(), 6);
+    /// assert_eq!(table.get::<i32, _, _>(1).unwrap(), 9);
+    /// assert_eq!(table.get::<i32, _, _>(3).unwrap(), 6);
     ///
     /// {
     ///     let mut subtable: hlua::LuaTable<_> = table.get(2).unwrap();
-    ///     assert_eq!(subtable.get::<i32, _>(1).unwrap(), 8);
-    ///     assert_eq!(subtable.get::<i32, _>(2).unwrap(), 7);
+    ///     assert_eq!(subtable.get::<i32, _, _>(1).unwrap(), 8);
+    ///     assert_eq!(subtable.get::<i32, _, _>(2).unwrap(), 7);
     /// }
     /// ```
     ///
     #[inline]
-    pub fn get<'a, R, I>(&'a mut self, index: I) -> Option<R>
+    pub fn get<'a, R, I, E>(&'a mut self, index: I) -> Option<R>
         where R: LuaRead<PushGuard<&'a mut LuaTable<L>>>,
-              I: for<'b> PushOne<&'b mut &'a mut LuaTable<L>, Err = Void>
+              I: for<'b> PushOne<&'b mut &'a mut LuaTable<L>, Err = E>,
+              E: Into<Void>,
     {
         unsafe {
             // Because of a weird borrow error, we need to push the index by borrowing `&mut &mut L`
@@ -169,9 +170,10 @@ impl<'lua, L> LuaTable<L>
     /// Loads a value in the table, with the result capturing the table by value.
     // TODO: doc
     #[inline]
-    pub fn into_get<R, I>(mut self, index: I) -> Result<R, PushGuard<Self>>
+    pub fn into_get<R, I, E>(mut self, index: I) -> Result<R, PushGuard<Self>>
         where R: LuaRead<PushGuard<LuaTable<L>>>,
-              I: for<'b> PushOne<&'b mut LuaTable<L>, Err = Void>
+              I: for<'b> PushOne<&'b mut LuaTable<L>, Err = E>,
+              E: Into<Void>,
     {
         unsafe {
             index.push_no_err(&mut self).assert_one_and_forget();
@@ -199,9 +201,11 @@ impl<'lua, L> LuaTable<L>
     /// (which is the case for most types).
     // TODO: doc
     #[inline]
-    pub fn set<I, V>(&mut self, index: I, value: V)
-        where I: for<'r> PushOne<&'r mut LuaTable<L>, Err = Void>,
-              V: for<'r, 's> PushOne<&'r mut PushGuard<&'s mut LuaTable<L>>, Err = Void>
+    pub fn set<I, V, Ei, Ev>(&mut self, index: I, value: V)
+        where I: for<'r> PushOne<&'r mut LuaTable<L>, Err = Ei>,
+              V: for<'r, 's> PushOne<&'r mut PushGuard<&'s mut LuaTable<L>>, Err = Ev>,
+              Ei: Into<Void>,
+              Ev: Into<Void>,
     {
         match self.checked_set(index, value) {
             Ok(()) => (),
@@ -254,8 +258,9 @@ impl<'lua, L> LuaTable<L>
 
     /// Inserts an empty array, then loads it.
     #[inline]
-    pub fn empty_array<'s, I>(&'s mut self, index: I) -> LuaTable<PushGuard<&'s mut LuaTable<L>>>
-        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = Void> + Clone
+    pub fn empty_array<'s, I, E>(&'s mut self, index: I) -> LuaTable<PushGuard<&'s mut LuaTable<L>>>
+        where I: for<'a> PushOne<&'a mut &'s mut LuaTable<L>, Err = E> + Clone,
+              E: Into<Void>,
     {
         // TODO: cleaner implementation
         unsafe {
@@ -535,7 +540,7 @@ mod tests {
         assert_eq!(x, 9);
 
         {
-            let mut subtable = table.get::<LuaTable<_>, _>(2).unwrap();
+            let mut subtable = table.get::<LuaTable<_>, _, _>(2).unwrap();
 
             let y: i32 = subtable.get(1).unwrap();
             assert_eq!(y, 8);

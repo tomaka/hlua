@@ -31,26 +31,37 @@ macro_rules! tuple_impl {
 
     ($first:ident, $($other:ident),+) => (
         #[allow(non_snake_case)]
-        impl<'lua, LU, $first: for<'a> Push<&'a mut LU>, $($other: for<'a> Push<&'a mut LU>),+>
-            Push<LU> for ($first, $($other),+) where LU: AsMutLua<'lua>
+        impl<'lua, LU, FE, OE, $first, $($other),+> Push<LU> for ($first, $($other),+)
+            where LU: AsMutLua<'lua>,
+                  $first: for<'a> Push<&'a mut LU, Err = FE>,
+                  ($($other,)+): for<'a> Push<&'a mut LU, Err = OE>
         {
-            type Err = Void;      // TODO: wrong
+            type Err = TuplePushError<FE, OE>;
 
             #[inline]
             fn push_to_lua(self, mut lua: LU) -> Result<PushGuard<LU>, (Self::Err, LU)> {
                 match self {
                     ($first, $($other),+) => {
-                        let mut total = match $first.push_to_lua(&mut lua) {
-                            Ok(pushed) => pushed.forget(),
-                            Err(_) => panic!()      // TODO: wrong
+                        let mut total = 0;
+
+                        let first_err = match $first.push_to_lua(&mut lua) {
+                            Ok(pushed) => { total += pushed.forget(); None },
+                            Err((err, _)) => Some(err),
                         };
 
-                        $(
-                            total += match $other.push_to_lua(&mut lua) {
-                                Ok(pushed) => pushed.forget(),
-                                Err(_) => panic!()      // TODO: wrong
-                            };
-                        )+
+                        if let Some(err) = first_err {
+                            return Err((TuplePushError::First(err), lua));
+                        }
+
+                        let rest = ($($other,)+);
+                        let other_err = match rest.push_to_lua(&mut lua) {
+                            Ok(pushed) => { total += pushed.forget(); None },
+                            Err((err, _)) => Some(err),
+                        };
+
+                        if let Some(err) = other_err {
+                            return Err((TuplePushError::Other(err), lua));
+                        }
 
                         let raw_lua = lua.as_lua();
                         Ok(PushGuard { lua: lua, size: total, raw_lua: raw_lua })
@@ -94,3 +105,18 @@ macro_rules! tuple_impl {
 }
 
 tuple_impl!(A, B, C, D, E, F, G, H, I, J, K, L, M);
+
+/// Error that can happen when pushing multiple values at once.
+// TODO: implement Error on that thing
+#[derive(Debug, Copy, Clone)]
+pub enum TuplePushError<C, O> {
+    First(C),
+    Other(O),
+}
+
+impl From<TuplePushError<Void, Void>> for Void {
+    #[inline]
+    fn from(_: TuplePushError<Void, Void>) -> Void {
+        unreachable!()
+    }
+}

@@ -16,6 +16,7 @@ pub use lua_functions::LuaFunctionCallError;
 pub use lua_functions::{LuaCode, LuaCodeFromReader};
 pub use lua_tables::LuaTable;
 pub use lua_tables::LuaTableIterator;
+pub use tuples::TuplePushError;
 pub use userdata::UserdataOnStack;
 pub use userdata::{push_userdata, read_userdata};
 pub use values::StringInLua;
@@ -191,9 +192,10 @@ pub trait Push<L> {
     /// Same as `push_to_lua` but can only succeed and is only available if `Err` is `Void`.
     // TODO: when https://github.com/rust-lang/rust/issues/20041 is fixed, use `Self::Err == Void`
     #[inline]
-    fn push_no_err(self, lua: L) -> PushGuard<L>
+    fn push_no_err<E>(self, lua: L) -> PushGuard<L>
         where Self: Sized,
-              Self: Push<L, Err = Void>
+              Self: Push<L, Err = E>,
+              E: Into<Void>,
     {
         match self.push_to_lua(lua) {
             Ok(p) => p,
@@ -496,9 +498,10 @@ impl<'lua> Lua<'lua> {
     /// assert_eq!(six, 6);
     /// ```
     #[inline]
-    pub fn set<I, V>(&mut self, index: I, value: V)
+    pub fn set<I, V, E>(&mut self, index: I, value: V)
         where I: Borrow<str>,
-              for<'a> V: PushOne<&'a mut Lua<'lua>, Err = Void>
+              for<'a> V: PushOne<&'a mut Lua<'lua>, Err = E>,
+              E: Into<Void>,
     {
         match self.checked_set(index, value) {
             Ok(_) => (),
