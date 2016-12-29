@@ -13,7 +13,6 @@ use Push;
 use PushGuard;
 use LuaRead;
 
-use InsideCallback;
 use LuaTable;
 
 // Called when an object inside Lua is being dropped.
@@ -120,10 +119,10 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> Pu
 
 ///
 #[inline]
-pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
-                                index: i32)
-                                -> Result<&'t mut T, &'c mut InsideCallback>
-    where T: 'static + Any
+pub fn read_userdata<'l, 'lua, L, T>(lua: &'l L, index: i32)
+                                     -> Result<&'l T, &'l L>
+    where L: AsLua<'lua>,
+          T: 'lua + Any
 {
     unsafe {
         let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
@@ -137,6 +136,29 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
         }
 
         let data = (data_ptr as *const u8).offset(mem::size_of::<TypeId>() as isize);
+        Ok(&*(data as *const T))
+    }
+}
+
+///
+#[inline]
+pub fn read_mut_userdata<'l, 'lua, L, T>(lua: &'l mut L, index: i32)
+                                         -> Result<&'l mut T, &'l mut L>
+    where L: AsMutLua<'lua>,
+          T: 'lua + Any
+{
+    unsafe {
+        let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
+        if data_ptr.is_null() {
+            return Err(lua);
+        }
+
+        let actual_typeid = data_ptr as *const TypeId;
+        if *actual_typeid != TypeId::of::<T>() {
+            return Err(lua);
+        }
+
+        let data = (data_ptr as *mut u8).offset(mem::size_of::<TypeId>() as isize);
         Ok(&mut *(data as *mut T))
     }
 }
@@ -148,7 +170,7 @@ pub struct UserdataOnStack<T, L> {
 }
 
 impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
-    where L: AsMutLua<'lua> + AsLua<'lua>,
+    where L: AsLua<'lua>,
           T: 'lua + Any
 {
     #[inline]

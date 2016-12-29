@@ -17,45 +17,30 @@ macro_rules! implement_lua_push {
 #[macro_export]
 macro_rules! implement_lua_read {
     ($ty:ty) => {
-        impl<'s, 'c> hlua::LuaRead<&'c mut hlua::InsideCallback> for &'s mut $ty {
+        impl<'l, 'lua, L> hlua::LuaRead<&'l L> for &'l $ty
+            where L: hlua::AsLua<'lua>
+        {
             #[inline]
-            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s mut $ty, &'c mut hlua::InsideCallback> {
-                // FIXME:
-                unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
+            fn lua_read_at_position(lua: &'l L, index: i32) -> Result<&'l $ty, &'l L> {
+                hlua::read_userdata(lua, index)
             }
         }
 
-        impl<'s, 'c> hlua::LuaRead<&'c mut hlua::InsideCallback> for &'s $ty {
+        /*impl<'l, 'lua, L> hlua::LuaRead<&'l mut L> for &'l $ty
+            where L: hlua::AsMutLua<'lua>
+        {
             #[inline]
-            fn lua_read_at_position(lua: &'c mut hlua::InsideCallback, index: i32) -> Result<&'s $ty, &'c mut hlua::InsideCallback> {
-                // FIXME:
-                unsafe { ::std::mem::transmute($crate::read_userdata::<$ty>(lua, index)) }
+            fn lua_read_at_position(lua: &'l mut L, index: i32) -> Result<&'l $ty, &'l mut L> {
+                hlua::read_userdata(lua, index)
             }
-        }
+        }*/
 
-        impl<'s, 'b, 'c> hlua::LuaRead<&'b mut &'c mut hlua::InsideCallback> for &'s mut $ty {
+        impl<'l, 'lua, L> hlua::LuaRead<&'l mut L> for &'l mut $ty
+            where L: hlua::AsMutLua<'lua>
+        {
             #[inline]
-            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32) -> Result<&'s mut $ty, &'b mut &'c mut hlua::InsideCallback> {
-                let ptr_lua = lua as *mut &mut hlua::InsideCallback;
-                let deref_lua = unsafe { ::std::ptr::read(ptr_lua) };
-                let res = Self::lua_read_at_position(deref_lua, index);
-                match res {
-                    Ok(x) => Ok(x),
-                    _ => Err(lua)
-                }
-            }
-        }
-
-        impl<'s, 'b, 'c> hlua::LuaRead<&'b mut &'c mut hlua::InsideCallback> for &'s $ty {
-            #[inline]
-            fn lua_read_at_position(lua: &'b mut &'c mut hlua::InsideCallback, index: i32) -> Result<&'s $ty, &'b mut &'c mut hlua::InsideCallback> {
-                let ptr_lua = lua as *mut &mut hlua::InsideCallback;
-                let deref_lua = unsafe { ::std::ptr::read(ptr_lua) };
-                let res = Self::lua_read_at_position(deref_lua, index);
-                match res {
-                    Ok(x) => Ok(x),
-                    _ => Err(lua)
-                }
+            fn lua_read_at_position(lua: &'l mut L, index: i32) -> Result<&'l mut $ty, &'l mut L> {
+                hlua::read_mut_userdata(lua, index)
             }
         }
     };
