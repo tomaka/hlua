@@ -245,7 +245,7 @@ impl<'lua, L> LuaTable<L>
                     assert_eq!(pushed.size, 1);
                     pushed.forget()
                 }
-                Err((err, lua)) => {
+                Err((err, _)) => {
                     return Err(CheckedSetError::ValuePushError(err));
                 }
             };
@@ -625,7 +625,7 @@ mod tests {
     fn registry_metatable() {
         let mut lua = Lua::new();
 
-        let mut registry = LuaTable::registry(&mut lua);
+        let registry = LuaTable::registry(&mut lua);
         let mut metatable = registry.get_or_create_metatable();
         metatable.set(3, "hello");
     }
