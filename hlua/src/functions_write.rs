@@ -49,6 +49,94 @@ impl_function!(function9, A, B, C, D, E, F, G, H, I);
 impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 
 /// Opaque type containing a Rust function or closure.
+///
+/// In order to build an instance of this struct, you need to use one of the `functionN` functions.
+/// There is one function for each possible number of parameter. For example if you have a function
+/// with two parameters, you must use [`function2`](fn.function2.html).
+/// Example:
+///
+/// ```
+/// let f: hlua::Function<_, _, _> = hlua::function2(move |a: i32, b: i32| { });
+/// ```
+///
+/// > **Note**: In practice you will never need to build an object of type `Function` as an
+/// > intermediary step. Instead you will most likely always immediately push the function, like
+/// > in the code below.
+///
+/// You can push a `Function` object like any other value:
+///
+/// ```
+/// use hlua::Lua;
+/// let mut lua = Lua::new();
+/// 
+/// lua.set("foo", hlua::function1(move |a: i32| -> i32 {
+///     a * 5
+/// }));
+/// ```
+///
+/// The function can then be called from Lua:
+///
+/// ```
+/// # use hlua::Lua;
+/// # let mut lua = Lua::new();
+/// # lua.set("foo", hlua::function1(move |a: i32| -> i32 { a * 5 }));
+/// lua.execute::<()>("a = foo(12)").unwrap();
+///
+/// assert_eq!(lua.get::<i32, _>("a").unwrap(), 60);
+/// ```
+///
+/// Remember that in Lua functions are regular variables, so you can do something like this
+/// for example:
+///
+/// ```
+/// # use hlua::Lua;
+/// # let mut lua = Lua::new();
+/// # lua.set("foo", hlua::function1(move |a: i32| -> i32 { a * 5 }));
+/// lua.execute::<()>("bar = foo; a = bar(12)").unwrap();
+/// ```
+///
+/// # Multiple return values
+///
+/// The Lua language supports functions that return multiple values at once.
+///
+/// In order to return multiple values from a Rust function, you can return a tuple. The elements
+/// of the tuple will be returned in order.
+///
+/// ```
+/// use hlua::Lua;
+/// let mut lua = Lua::new();
+/// 
+/// lua.set("values", hlua::function0(move || -> (i32, i32, i32) {
+///     (12, 24, 48)
+/// }));
+///
+/// lua.execute::<()>("a, b, c = values()").unwrap();
+///
+/// assert_eq!(lua.get::<i32, _>("a").unwrap(), 12);
+/// assert_eq!(lua.get::<i32, _>("b").unwrap(), 24);
+/// assert_eq!(lua.get::<i32, _>("c").unwrap(), 48);
+/// ```
+///
+/// # Using `Result`
+///
+/// If you want to return an error to the Lua script, you can use a `Result` that contains an
+/// `Err`. The error will be a regular Lua error and will be propagated either to the `execute`
+/// function, or can be caught with the `pcall` Lua function.
+///
+/// The error type of the `Result` must implement the `Debug` trait, and will be turned into a
+/// Lua string.
+///
+/// ```
+/// use hlua::Lua;
+/// let mut lua = Lua::new();
+/// 
+/// lua.set("err", hlua::function0(move || -> Result<i32, &'static str> {
+///     Err("something wrong happened")
+/// }));
+///
+/// let ret = lua.execute::<()>("a = err()");
+/// assert!(ret.is_err());
+/// ```
 pub struct Function<F, P, R> {
     function: F,
     marker: PhantomData<(P, R)>,

@@ -117,6 +117,11 @@ impl<'lua, L> LuaTable<L>
 
     /// Loads a value in the table given its index.
     ///
+    /// The index must implement the `PushOne` trait and the return type must implement the
+    /// `LuaRead` trait. See
+    /// [the documentation at the crate root](index.html#pushing-and-loading-values) for more
+    /// information.
+    ///
     /// # Example: reading a table inside of a table.
     ///
     /// ```
@@ -199,6 +204,10 @@ impl<'lua, L> LuaTable<L>
     ///
     /// Contrary to `checked_set`, can only be called when writing the key and value cannot fail
     /// (which is the case for most types).
+    ///
+    /// The index and the value must both implement the `PushOne` trait. See
+    /// [the documentation at the crate root](index.html#pushing-and-loading-values) for more
+    /// information.
     // TODO: doc
     #[inline]
     pub fn set<I, V, Ei, Ev>(&mut self, index: I, value: V)
