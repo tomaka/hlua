@@ -90,7 +90,7 @@ macro_rules! numeric_impl(
 
             #[inline]
             fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
-                unsafe { ffi::lua_pushnumber(lua.as_mut_lua().0, self as f64) };
+                unsafe { ffi::lua_pushnumber(lua.as_mut_lua().0, self as ffi::lua_Number) };
                 let raw_lua = lua.as_lua();
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
@@ -114,7 +114,7 @@ macro_rules! numeric_impl(
 );
 
 numeric_impl!(f32);
-numeric_impl!(f64);
+numeric_impl!(f64);     // TODO: remove?
 
 impl<'lua, L> Push<L> for String
     where L: AsMutLua<'lua>
