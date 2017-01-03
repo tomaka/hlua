@@ -162,7 +162,7 @@ pub struct UserdataOnStack<T, L> {
 
 impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
     where L: AsMutLua<'lua> + AsLua<'lua>,
-          T: 'static + Any
+          T: 'lua + Any
 {
     #[inline]
     fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
@@ -199,30 +199,30 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
     }
 }
 
-#[allow(mutable_transmutes)]
 impl<'lua, T, L> Deref for UserdataOnStack<T, L>
-    where L: AsMutLua<'lua>,
-          T: 'static + Any
+    where L: AsLua<'lua>,
+          T: 'lua + Any
 {
     type Target = T;
 
     #[inline]
     fn deref(&self) -> &T {
-        let me: &mut UserdataOnStack<T, L> = unsafe { mem::transmute(self) };       // FIXME:
-        let data = unsafe { ffi::lua_touserdata(me.variable.as_mut_lua().0, -1) };
-        let data: &T = unsafe { mem::transmute(data) };
-        data
+        unsafe {
+            let data = ffi::lua_touserdata(self.variable.as_lua().0, -1);
+            &*(data as *const T)
+        }
     }
 }
 
 impl<'lua, T, L> DerefMut for UserdataOnStack<T, L>
     where L: AsMutLua<'lua>,
-          T: 'static + Any
+          T: 'lua + Any
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
-        let data = unsafe { ffi::lua_touserdata(self.variable.as_mut_lua().0, -1) };
-        let data: &mut T = unsafe { mem::transmute(data) };
-        data
+        unsafe {
+            let data = ffi::lua_touserdata(self.variable.as_mut_lua().0, -1);
+            &mut *(data as *mut T)
+        }
     }
 }
