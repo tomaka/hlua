@@ -1,3 +1,110 @@
+//! High-level zero-cost bindings for Lua
+//!
+//! Lua is an interpreted programming language. This crate allows you to execute Lua code.
+//!
+//! # General usage
+//!
+//! In order to execute Lua code you first need a *Lua context*, which is represented in this
+//! library with [the `Lua` struct](struct.Lua.html). You can then call
+//! [the `execute` method](struct.Lua.html#method.execute) on this object.
+//!
+//! For example:
+//!
+//! ```
+//! use hlua::Lua;
+//!
+//! let mut lua = Lua::new();
+//! lua.execute::<()>("a = 12 * 5").unwrap();
+//! ```
+//!
+//! This example puts the value `60` in the global variable `a`. The values of all global variables
+//! are stored within the `Lua` struct. If you execute multiple Lua scripts on the same context,
+//! each script will have access to the same global variables that were modified by the previous
+//! scripts.
+//!
+//! In order to do something actually useful with Lua, we will need to make Lua and Rust
+//! communicate with each other. This can be done in four ways:
+//!
+//! - You can use methods on the `Lua` struct to read or write the values of global variables with
+//!   the [`get`](struct.Lua.html#method.get) and [`set`](struct.Lua.html#method.set) methods. For
+//!   example you can write to a global variable with a Lua script then read it from Rust, or you
+//!   can write to a global variable from Rust then read it from a Lua script.
+//!
+//! - The Lua script that you execute with the [`execute`](struct.Lua.html#method.execute) method
+//!   can return a value.
+//!
+//! - You can set the value of a global variable to a Rust functions or closures, which can then be
+//!   invoked with a Lua script. See [the `Function` struct](struct.Function.html) for more
+//!   information. For example if you set the value of the global variable `foo` to a Rust
+//!   function, you can then call it from Lua with `foo()`.
+//!
+//! - Similarly you can set the value of a global variable to a Lua function, then call it from
+//!   Rust. The function call can return a value.
+//!
+//! Which method(s) you use depends on which API you wish to expose to your Lua scripts.
+//!
+//! # Pushing and loading values
+//!
+//! The interface between Rust and Lua involves two things:
+//!
+//! - Sending values from Rust to Lua, which is known as *pushing* the value.
+//! - Sending values from Lua to Rust, which is known as *loading* the value.
+//!
+//! Pushing (ie. sending from Rust to Lua) can be done with
+//! [the `set` method](struct.Lua.html#method.set):
+//!
+//! ```
+//! # use hlua::Lua;
+//! # let mut lua = Lua::new();
+//! lua.set("a", 50);
+//! ```
+//!
+//! You can push values that implement [the `Push` trait](trait.Push.html) or
+//! [the `PushOne` trait](trait.PushOne.html) depending on the situation:
+//!
+//! - Integers, floating point numbers and booleans.
+//! - `String` and `&str`.
+//! - Any Rust function or closure whose parameters and loadable and whose return type is pushable.
+//!   See the documentation of [the `Function` struct](struct.Function.html) for more information.
+//! - [The `AnyLuaValue` struct](struct.AnyLuaValue.html). This enumeration represents any possible
+//!   value in Lua.
+//! - The [`LuaCode`](struct.LuaCode.html) and
+//!   [`LuaCodeFromReader`](struct.LuaCodeFromReader.html) structs. Since pushing these structs can
+//!   result in an error, you need to use [`checked_set`](struct.Lua.html#method.checked_set)
+//!   instead of `set`.
+//! - `Vec`s and `HashMap`s whose content is pushable.
+//! - As a special case, `Result` can be pushed only as the return type of a Rust function or
+//!   closure. If they contain an error, the Rust function call is considered to have failed.
+//! - As a special case, tuples can be pushed when they are the return type of a Rust function or
+//!   closure. They implement `Push` but not `PushOne`.
+//! - TODO: userdata
+//!
+//! Loading (ie. sending from Lua to Rust) can be done with
+//! [the `get` method](struct.Lua.html#method.get):
+//!
+//! ```no_run
+//! # use hlua::Lua;
+//! # let mut lua = Lua::new();
+//! let a: i32 = lua.get("a").unwrap();
+//! ```
+//!
+//! You can load values that implement [the `LuaRead` trait](trait.LuaRead.html):
+//!
+//! - Integers, floating point numbers and booleans.
+//! - `String` and [`StringInLua`](struct.StringInLua.html) (ie. the equivalent of `&str`). Loading
+//!   the latter has no cost while loading a `String` performs an allocation.
+//! - Any function (Lua or Rust), with [the `LuaFunction` struct](struct.LuaFunction.html). This
+//!   can then be used to execute the function.
+//! - [The `AnyLuaValue` struct](struct.AnyLuaValue.html). This enumeration represents any possible
+//!   value in Lua.
+//! - [The `LuaTable` struct](struct.LuaTable.html). This struct represents a table in Lua, where
+//!   keys and values can be of different types. The table can then be iterated and individual
+//!   elements can be loaded or modified.
+//! - As a special case, tuples can be loaded when they are the return type of a Lua function or as
+//!   the return type of [`execute`](struct.Lua.html#method.execute).
+//! - TODO: userdata
+//!
+
 extern crate lua52_sys as ffi;
 extern crate libc;
 
@@ -358,7 +465,9 @@ impl<'lua> Lua<'lua> {
     /// The function will return an error if the actual return type of the expression doesn't
     /// match the template parameter.
     ///
-    /// See [the `get` method](#method.get) for more information about the possible return types.
+    /// The return type must implement the `LuaRead` trait. See
+    /// [the documentation at the crate root](index.html#pushing-and-loading-values) for more
+    /// information.
     ///
     /// # Examples
     ///
@@ -418,9 +527,11 @@ impl<'lua> Lua<'lua> {
 
     /// Reads the value of a global variable.
     ///
-    /// Returns `None` if the variable doesn't exist or is nil.
+    /// Returns `None` if the variable doesn't exist or has the wrong type.
     ///
-    /// TODO: document the return types
+    /// The type must implement the `LuaRead` trait. See
+    /// [the documentation at the crate root](index.html#pushing-and-loading-values) for more
+    /// information.
     ///
     /// # Example
     ///
@@ -486,6 +597,10 @@ impl<'lua> Lua<'lua> {
     ///
     /// If you want to write an array, you are encouraged to use
     /// [the `empty_array` method](#method.empty_array) instead.
+    ///
+    /// The type must implement the `PushOne` trait. See
+    /// [the documentation at the crate root](index.html#pushing-and-loading-values) for more
+    /// information.
     ///
     /// # Example
     ///
