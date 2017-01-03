@@ -5,7 +5,6 @@ use PushGuard;
 use PushOne;
 use AsMutLua;
 use TuplePushError;
-use Void;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -23,7 +22,7 @@ fn push_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<L>, 
     for (elem, index) in iterator.zip((1..)) {
         let size = match elem.push_to_lua(&mut lua) {
             Ok(pushed) => pushed.forget(),
-            Err((err, lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
+            Err((_err, _lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
         };
 
         match size {
@@ -64,7 +63,7 @@ fn push_rec_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<
     for elem in iterator {
         let size = match elem.push_to_lua(&mut lua) {
             Ok(pushed) => pushed.forget(),
-            Err((err, lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
+            Err((_err, _lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
         };
 
         match size {
@@ -154,7 +153,7 @@ impl<'lua, L, K, E> Push<L> for HashSet<K>
         match push_rec_iter(lua, self.into_iter().zip(iter::repeat(true))) {
             Ok(g) => Ok(g),
             Err((TuplePushError::First(err), lua)) => Err((err, lua)),
-            Err((TuplePushError::Other(_), lua)) => unreachable!(),
+            Err((TuplePushError::Other(_), _)) => unreachable!(),
         }
     }
 }
