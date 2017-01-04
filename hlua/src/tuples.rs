@@ -1,5 +1,4 @@
 use AsMutLua;
-use AsLua;
 
 use Push;
 use PushOne;
@@ -9,7 +8,7 @@ use Void;
 
 macro_rules! tuple_impl {
     ($ty:ident) => (
-        impl<'lua, LU, $ty> Push<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: Push<LU> {
+        impl<LU, $ty> Push<LU> for ($ty,) where $ty: Push<LU> {
             type Err = <$ty as Push<LU>>::Err;
 
             #[inline]
@@ -18,10 +17,10 @@ macro_rules! tuple_impl {
             }
         }
 
-        impl<'lua, LU, $ty> PushOne<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: PushOne<LU> {
+        impl<LU, $ty> PushOne<LU> for ($ty,) where $ty: PushOne<LU> {
         }
 
-        impl<'lua, LU, $ty> LuaRead<LU> for ($ty,) where LU: AsMutLua<'lua>, $ty: LuaRead<LU> {
+        impl<LU, $ty> LuaRead<LU> for ($ty,) where $ty: LuaRead<LU> {
             #[inline]
             fn lua_read_at_position(lua: LU, index: i32) -> Result<($ty,), LU> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
@@ -74,7 +73,7 @@ macro_rules! tuple_impl {
         #[allow(unused_assignments)]
         #[allow(non_snake_case)]
         impl<'lua, LU, $first: for<'a> LuaRead<&'a mut LU>, $($other: for<'a> LuaRead<&'a mut LU>),+>
-            LuaRead<LU> for ($first, $($other),+) where LU: AsLua<'lua>
+            LuaRead<LU> for ($first, $($other),+)
         {
             #[inline]
             fn lua_read_at_position(mut lua: LU, index: i32) -> Result<($first, $($other),+), LU> {
