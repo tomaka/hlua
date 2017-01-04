@@ -16,21 +16,15 @@ use LuaRead;
 use InsideCallback;
 use LuaTable;
 
+// Called when an object inside Lua is being dropped.
 #[inline]
-extern "C" fn destructor_wrapper(lua: *mut ffi::lua_State) -> libc::c_int {
-    let impl_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
-    let imp: fn(*mut ffi::lua_State) -> ::libc::c_int = unsafe { mem::transmute(impl_raw) };
-
-    imp(lua)
-}
-
-#[inline]
-fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
-    let obj = unsafe { ffi::lua_touserdata(lua, -1) };
-    let obj: &mut T = unsafe { mem::transmute(obj) };
-    mem::replace(obj, unsafe { mem::uninitialized() });
-
-    0
+extern "C" fn destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
+    unsafe {
+        let obj = ffi::lua_touserdata(lua, -1);
+        ptr::drop_in_place(obj as *mut TypeId);
+        ptr::drop_in_place((obj as *mut u8).offset(mem::size_of::<TypeId>() as isize) as *mut T);
+        0
+    }
 }
 
 /// Pushes an object as a user data.
@@ -43,6 +37,15 @@ fn destructor_impl<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 ///
 /// [See this link for more infos.](http://www.lua.org/manual/5.2/manual.html#2.4)
 ///
+/// # About the Drop trait
+///
+/// When the Lua context detects that a userdata is no longer needed it calls the function at the
+/// `__gc` index in the userdata's metatable, if any. The hlua library will automatically fill this
+/// index with a function that invokes the `Drop` trait of the userdata.
+///
+/// You can replace the function if you wish so, although you are strongly discouraged to do it.
+/// It is no unsafe to leak data in Rust, so there is no safety issue in doing so.
+///
 /// # Arguments
 ///
 ///  - `metatable`: Function that fills the metatable of the object.
@@ -53,49 +56,46 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> Pu
           L: AsMutLua<'lua>,
           T: Send + 'static + Any
 {
-    let typeid = format!("{:?}", TypeId::of::<T>());
-
-    let lua_data_raw = unsafe {
-        ffi::lua_newuserdata(lua.as_mut_lua().0, mem::size_of_val(&data) as libc::size_t)
-    };
-    let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
-    unsafe { ptr::write(lua_data, data) };
-
-    let lua_raw = lua.as_mut_lua();
-
-    // creating a metatable
     unsafe {
+        let typeid = TypeId::of::<T>();
+
+        let lua_data = {
+            let tot_size = mem::size_of_val(&typeid) + mem::size_of_val(&data);
+            ffi::lua_newuserdata(lua.as_mut_lua().0, tot_size as libc::size_t)
+        };
+
+        // We check the alignment requirements.
+        debug_assert_eq!(lua_data as usize % mem::align_of_val(&data), 0);
+        // Since the size of a `TypeId` should always be a usize, this assert should pass every
+        // time as well.
+        debug_assert_eq!(mem::size_of_val(&typeid) % mem::align_of_val(&data), 0);
+
+        // We write the `TypeId` first, and the data right next to it.
+        ptr::write(lua_data as *mut TypeId, typeid);
+        let data_loc = (lua_data as *const u8).offset(mem::size_of_val(&typeid) as isize);
+        ptr::write(data_loc as *mut _, data);
+
+        let lua_raw = lua.as_mut_lua();
+
+        // Creating a metatable.
         ffi::lua_newtable(lua.as_mut_lua().0);
 
-        // index "__typeid" corresponds to the hash of the TypeId of T
-        match "__typeid".push_to_lua(&mut lua) {
-            Ok(p) => p.forget(),
-            Err(_) => unreachable!(),
-        };
-        match typeid.push_to_lua(&mut lua) {
-            Ok(p) => p.forget(),
-            Err(_) => unreachable!(),
-        };
-        ffi::lua_settable(lua.as_mut_lua().0, -3);
+        // Index "__gc" in the metatable calls the object's destructor.
 
-        // index "__gc" call the object's destructor
+        // TODO: Could use std::intrinsics::needs_drop to avoid that if not needed.
+        // After some discussion on IRC, it would be acceptable to add a reexport in libcore
+        // without going through the RFC process.
         {
             match "__gc".push_to_lua(&mut lua) {
                 Ok(p) => p.forget(),
                 Err(_) => unreachable!(),
             };
 
-            // pushing destructor_impl as a lightuserdata
-            let destructor_impl: fn(*mut ffi::lua_State) -> libc::c_int = destructor_impl::<T>;
-            ffi::lua_pushlightuserdata(lua.as_mut_lua().0, mem::transmute(destructor_impl));
-
-            // pushing destructor_wrapper as a closure
-            ffi::lua_pushcclosure(lua.as_mut_lua().0, destructor_wrapper, 1);
-
+            ffi::lua_pushcfunction(lua.as_mut_lua().0, destructor_wrapper::<T>);
             ffi::lua_settable(lua.as_mut_lua().0, -3);
         }
 
-        // calling the metatable closure
+        // Calling the metatable closure.
         {
             let raw_lua = lua.as_lua();
             let mut guard = PushGuard {
@@ -126,31 +126,18 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
     where T: 'static + Any
 {
     unsafe {
-        let expected_typeid = format!("{:?}", TypeId::of::<T>());
-
         let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
         if data_ptr.is_null() {
             return Err(lua);
         }
 
-        if ffi::lua_getmetatable(lua.as_lua().0, index) == 0 {
+        let actual_typeid = data_ptr as *const TypeId;
+        if *actual_typeid != TypeId::of::<T>() {
             return Err(lua);
         }
 
-        match "__typeid".push_to_lua(&mut lua) {
-            Ok(p) => p.forget(),
-            Err(_) => unreachable!(),
-        };
-        ffi::lua_gettable(lua.as_lua().0, -2);
-        match <String as LuaRead<_>>::lua_read(&mut lua) {
-            Ok(ref val) if val == &expected_typeid => {}
-            _ => {
-                return Err(lua);
-            }
-        }
-        ffi::lua_pop(lua.as_lua().0, 2);
-
-        Ok(mem::transmute(data_ptr))
+        let data = (data_ptr as *const u8).offset(mem::size_of::<TypeId>() as isize);
+        Ok(&mut *(data as *mut T))
     }
 }
 
@@ -162,34 +149,20 @@ pub struct UserdataOnStack<T, L> {
 
 impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
     where L: AsMutLua<'lua> + AsLua<'lua>,
-          T: 'static + Any
+          T: 'lua + Any
 {
     #[inline]
-    fn lua_read_at_position(mut lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
+    fn lua_read_at_position(lua: L, index: i32) -> Result<UserdataOnStack<T, L>, L> {
         unsafe {
-            let expected_typeid = format!("{:?}", TypeId::of::<T>());
-
             let data_ptr = ffi::lua_touserdata(lua.as_lua().0, index);
             if data_ptr.is_null() {
                 return Err(lua);
             }
 
-            if ffi::lua_getmetatable(lua.as_lua().0, index) == 0 {
+            let actual_typeid = data_ptr as *const TypeId;
+            if *actual_typeid != TypeId::of::<T>() {
                 return Err(lua);
             }
-
-            match "__typeid".push_to_lua(&mut lua) {
-                Ok(p) => p.forget(),
-                Err(_) => unreachable!(),
-            };
-            ffi::lua_gettable(lua.as_lua().0, -2);
-            match <String as LuaRead<_>>::lua_read(&mut lua) {
-                Ok(ref val) if val == &expected_typeid => {}
-                _ => {
-                    return Err(lua);
-                }
-            }
-            ffi::lua_pop(lua.as_lua().0, 2);
 
             Ok(UserdataOnStack {
                 variable: lua,
@@ -199,30 +172,32 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
     }
 }
 
-#[allow(mutable_transmutes)]
 impl<'lua, T, L> Deref for UserdataOnStack<T, L>
-    where L: AsMutLua<'lua>,
-          T: 'static + Any
+    where L: AsLua<'lua>,
+          T: 'lua + Any
 {
     type Target = T;
 
     #[inline]
     fn deref(&self) -> &T {
-        let me: &mut UserdataOnStack<T, L> = unsafe { mem::transmute(self) };       // FIXME:
-        let data = unsafe { ffi::lua_touserdata(me.variable.as_mut_lua().0, -1) };
-        let data: &T = unsafe { mem::transmute(data) };
-        data
+        unsafe {
+            let base = ffi::lua_touserdata(self.variable.as_lua().0, -1);
+            let data = (base as *const u8).offset(mem::size_of::<TypeId>() as isize);
+            &*(data as *const T)
+        }
     }
 }
 
 impl<'lua, T, L> DerefMut for UserdataOnStack<T, L>
     where L: AsMutLua<'lua>,
-          T: 'static + Any
+          T: 'lua + Any
 {
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
-        let data = unsafe { ffi::lua_touserdata(self.variable.as_mut_lua().0, -1) };
-        let data: &mut T = unsafe { mem::transmute(data) };
-        data
+        unsafe {
+            let base = ffi::lua_touserdata(self.variable.as_mut_lua().0, -1);
+            let data = (base as *const u8).offset(mem::size_of::<TypeId>() as isize);
+            &mut *(data as *mut T)
+        }
     }
 }
