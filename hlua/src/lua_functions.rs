@@ -260,28 +260,37 @@ impl<'lua, L> LuaFunction<L>
               V: LuaRead<PushGuard<&'a mut L>>
     {
         // calling pcall pops the parameters and pushes output
-        let (pcall_return_value, pushed_value) = unsafe {
+        let (pcall_return_value, pushed_value, count) = unsafe {
+            let initial_stack = ffi::lua_gettop(self.variable.as_mut_lua().0);
+
             // lua_pcall pops the function, so we have to make a copy of it
             ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
             let num_pushed = match args.push_to_lua(self) {
                 Ok(g) => g.forget(),
                 Err((err, _)) => return Err(LuaFunctionCallError::PushError(err)),
             };
-            let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, num_pushed, 1, 0);     // TODO: num ret values
+            let pcall_return_value = ffi::lua_pcall(
+                self.variable.as_mut_lua().0,
+                num_pushed,
+                ffi::MULTRET,
+                0
+            );
+
+            let return_count = ffi::lua_gettop(self.variable.as_mut_lua().0) - initial_stack;
 
             let raw_lua = self.variable.as_lua();
             let guard = PushGuard {
                 lua: &mut self.variable,
-                size: 1,
+                size: return_count,
                 raw_lua: raw_lua,
             };
 
-            (pcall_return_value, guard)
+            (pcall_return_value, guard, return_count)
         };
 
         // if pcall succeeded, returning
         if pcall_return_value == 0 {
-            return match LuaRead::lua_read(pushed_value) {
+            return match LuaRead::lua_read_at_position(pushed_value, -count) {
                 Err(_) => Err(LuaFunctionCallError::LuaError(LuaError::WrongType)),
                 Ok(x) => Ok(x),
             };
