@@ -312,12 +312,10 @@ impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
 
     #[inline]
     fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
-        unsafe {
-            match self {
-                Ok(val) => val.push_to_lua(lua),
-                Err(val) => {
-                    Ok((AnyLuaValue::LuaNil, format!("{}", val)).push_no_err(lua))
-                }
+        match self {
+            Ok(val) => val.push_to_lua(lua),
+            Err(val) => {
+                Ok((AnyLuaValue::LuaNil, format!("{}", val)).push_no_err(lua))
             }
         }
     }
@@ -372,7 +370,6 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
 
 #[cfg(test)]
 mod tests {
-    use AnyLuaValue;
     use Lua;
     use LuaError;
     use function0;
