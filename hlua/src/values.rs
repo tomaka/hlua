@@ -5,6 +5,7 @@ use std::ops::Deref;
 use ffi;
 use libc;
 
+use AnyLuaValue;
 use AsLua;
 use AsMutLua;
 use LuaRead;
@@ -301,8 +302,30 @@ impl<'lua, L> LuaRead<L> for ()
     }
 }
 
+impl<'lua, L, T, E> Push<L> for Option<T>
+where T: for<'b> Push<L, Err = E>,
+      L: AsMutLua<'lua>
+{
+    type Err = E;
+
+    #[inline]
+    fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (E, L)> {
+        match self {
+            Some(val) => val.push_to_lua(lua),
+            None => Ok(AnyLuaValue::LuaNil.push_no_err(lua)),
+        }
+    }
+}
+
+impl<'lua, L, T, E> PushOne<L> for Option<T>
+where T: for<'b> PushOne<L, Err = E>,
+      L: AsMutLua<'lua>
+{
+}
+
 #[cfg(test)]
 mod tests {
+    use AnyLuaValue;
     use Lua;
     use StringInLua;
 
@@ -435,5 +458,29 @@ mod tests {
             let x: StringInLua<_> = lua.get("a").unwrap();
             assert_eq!(&*x, "18");
         }
+    }
+
+    #[test]
+    fn push_opt() {
+        let mut lua = Lua::new();
+
+        lua.set("some", ::function0(|| Some(123)));
+        lua.set("none", ::function0(|| Option::None::<i32>));
+
+        match lua.execute::<i32>("return some()") {
+            Ok(123) => {}
+            unexpected => panic!("{:?}", unexpected),
+        }
+
+        match lua.execute::<AnyLuaValue>("return none()") {
+            Ok(AnyLuaValue::LuaNil) => {}
+            unexpected => panic!("{:?}", unexpected),
+        }
+
+        lua.set("no_value", None::<i32>);
+        lua.set("some_value", Some("Hello!"));
+
+        assert_eq!(lua.get("no_value"), None::<String>);
+        assert_eq!(lua.get("some_value"), Some("Hello!".to_string()));
     }
 }
