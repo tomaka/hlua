@@ -303,7 +303,7 @@ impl<'lua, L> LuaRead<L> for ()
 }
 
 impl<'lua, L, T, E> Push<L> for Option<T>
-where T: for<'b> Push<L, Err = E>,
+where T: Push<L, Err = E>,
       L: AsMutLua<'lua>
 {
     type Err = E;
@@ -318,7 +318,7 @@ where T: for<'b> Push<L, Err = E>,
 }
 
 impl<'lua, L, T, E> PushOne<L> for Option<T>
-where T: for<'b> PushOne<L, Err = E>,
+where T: PushOne<L, Err = E>,
       L: AsMutLua<'lua>
 {
 }
