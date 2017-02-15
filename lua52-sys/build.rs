@@ -1,13 +1,22 @@
 extern crate pkg_config;
 extern crate gcc;
 
+use std::env;
+
 fn main() {
     match pkg_config::find_library("lua5.2") {
         Ok(_) => return,
         Err(..) => {}
     };
 
-    gcc::Config::new()
+    let mut config = gcc::Config::new();
+
+    if env::var("CARGO_CFG_TARGET_OS") == Ok("linux".to_string()) {
+        // Enable `io.popen` support
+        config.define("LUA_USE_LINUX", None);
+    }
+
+    config
         .file("lua/src/lapi.c")
         .file("lua/src/lcode.c")
         .file("lua/src/lctype.c")

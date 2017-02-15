@@ -1,0 +1,2 @@
+[workspace]
+members = ["hlua", "lua52-sys"]
