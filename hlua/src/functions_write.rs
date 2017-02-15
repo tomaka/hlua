@@ -1,6 +1,7 @@
 use ffi;
 use libc;
 
+use AnyLuaValue;
 use AsLua;
 use AsMutLua;
 use LuaContext;
@@ -11,7 +12,7 @@ use PushOne;
 use Void;
 
 use std::marker::PhantomData;
-use std::fmt::Debug;
+use std::fmt::Display;
 use std::mem;
 use std::ptr;
 
@@ -120,21 +121,39 @@ impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 /// # Using `Result`
 ///
 /// If you want to return an error to the Lua script, you can use a `Result` that contains an
-/// `Err`. The error will be a regular Lua error and will be propagated either to the `execute`
-/// function, or can be caught with the `pcall` Lua function.
+/// `Err`. The error will be returned to Lua as two values: A `nil` value and the error message.
 ///
-/// The error type of the `Result` must implement the `Debug` trait, and will be turned into a
+/// The error type of the `Result` must implement the `Display` trait, and will be turned into a
 /// Lua string.
 ///
 /// ```
 /// use hlua::Lua;
 /// let mut lua = Lua::new();
+/// lua.openlibs();
 /// 
 /// lua.set("err", hlua::function0(move || -> Result<i32, &'static str> {
 ///     Err("something wrong happened")
 /// }));
 ///
-/// let ret = lua.execute::<()>("a = err()");
+/// lua.execute::<()>(r#"
+///     res, err = err();
+///     assert(res == nil);
+///     assert(err == "something wrong happened");
+/// "#).unwrap();
+/// ```
+///
+/// This also allows easy use of `assert` to act like `.unwrap()` in Rust:
+///
+/// ```
+/// use hlua::Lua;
+/// let mut lua = Lua::new();
+/// lua.openlibs();
+///
+/// lua.set("err", hlua::function0(move || -> Result<i32, &'static str> {
+///     Err("something wrong happened")
+/// }));
+///
+/// let ret = lua.execute::<()>("res = assert(err())");
 /// assert!(ret.is_err());
 /// ```
 pub struct Function<F, P, R> {
@@ -287,24 +306,16 @@ unsafe impl<'a, 'lua> AsMutLua<'lua> for &'a mut InsideCallback {
 
 impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
     where T: Push<&'a mut InsideCallback, Err = P> + for<'b> Push<&'b mut &'a mut InsideCallback, Err = P>,
-          E: Debug
+          E: Display
 {
     type Err = P;
 
     #[inline]
     fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
-        unsafe {
-            match self {
-                Ok(val) => val.push_to_lua(lua),
-                Err(val) => {
-                    let msg = format!("{:?}", val);
-                    match msg.push_to_lua(&mut lua) {
-                        Ok(pushed) => pushed.forget(),
-                        Err(_) => unreachable!()
-                    };
-                    ffi::lua_error(lua.as_mut_lua().0);
-                    unreachable!();
-                }
+        match self {
+            Ok(val) => val.push_to_lua(lua),
+            Err(val) => {
+                Ok((AnyLuaValue::LuaNil, format!("{}", val)).push_no_err(lua))
             }
         }
     }
@@ -312,7 +323,7 @@ impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
 
 impl<'a, T, E, P> PushOne<&'a mut InsideCallback> for Result<T, E>
     where T: PushOne<&'a mut InsideCallback, Err = P> + for<'b> PushOne<&'b mut &'a mut InsideCallback, Err = P>,
-          E: Debug
+          E: Display
 {
 }
 
@@ -422,15 +433,20 @@ mod tests {
     #[test]
     fn return_result() {
         let mut lua = Lua::new();
+        lua.openlibs();
 
         fn always_fails() -> Result<i32, &'static str> {
             Err("oops, problem")
         };
         lua.set("always_fails", function0(always_fails));
 
-        match lua.execute::<()>("always_fails()") {
-            Err(LuaError::ExecutionError(_)) => (),
-            _ => panic!(),
+        match lua.execute::<()>(r#"
+            local res, err = always_fails();
+            assert(res == nil);
+            assert(err == "oops, problem");
+        "#) {
+            Ok(()) => {}
+            Err(e) => panic!("{:?}", e),
         }
     }
 
