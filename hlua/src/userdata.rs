@@ -51,8 +51,8 @@ extern "C" fn destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
 ///  - `metatable`: Function that fills the metatable of the object.
 ///
 #[inline]
-pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, mut metatable: F) -> PushGuard<L>
-    where F: FnMut(LuaTable<&mut PushGuard<&mut L>>),
+pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, metatable: F) -> PushGuard<L>
+    where F: FnOnce(LuaTable<&mut PushGuard<&mut L>>),
           L: AsMutLua<'lua>,
           T: Send + 'static + Any
 {
