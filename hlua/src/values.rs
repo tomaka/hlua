@@ -153,9 +153,29 @@ impl<'lua, L> LuaRead<L> for String
         }
 
         let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let c_str = String::from_utf8(c_str.to_bytes().to_vec()).unwrap();
+        let maybe_string = String::from_utf8(c_str.to_bytes().to_vec());
+        match maybe_string {
+            Ok(string) => Ok(string),
+            Err(_) => Err(lua),
+        }
+    }
+}
 
-        Ok(c_str)
+
+impl<'lua, L> LuaRead<L> for Vec<u8>
+    where L: AsLua<'lua>
+{
+    #[inline]
+    fn lua_read_at_position(lua: L, index: i32) -> Result<Vec<u8>, L> {
+        let mut size: libc::size_t = unsafe { mem::uninitialized() };
+        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
+        if c_str_raw.is_null() {
+            return Err(lua);
+        }
+
+        let c_str = unsafe { CStr::from_ptr(c_str_raw) };
+        let c_string = c_str.to_bytes().to_vec();
+        Ok(c_string)
     }
 }
 

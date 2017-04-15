@@ -13,6 +13,7 @@ use Void;
 #[derive(Clone, Debug, PartialEq)]
 pub enum AnyLuaValue {
     LuaString(String),
+    LuaPlainString(Vec<u8>),
     LuaNumber(f64),
     LuaBoolean(bool),
     LuaArray(Vec<(AnyLuaValue, AnyLuaValue)>),
@@ -33,6 +34,7 @@ impl<'lua, L> Push<L> for AnyLuaValue
         let raw_lua = lua.as_lua();
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaPlainString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaArray(val) => {
@@ -86,6 +88,11 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
 
         let lua = match LuaRead::lua_read_at_position(&lua, index) {
             Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
+            Err(lua) => lua,
+        };
+
+        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaPlainString(v)),
             Err(lua) => lua,
         };
 
@@ -193,5 +200,18 @@ mod tests {
         assert!(x.is_none(),
                 "x is a Some value when it should be a None value. X: {:?}",
                 x);
+    }
+
+
+    #[test]
+    fn non_utf_8_string() {
+        let mut lua = Lua::new();
+        let a = lua.execute::<AnyLuaValue>(r"return '\xff\xfe\xff\xfe'").unwrap();
+        match a {
+            AnyLuaValue::LuaPlainString(v) => {
+                assert_eq!(Vec::from(&b"\xff\xfe\xff\xfe"[..]), v);
+            },
+            _ => panic!("Decoded to wrong variant"),
+        }
     }
 }
