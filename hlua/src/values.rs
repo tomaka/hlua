@@ -6,6 +6,7 @@ use ffi;
 use libc;
 
 use AnyLuaValue;
+use AnyLuaString;
 use AsLua;
 use AsMutLua;
 use LuaRead;
@@ -153,9 +154,51 @@ impl<'lua, L> LuaRead<L> for String
         }
 
         let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let c_str = String::from_utf8(c_str.to_bytes().to_vec()).unwrap();
+        let maybe_string = String::from_utf8(c_str.to_bytes().to_vec());
+        match maybe_string {
+            Ok(string) => Ok(string),
+            Err(_) => Err(lua),
+        }
+    }
+}
 
-        Ok(c_str)
+impl<'lua, L> Push<L> for AnyLuaString
+    where L: AsMutLua<'lua>
+{
+    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+
+    #[inline]
+    fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
+        let AnyLuaString(v) = self;
+        unsafe {
+            ffi::lua_pushlstring(lua.as_mut_lua().0,
+                                 v[..].as_ptr() as *const _,
+                                 v[..].len() as libc::size_t);
+
+            let raw_lua = lua.as_lua();
+            Ok(PushGuard {
+                lua: lua,
+                size: 1,
+                raw_lua: raw_lua,
+            })
+        }
+    }
+}
+
+impl<'lua, L> LuaRead<L> for AnyLuaString
+    where L: AsLua<'lua>
+{
+    #[inline]
+    fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaString, L> {
+        let mut size: libc::size_t = unsafe { mem::uninitialized() };
+        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
+        if c_str_raw.is_null() {
+            return Err(lua);
+        }
+
+        let c_str = unsafe { CStr::from_ptr(c_str_raw) };
+        let c_string = c_str.to_bytes().to_vec();
+        Ok(AnyLuaString(c_string))
     }
 }
 

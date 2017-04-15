@@ -9,10 +9,14 @@ use PushOne;
 use LuaRead;
 use Void;
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct AnyLuaString(pub Vec<u8>);
+
 /// Represents any value that can be stored by Lua
 #[derive(Clone, Debug, PartialEq)]
 pub enum AnyLuaValue {
     LuaString(String),
+    LuaAnyString(AnyLuaString),
     LuaNumber(f64),
     LuaBoolean(bool),
     LuaArray(Vec<(AnyLuaValue, AnyLuaValue)>),
@@ -33,6 +37,7 @@ impl<'lua, L> Push<L> for AnyLuaValue
         let raw_lua = lua.as_lua();
         match self {
             AnyLuaValue::LuaString(val) => val.push_to_lua(lua),
+            AnyLuaValue::LuaAnyString(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaNumber(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaBoolean(val) => val.push_to_lua(lua),
             AnyLuaValue::LuaArray(val) => {
@@ -89,6 +94,11 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
             Err(lua) => lua,
         };
 
+        let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
+            Err(lua) => lua,
+        };
+
         if unsafe { ffi::lua_isnil(lua.as_lua().0, index) } {
             return Ok(AnyLuaValue::LuaNil);
         }
@@ -106,6 +116,7 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
 mod tests {
     use Lua;
     use AnyLuaValue;
+    use AnyLuaString;
 
     #[test]
     fn read_numbers() {
@@ -193,5 +204,18 @@ mod tests {
         assert!(x.is_none(),
                 "x is a Some value when it should be a None value. X: {:?}",
                 x);
+    }
+
+
+    #[test]
+    fn non_utf_8_string() {
+        let mut lua = Lua::new();
+        let a = lua.execute::<AnyLuaValue>(r"return '\xff\xfe\xff\xfe'").unwrap();
+        match a {
+            AnyLuaValue::LuaAnyString(AnyLuaString(v)) => {
+                assert_eq!(Vec::from(&b"\xff\xfe\xff\xfe"[..]), v);
+            },
+            _ => panic!("Decoded to wrong variant"),
+        }
     }
 }
