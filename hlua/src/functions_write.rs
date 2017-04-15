@@ -539,21 +539,27 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Destructor for Foo is run")]
     fn closures_drop_env() {
+        static mut DID_DESTRUCTOR_RUN: bool = false;
+
         #[derive(Debug)]
         struct Foo { };
         impl Drop for Foo {
             fn drop(&mut self) {
-                panic!("Destructor for Foo is run");
+                unsafe {
+                    DID_DESTRUCTOR_RUN = true;
+                }
             }
         }
-        let foo = Foo { };
-
         {
-            let mut lua = Lua::new();
+            let foo = Foo { };
 
-            lua.set("print_foo", function0(move || println!("{:?}", foo)));
+            {
+                let mut lua = Lua::new();
+
+                lua.set("print_foo", function0(move || println!("{:?}", foo)));
+            }
         }
+        assert_eq!(unsafe { DID_DESTRUCTOR_RUN }, true);
     }
 }
