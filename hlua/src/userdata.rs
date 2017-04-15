@@ -18,7 +18,7 @@ use LuaTable;
 
 // Called when an object inside Lua is being dropped.
 #[inline]
-pub extern "C" fn destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
+extern "C" fn destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
     unsafe {
         let obj = ffi::lua_touserdata(lua, -1);
         ptr::drop_in_place(obj as *mut TypeId);

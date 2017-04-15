@@ -170,6 +170,16 @@ pub trait FunctionExt<P> {
     fn call_mut(&mut self, params: P) -> Self::Output;
 }
 
+// Called when an object inside Lua is being dropped.
+#[inline]
+extern "C" fn closure_destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
+    unsafe {
+        let obj = ffi::lua_touserdata(lua, -1);
+        ptr::drop_in_place((obj as *mut u8) as *mut T);
+        0
+    }
+}
+
 macro_rules! impl_function_ext {
     () => (
         impl<Z, R> FunctionExt<()> for Function<Z, (), R> where Z: FnMut() -> R {
@@ -214,7 +224,7 @@ macro_rules! impl_function_ext {
                             Err(_) => unreachable!(),
                         };
 
-                        ffi::lua_pushcfunction(lua.as_mut_lua().0, ::userdata::destructor_wrapper::<Z>);
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, closure_destructor_wrapper::<Z>);
                         ffi::lua_settable(lua.as_mut_lua().0, -3);
                     }
                     ffi::lua_setmetatable(lua_raw.0, -2);
@@ -281,7 +291,7 @@ macro_rules! impl_function_ext {
                             Err(_) => unreachable!(),
                         };
 
-                        ffi::lua_pushcfunction(lua.as_mut_lua().0, ::userdata::destructor_wrapper::<Z>);
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, closure_destructor_wrapper::<Z>);
                         ffi::lua_settable(lua.as_mut_lua().0, -3);
                     }
                     ffi::lua_setmetatable(lua_raw.0, -2);
@@ -552,7 +562,7 @@ mod tests {
             }
         }
         {
-            let foo = Foo { };
+            let foo = ::std::rc::Rc::new(Foo { });
 
             {
                 let mut lua = Lua::new();
