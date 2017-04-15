@@ -386,6 +386,9 @@ mod tests {
     use LuaFunction;
     use LuaTable;
 
+    use std::io::Read;
+    use std::error::Error;
+
     #[test]
     fn basic() {
         let mut lua = Lua::new();
@@ -457,5 +460,24 @@ mod tests {
         assert_eq!(val, 5);
     }
 
-    // TODO: test for reading error
+    #[test]
+    fn execute_from_reader_errors_if_cant_read() {
+        struct Reader { };
+
+        impl Read for Reader {
+            fn read(&mut self, _: &mut [u8]) -> ::std::io::Result<usize> {
+                use std::io::{Error, ErrorKind};
+                Err(Error::new(ErrorKind::Other, "oh no!"))
+            }
+        }
+
+        let mut lua = Lua::new();
+        let reader = Reader { };
+        let res: Result<(), _> = lua.execute_from_reader(reader);
+        match res {
+            Ok(_) => panic!("Reading succeded"),
+            Err(LuaError::ReadError(e)) => { assert_eq!("oh no!", e.description()) },
+            Err(_) => panic!("Unexpected error happened"),
+        }
+    }
 }
