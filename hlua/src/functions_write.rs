@@ -562,7 +562,7 @@ mod tests {
             }
         }
         {
-            let foo = ::std::rc::Rc::new(Foo { });
+            let foo = ::std::sync::Arc::new(Foo { });
 
             {
                 let mut lua = Lua::new();
