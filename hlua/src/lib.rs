@@ -779,3 +779,27 @@ impl<L> Drop for PushGuard<L> {
         }
     }
 }
+
+#[test]
+fn execute_from_reader_errors_if_cant_read() {
+    use std::io::Read;
+    use std::error::Error;
+
+    struct Reader { };
+
+    impl Read for Reader {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            use std::io::{Error, ErrorKind};
+            Err(Error::new(ErrorKind::Other, "oh no!"))
+        }
+    }
+
+    let mut lua = Lua::new();
+    let reader = Reader { };
+    let res: Result<(), _> = lua.execute_from_reader(reader);
+    match res {
+        Ok(_) => panic!("Reading succeded"),
+        Err(LuaError::ReadError(e)) => { assert_eq!("oh no!", e.description()) },
+        Err(_) => panic!("Unexpected error happened"),
+    }
+}
