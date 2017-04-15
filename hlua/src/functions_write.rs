@@ -428,6 +428,8 @@ mod tests {
     use function1;
     use function2;
 
+    use std::sync::Arc;
+
     #[test]
     fn simple_function() {
         let mut lua = Lua::new();
@@ -562,7 +564,7 @@ mod tests {
             }
         }
         {
-            let foo = ::std::sync::Arc::new(Foo { });
+            let foo = Arc::new(Foo { });
 
             {
                 let mut lua = Lua::new();
