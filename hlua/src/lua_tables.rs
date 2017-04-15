@@ -1,4 +1,7 @@
 use std::marker::PhantomData;
+use std::mem;
+
+use libc;
 
 use ffi;
 use LuaContext;
@@ -453,7 +456,33 @@ impl<'t, 'lua, L, K, V> Iterator for LuaTableIterator<'t, L, K, V>
 
             // Reading the key and value.
             let mut me = self;
-            let key = LuaRead::lua_read_at_position(&mut me, -2).ok();
+
+            let is_number = match
+                ffi::lua_isnumber(me.table.as_lua().0, -2) {
+                    1 => true,
+                    _ => false,
+                };
+
+            let key;
+            if is_number {
+                // Copy the number to top of stack to convert it to string
+                // We can't convert it in-place because
+                // if the value is a number, then lua_tolstring also changes
+                // the actual value in the stack to a string.
+                // (This change confuses lua_next when lua_tolstring is applied
+                // to keys during a table traversal.)
+                // https://www.lua.org/manual/5.2/manual.html#lua_tolstring
+                ffi::lua_pushvalue(me.table.as_lua().0, -2);
+
+                let mut size: libc::size_t = mem::uninitialized();
+                ffi::lua_tolstring(me.table.as_lua().0, -1, &mut size);
+
+                key = LuaRead::lua_read_at_position(&mut me, -1).ok();
+
+                ffi::lua_pop(me.table.as_mut_lua().0, 1);
+            } else {
+                key = LuaRead::lua_read_at_position(&mut me, -2).ok();
+            }
             let value = LuaRead::lua_read_at_position(&mut me, -1).ok();
 
             // Removing the value, leaving only the key on the top of the stack.
@@ -484,6 +513,7 @@ mod tests {
     use Lua;
     use LuaTable;
     use PushGuard;
+    use AnyLuaValue;
     use function0;
 
     #[test]
@@ -637,5 +667,24 @@ mod tests {
         let registry = LuaTable::registry(&mut lua);
         let mut metatable = registry.get_or_create_metatable();
         metatable.set(3, "hello");
+    }
+
+    #[test]
+    fn iter_works_on_numeric_keys() {
+        let mut lua = Lua::new();
+        let table_str = r#"
+        data = {
+            foo = "bar",
+            baz = "qux",
+        }
+        data[0] = 100
+        "#;
+        lua.execute::<()>(&table_str).unwrap();
+        let mut table: LuaTable<_> = lua.get("data").unwrap();
+        for (key, value) in table.iter().filter_map(|e| e) {
+            let key: String = key;
+            let value: AnyLuaValue = value;
+            println!("{}: {:?}", key, value);
+        }
     }
 }
