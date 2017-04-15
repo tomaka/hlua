@@ -170,6 +170,16 @@ pub trait FunctionExt<P> {
     fn call_mut(&mut self, params: P) -> Self::Output;
 }
 
+// Called when an object inside Lua is being dropped.
+#[inline]
+extern "C" fn closure_destructor_wrapper<T>(lua: *mut ffi::lua_State) -> libc::c_int {
+    unsafe {
+        let obj = ffi::lua_touserdata(lua, -1);
+        ptr::drop_in_place((obj as *mut u8) as *mut T);
+        0
+    }
+}
+
 macro_rules! impl_function_ext {
     () => (
         impl<Z, R> FunctionExt<()> for Function<Z, (), R> where Z: FnMut() -> R {
@@ -197,6 +207,27 @@ macro_rules! impl_function_ext {
                                                         mem::size_of::<Z>() as libc::size_t);
                     let lua_data: *mut Z = mem::transmute(lua_data);
                     ptr::write(lua_data, self.function);
+
+                    let lua_raw = lua.as_mut_lua();
+
+                    // Creating a metatable.
+                    ffi::lua_newtable(lua.as_mut_lua().0);
+
+                    // Index "__gc" in the metatable calls the object's destructor.
+
+                    // TODO: Could use std::intrinsics::needs_drop to avoid that if not needed.
+                    // After some discussion on IRC, it would be acceptable to add a reexport in libcore
+                    // without going through the RFC process.
+                    {
+                        match "__gc".push_to_lua(&mut lua) {
+                            Ok(p) => p.forget(),
+                            Err(_) => unreachable!(),
+                        };
+
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, closure_destructor_wrapper::<Z>);
+                        ffi::lua_settable(lua.as_mut_lua().0, -3);
+                    }
+                    ffi::lua_setmetatable(lua_raw.0, -2);
 
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
@@ -243,6 +274,27 @@ macro_rules! impl_function_ext {
                                                         mem::size_of::<Z>() as libc::size_t);
                     let lua_data: *mut Z = mem::transmute(lua_data);
                     ptr::write(lua_data, self.function);
+
+                    let lua_raw = lua.as_mut_lua();
+
+                    // Creating a metatable.
+                    ffi::lua_newtable(lua.as_mut_lua().0);
+
+                    // Index "__gc" in the metatable calls the object's destructor.
+
+                    // TODO: Could use std::intrinsics::needs_drop to avoid that if not needed.
+                    // After some discussion on IRC, it would be acceptable to add a reexport in libcore
+                    // without going through the RFC process.
+                    {
+                        match "__gc".push_to_lua(&mut lua) {
+                            Ok(p) => p.forget(),
+                            Err(_) => unreachable!(),
+                        };
+
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, closure_destructor_wrapper::<Z>);
+                        ffi::lua_settable(lua.as_mut_lua().0, -3);
+                    }
+                    ffi::lua_setmetatable(lua_raw.0, -2);
 
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
@@ -376,6 +428,8 @@ mod tests {
     use function1;
     use function2;
 
+    use std::sync::Arc;
+
     #[test]
     fn simple_function() {
         let mut lua = Lua::new();
@@ -496,4 +550,28 @@ mod tests {
         assert_eq!(a, 20)
     }
 
+    #[test]
+    fn closures_drop_env() {
+        static mut DID_DESTRUCTOR_RUN: bool = false;
+
+        #[derive(Debug)]
+        struct Foo { };
+        impl Drop for Foo {
+            fn drop(&mut self) {
+                unsafe {
+                    DID_DESTRUCTOR_RUN = true;
+                }
+            }
+        }
+        {
+            let foo = Arc::new(Foo { });
+
+            {
+                let mut lua = Lua::new();
+
+                lua.set("print_foo", function0(move || println!("{:?}", foo)));
+            }
+        }
+        assert_eq!(unsafe { DID_DESTRUCTOR_RUN }, true);
+    }
 }
