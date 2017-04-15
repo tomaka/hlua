@@ -114,7 +114,7 @@ use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-pub use any::AnyLuaValue;
+pub use any::{AnyLuaValue, AnyLuaString};
 pub use functions_write::{Function, InsideCallback};
 pub use functions_write::{function0, function1, function2, function3, function4, function5};
 pub use functions_write::{function6, function7, function8, function9, function10};
