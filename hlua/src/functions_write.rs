@@ -538,11 +538,6 @@ mod tests {
         assert_eq!(a, 20)
     }
 
-    // FIXME: This test is wrong.
-    // It passes before PR, and
-    // https://github.com/mkpankov/hlua-test/blob/master/src/main.rs
-    // which it is based on does not.
-    // I'm out of ideas who calls Drop for Foo here, in test env.
     #[test]
     #[should_panic(expected = "Destructor for Foo is run")]
     fn closures_drop_env() {
@@ -558,7 +553,7 @@ mod tests {
         {
             let mut lua = Lua::new();
 
-            lua.set("print_foo", function0(|| println!("{:?}", foo)));
+            lua.set("print_foo", function0(move || println!("{:?}", foo)));
         }
     }
 }
