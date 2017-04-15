@@ -198,6 +198,27 @@ macro_rules! impl_function_ext {
                     let lua_data: *mut Z = mem::transmute(lua_data);
                     ptr::write(lua_data, self.function);
 
+                    let lua_raw = lua.as_mut_lua();
+
+                    // Creating a metatable.
+                    ffi::lua_newtable(lua.as_mut_lua().0);
+
+                    // Index "__gc" in the metatable calls the object's destructor.
+
+                    // TODO: Could use std::intrinsics::needs_drop to avoid that if not needed.
+                    // After some discussion on IRC, it would be acceptable to add a reexport in libcore
+                    // without going through the RFC process.
+                    {
+                        match "__gc".push_to_lua(&mut lua) {
+                            Ok(p) => p.forget(),
+                            Err(_) => unreachable!(),
+                        };
+
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, ::userdata::destructor_wrapper::<Z>);
+                        ffi::lua_settable(lua.as_mut_lua().0, -3);
+                    }
+                    ffi::lua_setmetatable(lua_raw.0, -2);
+
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
                     ffi::lua_pushcclosure(lua.as_mut_lua().0, wrapper, 1);
@@ -243,6 +264,27 @@ macro_rules! impl_function_ext {
                                                         mem::size_of::<Z>() as libc::size_t);
                     let lua_data: *mut Z = mem::transmute(lua_data);
                     ptr::write(lua_data, self.function);
+
+                    let lua_raw = lua.as_mut_lua();
+
+                    // Creating a metatable.
+                    ffi::lua_newtable(lua.as_mut_lua().0);
+
+                    // Index "__gc" in the metatable calls the object's destructor.
+
+                    // TODO: Could use std::intrinsics::needs_drop to avoid that if not needed.
+                    // After some discussion on IRC, it would be acceptable to add a reexport in libcore
+                    // without going through the RFC process.
+                    {
+                        match "__gc".push_to_lua(&mut lua) {
+                            Ok(p) => p.forget(),
+                            Err(_) => unreachable!(),
+                        };
+
+                        ffi::lua_pushcfunction(lua.as_mut_lua().0, ::userdata::destructor_wrapper::<Z>);
+                        ffi::lua_settable(lua.as_mut_lua().0, -3);
+                    }
+                    ffi::lua_setmetatable(lua_raw.0, -2);
 
                     // pushing wrapper as a closure
                     let wrapper: extern fn(*mut ffi::lua_State) -> libc::c_int = wrapper::<Self, _, R>;
@@ -496,4 +538,27 @@ mod tests {
         assert_eq!(a, 20)
     }
 
+    // FIXME: This test is wrong.
+    // It passes before PR, and
+    // https://github.com/mkpankov/hlua-test/blob/master/src/main.rs
+    // which it is based on does not.
+    // I'm out of ideas who calls Drop for Foo here, in test env.
+    #[test]
+    #[should_panic(expected = "Destructor for Foo is run")]
+    fn closures_drop_env() {
+        #[derive(Debug)]
+        struct Foo { };
+        impl Drop for Foo {
+            fn drop(&mut self) {
+                panic!("Destructor for Foo is run");
+            }
+        }
+        let foo = Foo { };
+
+        {
+            let mut lua = Lua::new();
+
+            lua.set("print_foo", function0(|| println!("{:?}", foo)));
+        }
+    }
 }
