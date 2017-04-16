@@ -452,6 +452,86 @@ impl<'lua> Lua<'lua> {
         unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
 
+    /// Opens base library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_base
+    #[inline]
+    pub fn open_base(&mut self) {
+        unsafe { ffi::luaopen_base(self.lua.0) }
+    }
+
+    /// Opens bit32 library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_bit32
+    #[inline]
+    pub fn open_bit32(&mut self) {
+        unsafe { ffi::luaopen_bit32(self.lua.0) }
+    }
+
+    /// Opens coroutine library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_coroutine
+    #[inline]
+    pub fn open_coroutine(&mut self) {
+        unsafe { ffi::luaopen_coroutine(self.lua.0) }
+    }
+
+    /// Opens debug library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_debug
+    #[inline]
+    pub fn open_debug(&mut self) {
+        unsafe { ffi::luaopen_debug(self.lua.0) }
+    }
+
+    /// Opens io library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_io
+    #[inline]
+    pub fn open_io(&mut self) {
+        unsafe { ffi::luaopen_io(self.lua.0) }
+    }
+
+    /// Opens math library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_math
+    #[inline]
+    pub fn open_math(&mut self) {
+        unsafe { ffi::luaopen_math(self.lua.0) }
+    }
+
+    /// Opens os library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_os
+    #[inline]
+    pub fn open_os(&mut self) {
+        unsafe { ffi::luaopen_os(self.lua.0) }
+    }
+
+    /// Opens package library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_package
+    #[inline]
+    pub fn open_package(&mut self) {
+        unsafe { ffi::luaopen_package(self.lua.0) }
+    }
+
+    /// Opens string library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_string
+    #[inline]
+    pub fn open_string(&mut self) {
+        unsafe { ffi::luaopen_string(self.lua.0) }
+    }
+
+    /// Opens table library.
+    ///
+    /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_table
+    #[inline]
+    pub fn open_table(&mut self) {
+        unsafe { ffi::luaopen_table(self.lua.0) }
+    }
+
     /// Executes some Lua code in the context.
     ///
     /// The code will have access to all the global variables you set with methods such as `set`.
@@ -777,5 +857,39 @@ impl<L> Drop for PushGuard<L> {
                 ffi::lua_pop(self.raw_lua.0, self.size);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use Lua;
+    use LuaError;
+
+    #[test]
+    fn open_base_opens_base_library() {
+        let mut lua = Lua::new();
+        match lua.execute::<()>("return assert(true)") {
+            Err(LuaError::ExecutionError(_)) => { },
+            Err(_) => panic!("Wrong error"),
+            Ok(_) => panic!("Unexpected success"),
+        }
+        lua.open_base();
+        let result: bool = lua.execute("return assert(true)").unwrap();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn opening_all_libraries_doesnt_panic() {
+        let mut lua = Lua::new();
+        lua.open_base();
+        lua.open_bit32();
+        lua.open_coroutine();
+        lua.open_debug();
+        lua.open_io();
+        lua.open_math();
+        lua.open_os();
+        lua.open_package();
+        lua.open_string();
+        lua.open_table();
     }
 }
