@@ -113,6 +113,10 @@ use std::io::Read;
 use std::io::Error as IoError;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
+use std::error::Error;
+use std::fmt;
+use std::convert::From;
+use std::io;
 
 pub use any::{AnyLuaValue, AnyLuaString};
 pub use functions_write::{Function, InsideCallback};
@@ -358,6 +362,49 @@ pub enum LuaError {
 
     /// The call to `execute` has requested the wrong type of data.
     WrongType,
+}
+
+impl fmt::Display for LuaError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use LuaError::*;
+
+        match *self {
+            SyntaxError(ref s) => write!(f, "Syntax error: {}", s),
+            ExecutionError(ref s) => write!(f, "Execution error: {}", s),
+            ReadError(ref e) => write!(f, "Read error: {}", e),
+            WrongType => write!(f, "Wrong type returned by Lua"),
+        }
+    }
+}
+
+impl Error for LuaError {
+    fn description(&self) -> &str {
+        use LuaError::*;
+
+        match *self {
+            SyntaxError(ref s) => &s,
+            ExecutionError(ref s) => &s,
+            ReadError(_) => "read error",
+            WrongType => "wrong type returned by Lua",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        use LuaError::*;
+
+        match *self {
+            SyntaxError(_) => None,
+            ExecutionError(_) => None,
+            ReadError(ref e) => Some(e),
+            WrongType => None,
+        }
+    }
+}
+
+impl From<io::Error> for LuaError {
+    fn from(e: io::Error) -> Self {
+        LuaError::ReadError(e)
+    }
 }
 
 impl<'lua> Lua<'lua> {
