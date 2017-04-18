@@ -125,7 +125,11 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                 let maybe_key: Option<i32> =
                     LuaRead::lua_read_at_position(&mut me, -2).ok();
                 match maybe_key {
-                    None => return Err(me),
+                    None => {
+                        // Cleaning up after ourselves
+                        unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
+                        return Err(me)
+                    }
                     Some(k) => key = k,
                 }
             }
