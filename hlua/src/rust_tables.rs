@@ -383,4 +383,17 @@ mod tests {
         let read: Vec<_> = lua.get("v").unwrap();
         assert_eq!(read, orig);
     }
+
+    #[test]
+    fn reading_vec_set_from_lua_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { 1, 2, 3 }"#).unwrap();
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        assert_eq!(
+            read,
+            [1., 2., 3.].iter()
+                .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<_>>());
+    }
 }
