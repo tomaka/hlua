@@ -1,12 +1,14 @@
 use ffi;
+use any::AnyLuaValue;
 
 use Push;
 use PushGuard;
 use PushOne;
 use AsMutLua;
 use TuplePushError;
+use LuaRead;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 use std::iter;
 
@@ -99,6 +101,80 @@ impl<'lua, L, T, E> PushOne<L> for Vec<T>
 {
 }
 
+impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
+    where L: AsMutLua<'lua>
+{
+    fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L> {
+        // We need this as iteration order isn't guaranteed to match order of
+        // keys, even if they're numeric
+        // https://www.lua.org/manual/5.2/manual.html#pdf-next
+        let mut dict: BTreeMap<i32, AnyLuaValue> = BTreeMap::new();
+
+        let mut me = lua;
+        unsafe { ffi::lua_pushnil(me.as_mut_lua().0) };
+        let index = index - 1;
+
+        loop {
+            if unsafe { ffi::lua_next(me.as_mut_lua().0, index) } == 0 {
+                break;
+            }
+
+            let key;
+
+            {
+                let maybe_key: Option<i32> =
+                    LuaRead::lua_read_at_position(&mut me, -2).ok();
+                match maybe_key {
+                    None => {
+                        // Cleaning up after ourselves
+                        unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
+                        return Err(me)
+                    }
+                    Some(k) => key = k,
+                }
+            }
+
+            let value: AnyLuaValue =
+                LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
+
+            unsafe { ffi::lua_pop(me.as_mut_lua().0, 1) };
+
+            dict.insert(key, value);
+        }
+
+        let (maximum_key, minimum_key) =
+            (*dict.keys().max().unwrap_or(&1), *dict.keys().min().unwrap_or(&1));
+
+        if minimum_key != 1 {
+            // Rust doesn't support sparse arrays or arrays with negative
+            // indices
+            return Err(me);
+        }
+
+        let mut result =
+            Vec::with_capacity(maximum_key as usize);
+
+        // We expect to start with first element of table and have this
+        // be smaller that first key by one
+        let mut previous_key = 0;
+
+        // By this point, we actually iterate the map to move values to Vec
+        // and check that table represented non-sparse 1-indexed array
+        for (k, v) in dict {
+            if previous_key + 1 != k {
+                return Err(me)
+            } else {
+                // We just push, thus converting Lua 1-based indexing
+                // to Rust 0-based indexing
+                result.push(v);
+                previous_key = k;
+            }
+        }
+
+        Ok(result)
+    }
+}
+
 impl<'a, 'lua, L, T, E> Push<L> for &'a [T]
     where L: AsMutLua<'lua>,
           T: Clone + for<'b> Push<&'b mut L, Err = E>
@@ -170,6 +246,7 @@ mod tests {
     use std::collections::HashSet;
     use Lua;
     use LuaTable;
+    use AnyLuaValue;
 
     #[test]
     fn write() {
@@ -235,5 +312,88 @@ mod tests {
 
         let val: i32 = lua.get("a").unwrap();
         assert_eq!(val, 12);
+    }
+
+    #[test]
+    fn reading_vec_works() {
+        let mut lua = Lua::new();
+
+        let orig = [1., 2., 3.];
+
+        lua.set("v", &orig[..]);
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        for (o, r) in orig.iter().zip(read.iter()) {
+            if let AnyLuaValue::LuaNumber(ref n) = *r {
+                assert_eq!(o, n);
+            } else {
+                panic!("Unexpected variant");
+            }
+        }
+    }
+
+    #[test]
+    fn reading_vec_from_sparse_table_doesnt_work() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [-1] = -1, [2] = 2, [42] = 42 }"#).unwrap();
+
+        let read: Option<Vec<_>> = lua.get("v");
+        if read.is_some() {
+            panic!("Unexpected success");
+        }
+    }
+
+    #[test]
+    fn reading_vec_with_empty_table_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { }"#).unwrap();
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        assert_eq!(read.len(), 0);
+    }
+
+    #[test]
+    fn reading_vec_with_complex_indexes_doesnt_work() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [-1] = -1, ["foo"] = 2, [{}] = 42 }"#).unwrap();
+
+        let read: Option<Vec<_>> = lua.get("v");
+        if read.is_some() {
+            panic!("Unexpected success");
+        }
+    }
+
+    #[test]
+    fn reading_heterogenous_vec_works() {
+        let mut lua = Lua::new();
+
+        let orig = [
+            AnyLuaValue::LuaNumber(1.),
+            AnyLuaValue::LuaBoolean(false),
+            AnyLuaValue::LuaNumber(3.),
+            // Pushing String to and reading it from makes it a number
+            //AnyLuaValue::LuaString(String::from("3"))
+        ];
+
+        lua.set("v", &orig[..]);
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        assert_eq!(read, orig);
+    }
+
+    #[test]
+    fn reading_vec_set_from_lua_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { 1, 2, 3 }"#).unwrap();
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        assert_eq!(
+            read,
+            [1., 2., 3.].iter()
+                .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<_>>());
     }
 }

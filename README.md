@@ -144,7 +144,7 @@ It is not possible to store the function for the moment, but it may be in the fu
 
 #### Reading and writing Rust containers
 
-*(note: not yet possible to read containers)*
+*(note: not yet possible to read all containers, see below)*
 
 It is possible to read and write whole Rust containers at once:
 
@@ -169,6 +169,24 @@ lua.set("mylib", [
 
 lua.execute::<()>("mylib.foo()");
 ```
+
+It is possible to read a `Vec<AnyLuaValue>`:
+
+```rust
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { 1, 2, 3 }"#).unwrap();
+
+        let read: Vec<_> = lua.get("v").unwrap();
+        assert_eq!(
+            read,
+            [1., 2., 3.].iter()
+                .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<_>>());
+```
+
+In case table represents sparse array, has non-numeric keys, or
+indices not starting at 1, `.get()` will return `None`, as Rust's
+`Vec` doesn't support these features.
 
 #### User data
 
