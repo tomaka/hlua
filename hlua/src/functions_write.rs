@@ -485,6 +485,26 @@ mod tests {
     }
 
     #[test]
+    fn return_multiple() {
+        let mut lua = Lua::new();
+
+        match lua.execute::<(i32, i32)>("return 3, 5") {
+            Ok((3, 5)) => {},
+            x => panic!("{:?}", x),
+        }
+    }
+
+    #[test]
+    fn return_none() {
+        let mut lua = Lua::new();
+
+        match lua.execute::<(i32, i32)>("return") {
+            Err(LuaError::WrongType) => {},
+            x => panic!("{:?}", x),
+        }
+    }
+
+    #[test]
     fn return_result() {
         let mut lua = Lua::new();
         lua.openlibs();
