@@ -119,9 +119,7 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                 break;
             }
 
-            let key;
-
-            {
+            let key = {
                 let maybe_key: Option<i32> =
                     LuaRead::lua_read_at_position(&mut me, -2).ok();
                 match maybe_key {
@@ -130,9 +128,9 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                         unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
                         return Err(me)
                     }
-                    Some(k) => key = k,
+                    Some(k) => k,
                 }
-            }
+            };
 
             let value: AnyLuaValue =
                 LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
