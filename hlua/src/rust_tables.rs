@@ -1,5 +1,5 @@
 use ffi;
-use any::AnyLuaValue;
+use any::{AnyLuaValue, AnyHashableLuaValue};
 
 use Push;
 use PushGuard;
@@ -119,9 +119,7 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                 break;
             }
 
-            let key;
-
-            {
+            let key = {
                 let maybe_key: Option<i32> =
                     LuaRead::lua_read_at_position(&mut me, -2).ok();
                 match maybe_key {
@@ -130,9 +128,9 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                         unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
                         return Err(me)
                     }
-                    Some(k) => key = k,
+                    Some(k) => k,
                 }
-            }
+            };
 
             let value: AnyLuaValue =
                 LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
@@ -193,6 +191,46 @@ impl<'a, 'lua, L, T, E> PushOne<L> for &'a [T]
 {
 }
 
+impl<'lua, L> LuaRead<L> for HashMap<AnyHashableLuaValue, AnyLuaValue>
+    where L: AsMutLua<'lua>
+{
+    // TODO: this should be implemented using the LuaTable API instead of raw Lua calls.
+    fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L> {
+        let mut me = lua;
+        unsafe { ffi::lua_pushnil(me.as_mut_lua().0) };
+        let index = index - 1;
+        let mut result = HashMap::new();
+
+        loop {
+            if unsafe { ffi::lua_next(me.as_mut_lua().0, index) } == 0 {
+                break;
+            }
+
+            let key = {
+                let maybe_key: Option<AnyHashableLuaValue> =
+                    LuaRead::lua_read_at_position(&mut me, -2).ok();
+                match maybe_key {
+                    None => {
+                        // Cleaning up after ourselves
+                        unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
+                        return Err(me)
+                    }
+                    Some(k) => k,
+                }
+            };
+
+            let value: AnyLuaValue =
+                LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
+
+            unsafe { ffi::lua_pop(me.as_mut_lua().0, 1) };
+
+            result.insert(key, value);
+        }
+
+        Ok(result)
+    }
+}
+
 // TODO: use an enum for the error to allow different error types for K and V
 impl<'lua, L, K, V, E> Push<L> for HashMap<K, V>
     where L: AsMutLua<'lua>,
@@ -242,11 +280,11 @@ impl<'lua, L, K, E> PushOne<L> for HashSet<K>
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet, BTreeMap};
     use Lua;
     use LuaTable;
     use AnyLuaValue;
+    use AnyHashableLuaValue;
 
     #[test]
     fn write() {
@@ -395,5 +433,109 @@ mod tests {
             read,
             [1., 2., 3.].iter()
                 .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn reading_hashmap_works() {
+        let mut lua = Lua::new();
+
+        let orig: HashMap<i32, f64> = [1., 2., 3.].into_iter().enumerate().map(|(k, v)| (k as i32, *v as f64)).collect();
+        let orig_copy = orig.clone();
+        // Collect to BTreeMap so that iterator yields values in order
+        let orig_btree: BTreeMap<_, _> = orig_copy.into_iter().collect();
+
+        lua.set("v", orig);
+
+        let read: HashMap<AnyHashableLuaValue, AnyLuaValue> = lua.get("v").unwrap();
+        // Same as above
+        let read_btree: BTreeMap<_, _> = read.into_iter().collect();
+        for (o, r) in orig_btree.iter().zip(read_btree.iter()) {
+            if let (&AnyHashableLuaValue::LuaNumber(i), &AnyLuaValue::LuaNumber(n)) = r {
+                let (&o_i, &o_n) = o;
+                assert_eq!(o_i, i);
+                assert_eq!(o_n, n);
+            } else {
+                panic!("Unexpected variant");
+            }
+        }
+    }
+
+    #[test]
+    fn reading_hashmap_from_sparse_table_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [-1] = -1, [2] = 2, [42] = 42 }"#).unwrap();
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(-1)], AnyLuaValue::LuaNumber(-1.));
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(2)], AnyLuaValue::LuaNumber(2.));
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(42)], AnyLuaValue::LuaNumber(42.));
+        assert_eq!(read.len(), 3);
+    }
+
+    #[test]
+    fn reading_hashmap_with_empty_table_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { }"#).unwrap();
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        assert_eq!(read.len(), 0);
+    }
+
+    #[test]
+    fn reading_hashmap_with_complex_indexes_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [-1] = -1, ["foo"] = 2, [2.] = 42 }"#).unwrap();
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(-1)], AnyLuaValue::LuaNumber(-1.));
+        assert_eq!(read[&AnyHashableLuaValue::LuaString("foo".to_owned())], AnyLuaValue::LuaNumber(2.));
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(2)], AnyLuaValue::LuaNumber(42.));
+        assert_eq!(read.len(), 3);
+    }
+
+    #[test]
+    fn reading_hashmap_with_floating_indexes_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [-1.25] = -1, [2.5] = 42 }"#).unwrap();
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        // It works by truncating integers in some unspecified way
+        // https://www.lua.org/manual/5.2/manual.html#lua_tointegerx
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(-1)], AnyLuaValue::LuaNumber(-1.));
+        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(2)], AnyLuaValue::LuaNumber(42.));
+        assert_eq!(read.len(), 2);
+    }
+
+    #[test]
+    fn reading_heterogenous_hashmap_works() {
+        let mut lua = Lua::new();
+
+        let mut orig = HashMap::new();
+        orig.insert(AnyHashableLuaValue::LuaNumber(42), AnyLuaValue::LuaNumber(42.));
+        orig.insert(AnyHashableLuaValue::LuaString("foo".to_owned()), AnyLuaValue::LuaString("foo".to_owned()));
+        orig.insert(AnyHashableLuaValue::LuaBoolean(true), AnyLuaValue::LuaBoolean(true));
+
+        let orig_clone = orig.clone();
+        lua.set("v", orig);
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        assert_eq!(read, orig_clone);
+    }
+
+    #[test]
+    fn reading_hashmap_set_from_lua_works() {
+        let mut lua = Lua::new();
+
+        lua.execute::<()>(r#"v = { [1] = 2, [2] = 3, [3] = 4 }"#).unwrap();
+
+        let read: HashMap<_, _> = lua.get("v").unwrap();
+        assert_eq!(
+            read,
+            [2., 3., 4.].iter().enumerate()
+                .map(|(k, v)| (AnyHashableLuaValue::LuaNumber((k + 1) as i32), AnyLuaValue::LuaNumber(*v))).collect::<HashMap<_, _>>());
     }
 }
