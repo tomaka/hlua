@@ -193,15 +193,15 @@ indices not starting at 1, `.get()` will return `None`, as Rust's
 It is possible to read a `HashMap<AnyHashableLuaValue, AnyLuaValue>`:
 
 ```rust
-        let mut lua = Lua::new();
+let mut lua = Lua::new();
 
-        lua.execute::<()>(r#"v = { [-1] = -1, ["foo"] = 2, [2.] = 42 }"#).unwrap();
+lua.execute::<()>(r#"v = { [-1] = -1, ["foo"] = 2, [2.] = 42 }"#).unwrap();
 
-        let read: HashMap<_, _> = lua.get("v").unwrap();
-        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(-1)], AnyLuaValue::LuaNumber(-1.));
-        assert_eq!(read[&AnyHashableLuaValue::LuaString("foo".to_owned())], AnyLuaValue::LuaNumber(2.));
-        assert_eq!(read[&AnyHashableLuaValue::LuaNumber(2)], AnyLuaValue::LuaNumber(42.));
-        assert_eq!(read.len(), 3);
+let read: HashMap<_, _> = lua.get("v").unwrap();
+assert_eq!(read[&AnyHashableLuaValue::LuaNumber(-1)], AnyLuaValue::LuaNumber(-1.));
+assert_eq!(read[&AnyHashableLuaValue::LuaString("foo".to_owned())], AnyLuaValue::LuaNumber(2.));
+assert_eq!(read[&AnyHashableLuaValue::LuaNumber(2)], AnyLuaValue::LuaNumber(42.));
+assert_eq!(read.len(), 3);
 ```
 
 #### User data

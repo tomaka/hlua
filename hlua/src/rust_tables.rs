@@ -194,6 +194,7 @@ impl<'a, 'lua, L, T, E> PushOne<L> for &'a [T]
 impl<'lua, L> LuaRead<L> for HashMap<AnyHashableLuaValue, AnyLuaValue>
     where L: AsMutLua<'lua>
 {
+    // TODO: this should be implemented using the LuaTable API instead of raw Lua calls.
     fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L> {
         let mut me = lua;
         unsafe { ffi::lua_pushnil(me.as_mut_lua().0) };
