@@ -107,6 +107,7 @@
 
 // Export the version of lua52_sys in use by this crate. This allows clients to perform low-level
 // Lua operations without worrying about semver.
+#[doc(hidden)]
 pub extern crate lua52_sys as ffi;
 extern crate libc;
 
@@ -257,6 +258,21 @@ pub unsafe trait AsMutLua<'lua>: AsLua<'lua> {
 // TODO: probably no longer necessary
 #[derive(Copy, Clone, Debug)]
 pub struct LuaContext(*mut ffi::lua_State);
+
+impl LuaContext {
+    /// Return a pointer to the inner `lua_State` for this context. This is an escape hatch that
+    /// lets the caller perform arbitrary operations against the FFI directly.
+    ///
+    /// Be careful: performing operations on this state might invalidate assumptions made in
+    /// higher-level APIs. For example, pushing a value onto the Lua stack will cause `PushGuard`s
+    /// in Rust code to be out of sync with the Lua stack.
+    #[doc(hidden)]
+    #[inline]
+    pub fn state_ptr(&self) -> *mut ffi::lua_State {
+        self.0
+    }
+}
+
 unsafe impl Send for LuaContext {}
 
 unsafe impl<'a, 'lua> AsLua<'lua> for Lua<'lua> {
