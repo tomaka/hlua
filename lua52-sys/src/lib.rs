@@ -53,6 +53,9 @@ pub const LUA_MINSTACK: c_int = 20;
 pub const LUA_RIDX_MAINTHREAD: c_int = 1;
 pub const LUA_RIDX_GLOBALS: c_int = 2;
 
+pub const LUA_REFNIL: c_int = -1;
+pub const LUA_NOREF: c_int = -2;
+
 pub type lua_Number = libc::c_double;
 pub type lua_Integer = libc::ptrdiff_t;
 pub type lua_Unsigned = libc::c_ulong;
@@ -224,6 +227,8 @@ extern "C" {
     pub fn lua_gethookcount(L: *mut lua_State) -> c_int;
 
     pub fn luaL_openlibs(L: *mut lua_State);
+    pub fn luaL_ref(L: *mut lua_State, idx: c_int) -> c_int;
+    pub fn luaL_unref(L: *mut lua_State, idx: c_int, ref_id: c_int);
 
     pub fn luaopen_base(L: *mut lua_State);
     pub fn luaopen_bit32(L: *mut lua_State);
