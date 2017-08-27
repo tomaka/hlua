@@ -45,7 +45,7 @@ macro_rules! tuple_impl {
                         let mut total = 0;
 
                         let first_err = match $first.push_to_lua(&mut lua) {
-                            Ok(pushed) => { total += pushed.forget(); None },
+                            Ok(pushed) => { total += pushed.forget_internal(); None },
                             Err((err, _)) => Some(err),
                         };
 
@@ -55,7 +55,7 @@ macro_rules! tuple_impl {
 
                         let rest = ($($other,)+);
                         let other_err = match rest.push_to_lua(&mut lua) {
-                            Ok(pushed) => { total += pushed.forget(); None },
+                            Ok(pushed) => { total += pushed.forget_internal(); None },
                             Err((err, _)) => Some(err),
                         };
 

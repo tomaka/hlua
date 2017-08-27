@@ -170,16 +170,45 @@ pub struct PushGuard<L> {
 impl<'lua, L> PushGuard<L>
     where L: AsMutLua<'lua>
 {
+    /// Creates a new `PushGuard` from this Lua context representing `size` items on the stack.
+    /// When this `PushGuard` is destroyed, `size` items will be popped.
+    ///
+    /// This is unsafe because the Lua stack can be corrupted if this is misused.
+    #[inline]
+    pub unsafe fn new(mut lua: L, size: i32) -> Self {
+        let raw_lua = lua.as_mut_lua();
+        PushGuard {
+            lua,
+            size,
+            raw_lua,
+        }
+    }
+
     #[inline]
     fn assert_one_and_forget(self) -> i32 {
         assert_eq!(self.size, 1);
-        self.forget()
+        self.forget_internal()
     }
 
-    /// Prevents the value from being poped when the `PushGuard` is destroyed, and returns the
-    /// number of elements on the stack.
+    /// Returns the number of elements managed by this `PushGuard`.
     #[inline]
-    fn forget(mut self) -> i32 {
+    pub fn size(&self) -> i32 {
+        self.size
+    }
+
+    /// Prevents the value from being popped when the `PushGuard` is destroyed, and returns the
+    /// number of elements on the Lua stack.
+    ///
+    /// This is unsafe because the Lua stack can be corrupted if this is misused.
+    #[inline]
+    pub unsafe fn forget(self) -> i32 {
+        self.forget_internal()
+    }
+
+    /// Internal crate-only version of `forget`. It is generally assumed that code within this
+    /// crate that calls this method knows what it is doing.
+    #[inline]
+    fn forget_internal(mut self) -> i32 {
         let size = self.size;
         self.size = 0;
         size

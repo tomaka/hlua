@@ -64,7 +64,7 @@ impl<'lua, L> Push<L> for AnyLuaValue
 
                 // We also need to destroy and recreate the push guard, otherwise the type parameter
                 // doesn't match.
-                let size = val.push_no_err(&mut lua as &mut AsMutLua<'lua>).forget();
+                let size = val.push_no_err(&mut lua as &mut AsMutLua<'lua>).forget_internal();
 
                 Ok(PushGuard {
                     lua: lua,
@@ -149,7 +149,7 @@ impl<'lua, L> Push<L> for AnyHashableLuaValue
 
                 // We also need to destroy and recreate the push guard, otherwise the type parameter
                 // doesn't match.
-                let size = val.push_no_err(&mut lua as &mut AsMutLua<'lua>).forget();
+                let size = val.push_no_err(&mut lua as &mut AsMutLua<'lua>).forget_internal();
 
                 Ok(PushGuard {
                     lua: lua,
