@@ -264,7 +264,7 @@ impl<'lua, L> LuaFunction<L>
             // lua_pcall pops the function, so we have to make a copy of it
             ffi::lua_pushvalue(self.variable.as_mut_lua().0, -1);
             let num_pushed = match args.push_to_lua(self) {
-                Ok(g) => g.forget(),
+                Ok(g) => g.forget_internal(),
                 Err((err, _)) => return Err(LuaFunctionCallError::PushError(err)),
             };
             let pcall_return_value = ffi::lua_pcall(self.variable.as_mut_lua().0, num_pushed, 1, 0);     // TODO: num ret values

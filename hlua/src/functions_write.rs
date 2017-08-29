@@ -69,7 +69,7 @@ impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 /// ```
 /// use hlua::Lua;
 /// let mut lua = Lua::new();
-/// 
+///
 /// lua.set("foo", hlua::function1(move |a: i32| -> i32 {
 ///     a * 5
 /// }));
@@ -106,7 +106,7 @@ impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 /// ```
 /// use hlua::Lua;
 /// let mut lua = Lua::new();
-/// 
+///
 /// lua.set("values", hlua::function0(move || -> (i32, i32, i32) {
 ///     (12, 24, 48)
 /// }));
@@ -130,7 +130,7 @@ impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 /// use hlua::Lua;
 /// let mut lua = Lua::new();
 /// lua.openlibs();
-/// 
+///
 /// lua.set("err", hlua::function0(move || -> Result<i32, &'static str> {
 ///     Err("something wrong happened")
 /// }));
@@ -287,7 +287,7 @@ macro_rules! impl_function_ext {
                     // without going through the RFC process.
                     {
                         match "__gc".push_to_lua(&mut lua) {
-                            Ok(p) => p.forget(),
+                            Ok(p) => p.forget_internal(),
                             Err(_) => unreachable!(),
                         };
 
@@ -399,7 +399,7 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
         Err(_) => {
             let err_msg = format!("wrong parameter types for callback function");
             match err_msg.push_to_lua(&mut tmp_lua) {
-                Ok(p) => p.forget(),
+                Ok(p) => p.forget_internal(),
                 Err(_) => unreachable!(),
             };
             unsafe {
@@ -414,7 +414,7 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
 
     // pushing back the result of the function on the stack
     let nb = match ret_value.push_to_lua(&mut tmp_lua) {
-        Ok(p) => p.forget(),
+        Ok(p) => p.forget_internal(),
         Err(_) => panic!(),      // TODO: wrong
     };
     nb as libc::c_int

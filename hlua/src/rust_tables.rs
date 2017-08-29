@@ -23,7 +23,7 @@ fn push_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<L>, 
 
     for (elem, index) in iterator.zip((1..)) {
         let size = match elem.push_to_lua(&mut lua) {
-            Ok(pushed) => pushed.forget(),
+            Ok(pushed) => pushed.forget_internal(),
             Err((_err, _lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
         };
 
@@ -32,7 +32,7 @@ fn push_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<L>, 
             1 => {
                 let index = index as u32;
                 match index.push_to_lua(&mut lua) {
-                    Ok(pushed) => pushed.forget(),
+                    Ok(pushed) => pushed.forget_internal(),
                     Err(_) => unreachable!(),
                 };
                 unsafe { ffi::lua_insert(lua.as_mut_lua().0, -2) }
@@ -64,7 +64,7 @@ fn push_rec_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<
 
     for elem in iterator {
         let size = match elem.push_to_lua(&mut lua) {
-            Ok(pushed) => pushed.forget(),
+            Ok(pushed) => pushed.forget_internal(),
             Err((_err, _lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
         };
 
