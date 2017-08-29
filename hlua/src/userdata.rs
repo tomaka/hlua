@@ -148,7 +148,7 @@ pub struct UserdataOnStack<T, L> {
 }
 
 impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
-    where L: AsMutLua<'lua> + AsLua<'lua>,
+    where L: AsMutLua<'lua>,
           T: 'lua + Any
 {
     #[inline]
