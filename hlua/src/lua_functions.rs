@@ -1,6 +1,8 @@
 use ffi;
 use libc;
 
+use std::error::Error;
+use std::fmt;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Error as IoError;
@@ -16,6 +18,7 @@ use LuaError;
 use Push;
 use PushGuard;
 use PushOne;
+use Void;
 
 /// Wrapper around a `&str`. When pushed, the content will be parsed as Lua code and turned into a
 /// function.
@@ -351,10 +354,67 @@ pub enum LuaFunctionCallError<E> {
     PushError(E),
 }
 
+impl<E> fmt::Display for LuaFunctionCallError<E>
+    where E: fmt::Display
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            LuaFunctionCallError::LuaError(ref lua_error) => write!(f, "Lua error: {}", lua_error),
+            LuaFunctionCallError::PushError(ref err) => {
+                write!(f, "Error while pushing arguments: {}", err)
+            }
+        }
+    }
+}
+
 impl<E> From<LuaError> for LuaFunctionCallError<E> {
     #[inline]
     fn from(err: LuaError) -> LuaFunctionCallError<E> {
         LuaFunctionCallError::LuaError(err)
+    }
+}
+
+impl From<LuaFunctionCallError<Void>> for LuaError {
+    #[inline]
+    fn from(err: LuaFunctionCallError<Void>) -> LuaError {
+        match err {
+            LuaFunctionCallError::LuaError(lua_error) => lua_error,
+            LuaFunctionCallError::PushError(_) => unreachable!("Void cannot be instantiated"),
+        }
+    }
+}
+
+impl<E> Error for LuaFunctionCallError<E>
+    where E: Error
+{
+    fn description(&self) -> &str {
+        match *self {
+            LuaFunctionCallError::LuaError(_) => "Lua error",
+            LuaFunctionCallError::PushError(_) => "error while pushing arguments",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            LuaFunctionCallError::LuaError(ref lua_error) => Some(lua_error),
+            LuaFunctionCallError::PushError(ref err) => Some(err),
+        }
+    }
+}
+
+impl Error for LuaFunctionCallError<Void> {
+    fn description(&self) -> &str {
+        match *self {
+            LuaFunctionCallError::LuaError(_) => "Lua error",
+            _ => unreachable!("Void cannot be instantiated"),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            LuaFunctionCallError::LuaError(ref lua_error) => Some(lua_error),
+            _ => unreachable!("Void cannot be instantiated"),
+        }
     }
 }
 
@@ -384,9 +444,11 @@ mod tests {
     use Lua;
     use LuaError;
     use LuaFunction;
+    use LuaFunctionCallError;
     use LuaTable;
+    use Void;
 
-    use std::io::Read;
+    use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read};
     use std::error::Error;
 
     #[test]
@@ -479,5 +541,13 @@ mod tests {
             Err(LuaError::ReadError(e)) => { assert_eq!("oh no!", e.description()) },
             Err(_) => panic!("Unexpected error happened"),
         }
+    }
+
+    fn _assert_error() {
+        // Compile-time trait checks.
+        fn _assert<T: Error>(_: T) {}
+
+        _assert(LuaFunctionCallError::LuaError::<Void>(LuaError::WrongType));
+        _assert(LuaFunctionCallError::PushError(IoError::new(IoErrorKind::Other, "Test")));
     }
 }
