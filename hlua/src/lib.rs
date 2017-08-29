@@ -105,7 +105,9 @@
 //! - TODO: userdata
 //!
 
-extern crate lua52_sys as ffi;
+// Export the version of lua52_sys in use by this crate. This allows clients to perform low-level
+// Lua operations without worrying about semver.
+pub extern crate lua52_sys as ffi;
 extern crate libc;
 
 use std::ffi::{CStr, CString};
