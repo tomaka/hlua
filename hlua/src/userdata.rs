@@ -11,6 +11,7 @@ use AsLua;
 use AsMutLua;
 use Push;
 use PushGuard;
+use LuaContext;
 use LuaRead;
 
 use InsideCallback;
@@ -169,6 +170,26 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
                 marker: PhantomData,
             })
         }
+    }
+}
+
+unsafe impl<'lua, T, L> AsLua<'lua> for UserdataOnStack<T, L>
+    where L: AsLua<'lua>,
+          T: 'lua + Any
+{
+    #[inline]
+    fn as_lua(&self) -> LuaContext {
+        self.variable.as_lua()
+    }
+}
+
+unsafe impl<'lua, T, L> AsMutLua<'lua> for UserdataOnStack<T, L>
+    where L: AsMutLua<'lua>,
+          T: 'lua + Any
+{
+    #[inline]
+    fn as_mut_lua(&mut self) -> LuaContext {
+        self.variable.as_mut_lua()
     }
 }
 
