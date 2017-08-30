@@ -361,6 +361,12 @@ pub trait PushOne<L>: Push<L> {}
 #[derive(Debug, Copy, Clone)]
 pub enum Void {}
 
+impl fmt::Display for Void {
+    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
+        unreachable!("Void cannot be instantiated")
+    }
+}
+
 /// Types that can be obtained from a Lua context.
 ///
 /// Most types that implement `Push` also implement `LuaRead`, but this is not always the case
