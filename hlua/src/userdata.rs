@@ -143,6 +143,7 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
 }
 
 /// Represents a user data located inside the Lua context.
+#[derive(Debug)]
 pub struct UserdataOnStack<T, L> {
     variable: L,
     marker: PhantomData<T>,

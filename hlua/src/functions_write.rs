@@ -156,6 +156,7 @@ impl_function!(function10, A, B, C, D, E, F, G, H, I, J);
 /// let ret = lua.execute::<()>("res = assert(err())");
 /// assert!(ret.is_err());
 /// ```
+#[derive(Debug)]
 pub struct Function<F, P, R> {
     function: F,
     marker: PhantomData<(P, R)>,
@@ -331,6 +332,7 @@ impl_function_ext!(A, B, C, D, E, F, G, H, I, J);
 ///
 /// Some types (like `Result`) can only be returned from a callback and not written inside a
 /// Lua variable. This type is here to enforce this restriction.
+#[derive(Debug)]
 pub struct InsideCallback {
     lua: LuaContext,
 }

@@ -151,6 +151,7 @@ mod tuples;
 /// This type isn't panic safe. This means that if a panic happens while you were using the `Lua`,
 /// then it will probably stay in a corrupt state. Trying to use the `Lua` again will most likely
 /// result in another panic but shouldn't result in unsafety.
+#[derive(Debug)]
 pub struct Lua<'lua> {
     lua: LuaContext,
     must_be_closed: bool,
@@ -161,6 +162,7 @@ pub struct Lua<'lua> {
 ///
 /// You shouldn't have to manipulate this type directly unless you are fiddling with the
 /// library's internals.
+#[derive(Debug)]
 pub struct PushGuard<L> {
     lua: L,
     size: i32,
@@ -251,7 +253,7 @@ pub unsafe trait AsMutLua<'lua>: AsLua<'lua> {
 
 /// Opaque type that contains the raw Lua context.
 // TODO: probably no longer necessary
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct LuaContext(*mut ffi::lua_State);
 unsafe impl Send for LuaContext {}
 
