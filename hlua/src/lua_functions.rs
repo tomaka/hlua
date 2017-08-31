@@ -285,28 +285,20 @@ impl<'lua, L> LuaFunction<L>
             (pcall_return_value, guard)
         };
 
-        // if pcall succeeded, returning
-        if pcall_return_value == 0 {
-            return match LuaRead::lua_read(pushed_value) {
+        match pcall_return_value {
+            0 => match LuaRead::lua_read(pushed_value) {
                 Err(_) => Err(LuaFunctionCallError::LuaError(LuaError::WrongType)),
                 Ok(x) => Ok(x),
-            };
+            },
+            ffi::LUA_ERRMEM => panic!("lua_pcall returned LUA_ERRMEM"),
+            ffi::LUA_ERRRUN => {
+                let error_msg: String = LuaRead::lua_read(pushed_value)
+                    .ok()
+                    .expect("can't find error message at the top of the Lua stack");
+                Err(LuaFunctionCallError::LuaError(LuaError::ExecutionError(error_msg)))
+            }
+            _ => panic!("Unknown error code returned by lua_pcall: {}", pcall_return_value),
         }
-
-        // an error occured during execution
-        if pcall_return_value == ffi::LUA_ERRMEM {
-            panic!("lua_pcall returned LUA_ERRMEM");
-        }
-
-        if pcall_return_value == ffi::LUA_ERRRUN {
-            let error_msg: String = LuaRead::lua_read(pushed_value)
-                .ok()
-                .expect("can't find error message at the top of the Lua stack");
-            return Err(LuaFunctionCallError::LuaError(LuaError::ExecutionError(error_msg)));
-        }
-
-        panic!("Unknown error code returned by lua_pcall: {}",
-               pcall_return_value)
     }
 
     /// Builds a new `LuaFunction` from the code of a reader.
