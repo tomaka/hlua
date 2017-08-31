@@ -29,6 +29,7 @@ use Void;
 /// }
 /// ```
 ///
+#[derive(Debug)]
 pub struct LuaTable<L> {
     table: L,
     index: i32,
@@ -404,6 +405,7 @@ pub enum CheckedSetError<K, V> {
 /// See `LuaTable::iter` for more info.
 // Implementation note: While the LuaTableIterator is active, the current key is constantly
 // pushed over the table. The destructor takes care of removing it.
+#[derive(Debug)]
 pub struct LuaTableIterator<'t, L: 't, K, V> {
     table: &'t mut LuaTable<L>,
     finished: bool, // if true, the key is not on the stack anymore

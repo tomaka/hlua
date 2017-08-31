@@ -39,6 +39,7 @@ use Void;
 /// let r: i32 = lua.execute("return hello();").unwrap();
 /// assert_eq!(r, 5);
 /// ```
+#[derive(Debug)]
 pub struct LuaCode<'a>(pub &'a str);
 
 impl<'lua, 'c, L> Push<L> for LuaCode<'c>
@@ -75,6 +76,7 @@ impl<'lua, 'c, L> PushOne<L> for LuaCode<'c> where L: AsMutLua<'lua> {}
 /// let r: i32 = lua.execute("local lua_func = call_rust(); return lua_func();").unwrap();
 /// assert_eq!(r, 18);
 /// ```
+#[derive(Debug)]
 pub struct LuaCodeFromReader<R>(pub R);
 
 impl<'lua, L, R> Push<L> for LuaCodeFromReader<R>
@@ -190,6 +192,7 @@ impl<'lua, L, R> PushOne<L> for LuaCodeFromReader<R>
 /// assert_eq!(result, 12);
 /// ```
 // TODO: example for how to get a LuaFunction as a parameter of a Rust function
+#[derive(Debug)]
 pub struct LuaFunction<L> {
     variable: L,
 }
