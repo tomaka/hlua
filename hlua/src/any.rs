@@ -94,36 +94,58 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
-            Err(lua) => lua,
-        };
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyLuaValue::LuaBoolean(v)),
-            Err(lua) => lua,
-        };
+        // If we know that the value on the stack is a string, we should try
+        // to parse it as a string instead of a number or boolean, so that
+        // values such as '1.10' don't become `AnyLuaValue::LuaNumber(1.1)`.
+        let data_type = unsafe { ffi::lua_type(lua.as_lua().0, index) };
+        if data_type == ffi::LUA_TSTRING {
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
-            Err(lua) => lua,
-        };
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
+                Err(lua) => lua,
+            };
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
-            Err(lua) => lua,
-        };
+            let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
+                Err(lua) => lua,
+            };
 
-        if unsafe { ffi::lua_isnil(lua.as_lua().0, index) } {
-            return Ok(AnyLuaValue::LuaNil);
+            Ok(AnyLuaValue::LuaOther)
+
+        } else {
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaBoolean(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
+                Err(lua) => lua,
+            };
+
+            if unsafe { ffi::lua_isnil(lua.as_lua().0, index) } {
+                return Ok(AnyLuaValue::LuaNil);
+            }
+
+            // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            // Ok(v) => return Ok(AnyLuaValue::LuaArray(v)),
+            // Err(lua) => lua
+            // };
+
+            Ok(AnyLuaValue::LuaOther)
         }
-
-        // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
-        // Ok(v) => return Ok(AnyLuaValue::LuaArray(v)),
-        // Err(lua) => lua
-        // };
-
-        Ok(AnyLuaValue::LuaOther)
     }
 }
 
@@ -227,7 +249,7 @@ mod tests {
         lua.set("b", 3.5f32);
 
         let x: AnyLuaValue = lua.get("a").unwrap();
-        assert_eq!(x, AnyLuaValue::LuaNumber(-2.0));
+        assert_eq!(x, AnyLuaValue::LuaString("-2".to_owned()));
 
         let y: AnyLuaValue = lua.get("b").unwrap();
         assert_eq!(y, AnyLuaValue::LuaNumber(3.5));
