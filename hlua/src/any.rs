@@ -201,36 +201,54 @@ impl<'lua, L> LuaRead<L> for AnyHashableLuaValue
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyHashableLuaValue, L> {
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyHashableLuaValue::LuaNumber(v)),
-            Err(lua) => lua,
-        };
+        let data_type = unsafe { ffi::lua_type(lua.as_lua().0, index) };
+        if data_type == ffi::LUA_TSTRING {
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyHashableLuaValue::LuaBoolean(v)),
-            Err(lua) => lua,
-        };
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaString(v)),
+                Err(lua) => lua,
+            };
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyHashableLuaValue::LuaString(v)),
-            Err(lua) => lua,
-        };
+            let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaAnyString(v)),
+                Err(lua) => lua,
+            };
+            
+            Ok(AnyHashableLuaValue::LuaOther)
 
-        let lua = match LuaRead::lua_read_at_position(&lua, index) {
-            Ok(v) => return Ok(AnyHashableLuaValue::LuaAnyString(v)),
-            Err(lua) => lua,
-        };
+        } else {
 
-        if unsafe { ffi::lua_isnil(lua.as_lua().0, index) } {
-            return Ok(AnyHashableLuaValue::LuaNil);
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaNumber(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaBoolean(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaString(v)),
+                Err(lua) => lua,
+            };
+
+            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+                Ok(v) => return Ok(AnyHashableLuaValue::LuaAnyString(v)),
+                Err(lua) => lua,
+            };
+
+            if unsafe { ffi::lua_isnil(lua.as_lua().0, index) } {
+                return Ok(AnyHashableLuaValue::LuaNil);
+            }
+
+            // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            // Ok(v) => return Ok(AnyHashableLuaValue::LuaArray(v)),
+            // Err(lua) => lua
+            // };
+
+            Ok(AnyHashableLuaValue::LuaOther)
         }
-
-        // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
-        // Ok(v) => return Ok(AnyHashableLuaValue::LuaArray(v)),
-        // Err(lua) => lua
-        // };
-
-        Ok(AnyHashableLuaValue::LuaOther)
     }
 }
 
@@ -247,26 +265,34 @@ mod tests {
 
         lua.set("a", "-2");
         lua.set("b", 3.5f32);
+        lua.set("c", -2.0f32);
 
         let x: AnyLuaValue = lua.get("a").unwrap();
         assert_eq!(x, AnyLuaValue::LuaString("-2".to_owned()));
 
         let y: AnyLuaValue = lua.get("b").unwrap();
         assert_eq!(y, AnyLuaValue::LuaNumber(3.5));
+
+        let z: AnyLuaValue = lua.get("c").unwrap();
+        assert_eq!(z, AnyLuaValue::LuaNumber(-2.0));
     }
 
     #[test]
     fn read_hashable_numbers() {
         let mut lua = Lua::new();
 
-        lua.set("a", "-2");
-        lua.set("b", "4");
+        lua.set("a", -2.0f32);
+        lua.set("b", 4.0f32);
+        lua.set("c", "4");
 
         let x: AnyHashableLuaValue = lua.get("a").unwrap();
         assert_eq!(x, AnyHashableLuaValue::LuaNumber(-2));
 
         let y: AnyHashableLuaValue = lua.get("b").unwrap();
         assert_eq!(y, AnyHashableLuaValue::LuaNumber(4));
+
+        let z: AnyHashableLuaValue = lua.get("c").unwrap();
+        assert_eq!(z, AnyHashableLuaValue::LuaString("4".to_owned()));
     }
 
     #[test]
