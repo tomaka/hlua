@@ -369,6 +369,7 @@ where T: PushOne<L, Err = E>,
 #[cfg(test)]
 mod tests {
     use AnyLuaValue;
+    use AnyLuaString;
     use Lua;
     use StringInLua;
 
@@ -460,6 +461,14 @@ mod tests {
 
         let y: String = lua.get("b").unwrap();
         assert_eq!(y, "hello");
+
+        assert_eq!(lua.execute::<String>("return 'abc'").unwrap(), "abc");
+        assert_eq!(lua.execute::<u32>("return #'abc'").unwrap(), 3);
+        assert_eq!(lua.execute::<u32>("return #'a\\x00c'").unwrap(), 3);
+        assert_eq!(lua.execute::<AnyLuaString>("return 'a\\x00c'").unwrap().0, vec!(97, 0, 99));
+        assert_eq!(lua.execute::<AnyLuaString>("return 'a\\x00c'").unwrap().0.len(), 3);
+        assert_eq!(lua.execute::<AnyLuaString>("return '\\x01\\xff'").unwrap().0, vec!(1, 255));
+        lua.execute::<String>("return 'a\\x00\\xc0'").unwrap_err();
     }
 
     #[test]
