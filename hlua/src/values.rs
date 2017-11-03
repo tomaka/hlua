@@ -1,5 +1,6 @@
-use std::ffi::CStr;
 use std::mem;
+use std::slice;
+use std::str;
 use std::ops::Deref;
 
 use ffi;
@@ -153,8 +154,8 @@ impl<'lua, L> LuaRead<L> for String
             return Err(lua);
         }
 
-        let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let maybe_string = String::from_utf8(c_str.to_bytes().to_vec());
+        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
+        let maybe_string = String::from_utf8(c_slice.to_vec());
         match maybe_string {
             Ok(string) => Ok(string),
             Err(_) => Err(lua),
@@ -196,9 +197,8 @@ impl<'lua, L> LuaRead<L> for AnyLuaString
             return Err(lua);
         }
 
-        let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let c_string = c_str.to_bytes().to_vec();
-        Ok(AnyLuaString(c_string))
+        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
+        Ok(AnyLuaString(c_slice.to_vec()))
     }
 }
 
@@ -246,6 +246,7 @@ impl<'lua, 's, L> PushOne<L> for &'s str where L: AsMutLua<'lua> {}
 pub struct StringInLua<L> {
     lua: L,
     c_str_raw: *const libc::c_char,
+    size: libc::size_t,
 }
 
 impl<'lua, L> LuaRead<L> for StringInLua<L>
@@ -253,23 +254,23 @@ impl<'lua, L> LuaRead<L> for StringInLua<L>
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<StringInLua<L>, L> {
-        unsafe {
-            let mut size: libc::size_t = mem::uninitialized();
-            let c_str_raw = ffi::lua_tolstring(lua.as_lua().0, index, &mut size);
-            if c_str_raw.is_null() {
-                return Err(lua);
-            }
-
-            match CStr::from_ptr(c_str_raw).to_str() {
-                Ok(_) => (),
-                Err(_) => return Err(lua)
-            };
-
-            Ok(StringInLua {
-                lua: lua,
-                c_str_raw: c_str_raw,
-            })
+        let mut size: libc::size_t = unsafe { mem::uninitialized() };
+        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
+        if c_str_raw.is_null() {
+            return Err(lua);
         }
+
+        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
+        match str::from_utf8(c_slice) {
+            Ok(_) => (),
+            Err(_) => return Err(lua)
+        };
+
+        Ok(StringInLua {
+            lua: lua,
+            c_str_raw: c_str_raw,
+            size: size,
+        })
     }
 }
 
@@ -278,11 +279,10 @@ impl<L> Deref for StringInLua<L> {
 
     #[inline]
     fn deref(&self) -> &str {
-        unsafe {
-            match CStr::from_ptr(self.c_str_raw).to_str() {
-                Ok(s) => s,
-                Err(_) => unreachable!()        // Checked earlier
-            }
+        let c_slice = unsafe { slice::from_raw_parts(self.c_str_raw as *const u8, self.size) };
+        match str::from_utf8(c_slice) {
+            Ok(s) => s,
+            Err(_) => unreachable!()        // Checked earlier
         }
     }
 }
