@@ -7,6 +7,7 @@ use Push;
 use PushGuard;
 use PushOne;
 use LuaRead;
+use LuaTable;
 use Void;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -90,10 +91,10 @@ impl<'lua, L> Push<L> for AnyLuaValue
 impl<'lua, L> PushOne<L> for AnyLuaValue where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for AnyLuaValue
-    where L: AsLua<'lua>
+    where L: AsMutLua<'lua>
 {
     #[inline]
-    fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaValue, L> {
+    fn lua_read_at_position(mut lua: L, index: i32) -> Result<AnyLuaValue, L> {
 
         // If we know that the value on the stack is a string, we should try
         // to parse it as a string instead of a number or boolean, so that
@@ -101,12 +102,12 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
         let data_type = unsafe { ffi::lua_type(lua.as_lua().0, index) };
         if data_type == ffi::LUA_TSTRING {
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
                 Err(lua) => lua,
             };
 
-            let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let _lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
                 Err(lua) => lua,
             };
@@ -115,22 +116,22 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
 
         } else {
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaNumber(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaBoolean(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaString(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
                 Err(lua) => lua,
             };
@@ -139,10 +140,12 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
                 return Ok(AnyLuaValue::LuaNil);
             }
 
-            // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
-            // Ok(v) => return Ok(AnyLuaValue::LuaArray(v)),
-            // Err(lua) => lua
-            // };
+            let table: Result<LuaTable<_>, _> = LuaRead::lua_read_at_position(lua, index);
+            let _lua = match table {
+                Ok(mut v) => return Ok(AnyLuaValue::LuaArray(v.iter::<AnyLuaValue, AnyLuaValue>()
+                                                              .filter_map(|e| e).collect())),
+                Err(lua) => lua,
+            };
 
             Ok(AnyLuaValue::LuaOther)
         }
@@ -197,19 +200,19 @@ impl<'lua, L> Push<L> for AnyHashableLuaValue
 impl<'lua, L> PushOne<L> for AnyHashableLuaValue where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for AnyHashableLuaValue
-    where L: AsLua<'lua>
+    where L: AsMutLua<'lua>
 {
     #[inline]
-    fn lua_read_at_position(lua: L, index: i32) -> Result<AnyHashableLuaValue, L> {
+    fn lua_read_at_position(mut lua: L, index: i32) -> Result<AnyHashableLuaValue, L> {
         let data_type = unsafe { ffi::lua_type(lua.as_lua().0, index) };
         if data_type == ffi::LUA_TSTRING {
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaString(v)),
                 Err(lua) => lua,
             };
 
-            let _lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let _lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaAnyString(v)),
                 Err(lua) => lua,
             };
@@ -218,22 +221,22 @@ impl<'lua, L> LuaRead<L> for AnyHashableLuaValue
 
         } else {
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaNumber(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaBoolean(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaString(v)),
                 Err(lua) => lua,
             };
 
-            let lua = match LuaRead::lua_read_at_position(&lua, index) {
+            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyHashableLuaValue::LuaAnyString(v)),
                 Err(lua) => lua,
             };
@@ -242,10 +245,13 @@ impl<'lua, L> LuaRead<L> for AnyHashableLuaValue
                 return Ok(AnyHashableLuaValue::LuaNil);
             }
 
-            // let _lua = match LuaRead::lua_read_at_position(&lua, index) {
-            // Ok(v) => return Ok(AnyHashableLuaValue::LuaArray(v)),
-            // Err(lua) => lua
-            // };
+            let table: Result<LuaTable<_>, _> = LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index);
+            let _lua = match table {
+                Ok(mut v) => return Ok(AnyHashableLuaValue::LuaArray(v
+                    .iter::<AnyHashableLuaValue, AnyHashableLuaValue>()
+                    .filter_map(|e| e).collect())),
+                Err(lua) => lua,
+            };
 
             Ok(AnyHashableLuaValue::LuaOther)
         }
@@ -357,6 +363,94 @@ mod tests {
 
         let y: AnyHashableLuaValue = lua.get("b").unwrap();
         assert_eq!(y, AnyHashableLuaValue::LuaBoolean(false));
+    }
+
+    #[test]
+    fn read_tables() {
+        let mut lua = Lua::new();
+        lua.execute::<()>("
+        a = {x = 12, y = 19}
+        b = {z = a, w = 'test string'}
+        c = {'first', 'second'}
+        ").unwrap();
+
+        fn get<'a>(table: &'a AnyLuaValue, key: &str) -> &'a AnyLuaValue {
+            let test_key = AnyLuaValue::LuaString(key.to_owned());
+            match table {
+                &AnyLuaValue::LuaArray(ref vec) => {
+                    let &(_, ref value) = vec.iter().find(|&&(ref key, _)| key == &test_key).expect("key not found");
+                    value
+                },
+                _ => panic!("not a table")
+            }
+        }
+
+        fn get_numeric<'a>(table: &'a AnyLuaValue, key: usize) -> &'a AnyLuaValue {
+            let test_key = AnyLuaValue::LuaNumber(key as f64);
+            match table {
+                &AnyLuaValue::LuaArray(ref vec) => {
+                    let &(_, ref value) = vec.iter().find(|&&(ref key, _)| key == &test_key).expect("key not found");
+                    value
+                },
+                _ => panic!("not a table")
+            }
+        }
+
+        let a: AnyLuaValue = lua.get("a").unwrap();
+        assert_eq!(get(&a, "x"), &AnyLuaValue::LuaNumber(12.0));
+        assert_eq!(get(&a, "y"), &AnyLuaValue::LuaNumber(19.0));
+
+        let b: AnyLuaValue = lua.get("b").unwrap();
+        assert_eq!(get(&get(&b, "z"), "x"), get(&a, "x"));
+        assert_eq!(get(&get(&b, "z"), "y"), get(&a, "y"));
+
+        let c: AnyLuaValue = lua.get("c").unwrap();
+        assert_eq!(get_numeric(&c, 1), &AnyLuaValue::LuaString("first".to_owned()));
+        assert_eq!(get_numeric(&c, 2), &AnyLuaValue::LuaString("second".to_owned()));
+    }
+
+    #[test]
+    fn read_hashable_tables() {
+        let mut lua = Lua::new();
+        lua.execute::<()>("
+        a = {x = 12, y = 19}
+        b = {z = a, w = 'test string'}
+        c = {'first', 'second'}
+        ").unwrap();
+
+        fn get<'a>(table: &'a AnyHashableLuaValue, key: &str) -> &'a AnyHashableLuaValue {
+            let test_key = AnyHashableLuaValue::LuaString(key.to_owned());
+            match table {
+                &AnyHashableLuaValue::LuaArray(ref vec) => {
+                    let &(_, ref value) = vec.iter().find(|&&(ref key, _)| key == &test_key).expect("key not found");
+                    value
+                },
+                _ => panic!("not a table")
+            }
+        }
+
+        fn get_numeric<'a>(table: &'a AnyHashableLuaValue, key: usize) -> &'a AnyHashableLuaValue {
+            let test_key = AnyHashableLuaValue::LuaNumber(key as i32);
+            match table {
+                &AnyHashableLuaValue::LuaArray(ref vec) => {
+                    let &(_, ref value) = vec.iter().find(|&&(ref key, _)| key == &test_key).expect("key not found");
+                    value
+                },
+                _ => panic!("not a table")
+            }
+        }
+
+        let a: AnyHashableLuaValue = lua.get("a").unwrap();
+        assert_eq!(get(&a, "x"), &AnyHashableLuaValue::LuaNumber(12));
+        assert_eq!(get(&a, "y"), &AnyHashableLuaValue::LuaNumber(19));
+
+        let b: AnyHashableLuaValue = lua.get("b").unwrap();
+        assert_eq!(get(&get(&b, "z"), "x"), get(&a, "x"));
+        assert_eq!(get(&get(&b, "z"), "y"), get(&a, "y"));
+
+        let c: AnyHashableLuaValue = lua.get("c").unwrap();
+        assert_eq!(get_numeric(&c, 1), &AnyHashableLuaValue::LuaString("first".to_owned()));
+        assert_eq!(get_numeric(&c, 2), &AnyHashableLuaValue::LuaString("second".to_owned()));
     }
 
     #[test]
