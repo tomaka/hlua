@@ -121,7 +121,7 @@ pub fn push_userdata<'lua, L, T, F>(data: T, mut lua: L, metatable: F) -> PushGu
 
 ///
 #[inline]
-pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
+pub fn read_userdata<'t, 'c, T>(lua: &'c mut InsideCallback,
                                 index: i32)
                                 -> Result<&'t mut T, &'c mut InsideCallback>
     where T: 'static + Any
@@ -146,6 +146,7 @@ pub fn read_userdata<'t, 'c, T>(mut lua: &'c mut InsideCallback,
 #[derive(Debug)]
 pub struct UserdataOnStack<T, L> {
     variable: L,
+    index: i32,
     marker: PhantomData<T>,
 }
 
@@ -168,6 +169,7 @@ impl<'lua, T, L> LuaRead<L> for UserdataOnStack<T, L>
 
             Ok(UserdataOnStack {
                 variable: lua,
+                index: index,
                 marker: PhantomData,
             })
         }
@@ -203,7 +205,7 @@ impl<'lua, T, L> Deref for UserdataOnStack<T, L>
     #[inline]
     fn deref(&self) -> &T {
         unsafe {
-            let base = ffi::lua_touserdata(self.variable.as_lua().0, -1);
+            let base = ffi::lua_touserdata(self.variable.as_lua().0, self.index);
             let data = (base as *const u8).offset(mem::size_of::<TypeId>() as isize);
             &*(data as *const T)
         }
@@ -217,7 +219,7 @@ impl<'lua, T, L> DerefMut for UserdataOnStack<T, L>
     #[inline]
     fn deref_mut(&mut self) -> &mut T {
         unsafe {
-            let base = ffi::lua_touserdata(self.variable.as_mut_lua().0, -1);
+            let base = ffi::lua_touserdata(self.variable.as_mut_lua().0, self.index);
             let data = (base as *const u8).offset(mem::size_of::<TypeId>() as isize);
             &mut *(data as *mut T)
         }

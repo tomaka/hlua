@@ -131,7 +131,7 @@ impl<'lua, L> LuaRead<L> for AnyLuaValue
                 Err(lua) => lua,
             };
 
-            let mut lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
+            let lua = match LuaRead::lua_read_at_position(&mut lua as &mut AsMutLua<'lua>, index) {
                 Ok(v) => return Ok(AnyLuaValue::LuaAnyString(v)),
                 Err(lua) => lua,
             };

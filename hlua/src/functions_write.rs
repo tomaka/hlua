@@ -365,7 +365,7 @@ impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
     type Err = P;
 
     #[inline]
-    fn push_to_lua(self, mut lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
+    fn push_to_lua(self, lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
         match self {
             Ok(val) => val.push_to_lua(lua),
             Err(val) => {
