@@ -9,14 +9,14 @@ fn main() {
         Err(..) => {}
     };
 
-    let mut config = gcc::Config::new();
+    let mut build = gcc::Build::new();
 
     if env::var("CARGO_CFG_TARGET_OS") == Ok("linux".to_string()) {
         // Enable `io.popen` support
-        config.define("LUA_USE_LINUX", None);
+        build.define("LUA_USE_LINUX", None);
     }
 
-    config
+    build
         .file("lua/src/lapi.c")
         .file("lua/src/lcode.c")
         .file("lua/src/lctype.c")
