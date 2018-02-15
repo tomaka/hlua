@@ -101,14 +101,15 @@ impl<'lua, L, T, E> PushOne<L> for Vec<T>
 {
 }
 
-impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
-    where L: AsMutLua<'lua>
+impl<'lua, L, V> LuaRead<L> for Vec<V>
+    where L: AsMutLua<'lua>,
+          V: for<'a> LuaRead<&'a mut L>
 {
     fn lua_read_at_position(lua: L, index: i32) -> Result<Self, L> {
         // We need this as iteration order isn't guaranteed to match order of
         // keys, even if they're numeric
         // https://www.lua.org/manual/5.2/manual.html#pdf-next
-        let mut dict: BTreeMap<i32, AnyLuaValue> = BTreeMap::new();
+        let mut dict: BTreeMap<i32, V> = BTreeMap::new();
 
         let mut me = lua;
         unsafe { ffi::lua_pushnil(me.as_mut_lua().0) };
@@ -132,7 +133,7 @@ impl<'lua, L> LuaRead<L> for Vec<AnyLuaValue>
                 }
             };
 
-            let value: AnyLuaValue =
+            let value: V =
                 LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
 
             unsafe { ffi::lua_pop(me.as_mut_lua().0, 1) };
