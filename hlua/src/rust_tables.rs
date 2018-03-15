@@ -371,13 +371,9 @@ mod tests {
 
         lua.set("v", &orig[..]);
 
-        let read: Vec<_> = lua.get("v").unwrap();
+        let read: Vec<f64> = lua.get("v").unwrap();
         for (o, r) in orig.iter().zip(read.iter()) {
-            if let AnyLuaValue::LuaNumber(ref n) = *r {
-                assert_eq!(o, n);
-            } else {
-                panic!("Unexpected variant");
-            }
+            assert_eq!(*o, *r);
         }
     }
 
@@ -387,7 +383,7 @@ mod tests {
 
         lua.execute::<()>(r#"v = { [-1] = -1, [2] = 2, [42] = 42 }"#).unwrap();
 
-        let read: Option<Vec<_>> = lua.get("v");
+        let read: Option<Vec<AnyLuaValue>> = lua.get("v");
         if read.is_some() {
             panic!("Unexpected success");
         }
@@ -399,7 +395,7 @@ mod tests {
 
         lua.execute::<()>(r#"v = { }"#).unwrap();
 
-        let read: Vec<_> = lua.get("v").unwrap();
+        let read: Vec<f64> = lua.get("v").unwrap();
         assert_eq!(read.len(), 0);
     }
 
@@ -409,7 +405,7 @@ mod tests {
 
         lua.execute::<()>(r#"v = { [-1] = -1, ["foo"] = 2, [{}] = 42 }"#).unwrap();
 
-        let read: Option<Vec<_>> = lua.get("v");
+        let read: Option<Vec<AnyLuaValue>> = lua.get("v");
         if read.is_some() {
             panic!("Unexpected success");
         }
@@ -429,7 +425,7 @@ mod tests {
 
         lua.set("v", &orig[..]);
 
-        let read: Vec<_> = lua.get("v").unwrap();
+        let read: Vec<AnyLuaValue> = lua.get("v").unwrap();
         assert_eq!(read, orig);
     }
 
@@ -439,11 +435,11 @@ mod tests {
 
         lua.execute::<()>(r#"v = { 1, 2, 3 }"#).unwrap();
 
-        let read: Vec<_> = lua.get("v").unwrap();
+        let read: Vec<AnyLuaValue> = lua.get("v").unwrap();
         assert_eq!(
             read,
             [1., 2., 3.].iter()
-                .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<_>>());
+                .map(|x| AnyLuaValue::LuaNumber(*x)).collect::<Vec<AnyLuaValue>>());
     }
 
     #[test]
