@@ -133,8 +133,18 @@ impl<'lua, L, V> LuaRead<L> for Vec<V>
                 }
             };
 
-            let value: V =
-                LuaRead::lua_read_at_position(&mut me, -1).ok().unwrap();
+            let value = {
+                let maybe_value: Option<V> =
+                    LuaRead::lua_read_at_position(&mut me, -1).ok();
+                match maybe_value {
+                    None => {
+                        // Cleaning up after ourselves
+                        unsafe { ffi::lua_pop(me.as_mut_lua().0, 2) };
+                        return Err(me)
+                    }
+                    Some(v) => v,
+                }
+            };
 
             unsafe { ffi::lua_pop(me.as_mut_lua().0, 1) };
 
