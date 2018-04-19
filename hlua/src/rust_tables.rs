@@ -21,7 +21,7 @@ fn push_iter<'lua, L, V, I, E>(mut lua: L, iterator: I) -> Result<PushGuard<L>, 
     // creating empty table
     unsafe { ffi::lua_newtable(lua.as_mut_lua().0) };
 
-    for (elem, index) in iterator.zip((1..)) {
+    for (elem, index) in iterator.zip(1..) {
         let size = match elem.push_to_lua(&mut lua) {
             Ok(pushed) => pushed.forget_internal(),
             Err((_err, _lua)) => panic!(),     // TODO: wrong   return Err((err, lua)),      // FIXME: destroy the temporary table
