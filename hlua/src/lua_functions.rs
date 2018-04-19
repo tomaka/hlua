@@ -458,7 +458,7 @@ mod tests {
     fn args() {
         let mut lua = Lua::new();
         lua.execute::<()>("function foo(a) return a * 5 end").unwrap();
-        let val: i32 = lua.get::<LuaFunction<_>, _>("foo").unwrap().call_with_args((3)).unwrap();
+        let val: i32 = lua.get::<LuaFunction<_>, _>("foo").unwrap().call_with_args(3).unwrap();
         assert_eq!(val, 15);
     }
 
