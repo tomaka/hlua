@@ -23,98 +23,14 @@ pub enum AnyHashableLuaValue {
     LuaAnyString(AnyLuaString),
     LuaNumber(i32),
     LuaBoolean(bool),
+    #[cfg_attr(feature = "serde_support", serde(with = "hashable_luaarray_serde"))]
     LuaArray(Vec<(AnyHashableLuaValue, AnyHashableLuaValue)>),
     LuaNil,
 
     /// The "Other" element is (hopefully) temporary and will be replaced by "Function" and "Userdata".
     /// A panic! will trigger if you try to push a Other.
+    #[cfg_attr(feature = "serde_support", serde(skip_serializing))]
     LuaOther,
-}
-
-#[cfg(feature = "serde_support")]
-mod luaarray_serde {
-    use super::AnyLuaValue;
-    use serde::de::{MapAccess, Visitor};
-    use serde::ser::SerializeMap;
-    use serde::{Deserializer, Serializer};
-    use std::fmt;
-
-    pub fn serialize<S>(
-        array: &Vec<(AnyLuaValue, AnyLuaValue)>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(array.len()))?;
-        for &(ref k, ref v) in array.iter() {
-            match k {
-                &AnyLuaValue::LuaNumber(ref n) => {
-                    let s = format!("{}", n);
-                    map.serialize_entry(&s, &v)?
-                }
-                &AnyLuaValue::LuaBoolean(ref b) => {
-                    let s = format!("{}", b);
-                    map.serialize_entry(&s, &v)?
-                }
-                _ => map.serialize_entry(&k, &v)?,
-            }
-        }
-        map.end()
-    }
-
-    struct JsonMapVisitor {}
-
-    impl JsonMapVisitor {
-        fn new() -> Self {
-            JsonMapVisitor {}
-        }
-    }
-
-    impl<'de> Visitor<'de> for JsonMapVisitor {
-        type Value = Vec<(AnyLuaValue, AnyLuaValue)>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("a very special map")
-        }
-
-        fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
-        where
-            M: MapAccess<'de>,
-        {
-            let mut deserialized_map = Vec::with_capacity(access.size_hint().unwrap_or(0));
-
-            while let Some((key, value)) = access.next_entry()? {
-                let k: AnyLuaValue = key;
-                let key = match k {
-                    AnyLuaValue::LuaString(s) => {
-                        let n = s.parse::<f64>();
-                        if let Ok(v) = n {
-                            AnyLuaValue::LuaNumber(v)
-                        } else {
-                            let b = s.parse::<bool>();
-                            if let Ok(v) = b {
-                                AnyLuaValue::LuaBoolean(v)
-                            } else {
-                                AnyLuaValue::LuaString(s)
-                            }
-                        }
-                    }
-                    _ => k,
-                };
-                deserialized_map.push((key, value));
-            }
-
-            Ok(deserialized_map)
-        }
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<(AnyLuaValue, AnyLuaValue)>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_map(JsonMapVisitor::new())
-    }
 }
 
 /// Represents any value that can be stored by Lua
@@ -132,9 +48,103 @@ pub enum AnyLuaValue {
 
     /// The "Other" element is (hopefully) temporary and will be replaced by "Function" and "Userdata".
     /// A panic! will trigger if you try to push a Other.
-    #[cfg_attr(feature = "serde_support", serde(skip_deserializing))]
+    #[cfg_attr(feature = "serde_support", serde(skip_serializing))]
     LuaOther,
 }
+
+macro_rules! luaarray_serde {
+    ($module_name: ident, $value_type:ident, $numeric_type:ty) => (
+        #[cfg(feature = "serde_support")]
+        mod $module_name {
+            use super::$value_type;
+            use serde::de::{MapAccess, Visitor};
+            use serde::ser::SerializeMap;
+            use serde::{Deserializer, Serializer};
+            use std::fmt;
+
+            pub fn serialize<S>(
+                array: &Vec<($value_type, $value_type)>,
+                serializer: S,
+            ) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                let mut map = serializer.serialize_map(Some(array.len()))?;
+                for &(ref k, ref v) in array.iter() {
+                    match k {
+                        &$value_type::LuaNumber(ref n) => {
+                            let s = format!("{}", n);
+                            map.serialize_entry(&s, &v)?
+                        }
+                        &$value_type::LuaBoolean(ref b) => {
+                            let s = format!("{}", b);
+                            map.serialize_entry(&s, &v)?
+                        }
+                        _ => map.serialize_entry(&k, &v)?,
+                    }
+                }
+                map.end()
+            }
+
+            struct JsonMapVisitor {}
+
+            impl JsonMapVisitor {
+                fn new() -> Self {
+                    JsonMapVisitor {}
+                }
+            }
+
+            impl<'de> Visitor<'de> for JsonMapVisitor {
+                type Value = Vec<($value_type, $value_type)>;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a JSON-encoded Lua table")
+                }
+
+                fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+                where
+                    M: MapAccess<'de>,
+                {
+                    let mut deserialized_map = Vec::with_capacity(access.size_hint().unwrap_or(0));
+
+                    while let Some((key, value)) = access.next_entry()? {
+                        let k: $value_type = key;
+                        let key = match k {
+                            $value_type::LuaString(s) => {
+                                let n = s.parse::<$numeric_type>();
+                                if let Ok(v) = n {
+                                    $value_type::LuaNumber(v)
+                                } else {
+                                    let b = s.parse::<bool>();
+                                    if let Ok(v) = b {
+                                        $value_type::LuaBoolean(v)
+                                    } else {
+                                        $value_type::LuaString(s)
+                                    }
+                                }
+                            }
+                            _ => k,
+                        };
+                        deserialized_map.push((key, value));
+                    }
+
+                    Ok(deserialized_map)
+                }
+            }
+
+            pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<($value_type, $value_type)>, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                deserializer.deserialize_map(JsonMapVisitor::new())
+            }
+        }
+    )
+}
+
+luaarray_serde! (luaarray_serde, AnyLuaValue, f64);
+luaarray_serde! (hashable_luaarray_serde, AnyHashableLuaValue, i32);
+
 
 impl<'lua, L> Push<L> for AnyLuaValue
 where
