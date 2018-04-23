@@ -53,7 +53,7 @@ pub enum AnyLuaValue {
 }
 
 macro_rules! luaarray_serde {
-    ($module_name: ident, $value_type:ident, $numeric_type:ty) => (
+    ($module_name:ident, $value_type:ident, $numeric_type:ty) => {
         #[cfg(feature = "serde_support")]
         mod $module_name {
             use super::$value_type;
@@ -132,19 +132,20 @@ macro_rules! luaarray_serde {
                 }
             }
 
-            pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<($value_type, $value_type)>, D::Error>
+            pub fn deserialize<'de, D>(
+                deserializer: D,
+            ) -> Result<Vec<($value_type, $value_type)>, D::Error>
             where
                 D: Deserializer<'de>,
             {
                 deserializer.deserialize_map(JsonMapVisitor::new())
             }
         }
-    )
+    };
 }
 
-luaarray_serde! (luaarray_serde, AnyLuaValue, f64);
-luaarray_serde! (hashable_luaarray_serde, AnyHashableLuaValue, i32);
-
+luaarray_serde!(luaarray_serde, AnyLuaValue, f64);
+luaarray_serde!(hashable_luaarray_serde, AnyHashableLuaValue, i32);
 
 impl<'lua, L> Push<L> for AnyLuaValue
 where

@@ -1,0 +1,12 @@
+[package]
+authors = ["Michael Pankov <work@michaelpankov.com>"]
+name = "hlua-serde-test"
+version = "0.1.0"
+
+[dependencies]
+serde_json = "1.0.15"
+serde_test = "1.0.41"
+
+[dependencies.hlua]
+features = ["serde_support"]
+path = "../hlua"
