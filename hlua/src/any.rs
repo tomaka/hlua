@@ -10,10 +10,13 @@ use PushGuard;
 use PushOne;
 use Void;
 
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct AnyLuaString(pub Vec<u8>);
 
 /// Represents any value that can be stored by Lua
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_support", serde(untagged))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum AnyHashableLuaValue {
     LuaString(String),
@@ -28,18 +31,108 @@ pub enum AnyHashableLuaValue {
     LuaOther,
 }
 
+#[cfg(feature = "serde_support")]
+mod luaarray_serde {
+    use super::AnyLuaValue;
+    use serde::de::{MapAccess, Visitor};
+    use serde::ser::SerializeMap;
+    use serde::{Deserializer, Serializer};
+    use std::fmt;
+
+    pub fn serialize<S>(
+        array: &Vec<(AnyLuaValue, AnyLuaValue)>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(array.len()))?;
+        for &(ref k, ref v) in array.iter() {
+            match k {
+                &AnyLuaValue::LuaNumber(ref n) => {
+                    let s = format!("{}", n);
+                    map.serialize_entry(&s, &v)?
+                }
+                &AnyLuaValue::LuaBoolean(ref b) => {
+                    let s = format!("{}", b);
+                    map.serialize_entry(&s, &v)?
+                }
+                _ => map.serialize_entry(&k, &v)?,
+            }
+        }
+        map.end()
+    }
+
+    struct JsonMapVisitor {}
+
+    impl JsonMapVisitor {
+        fn new() -> Self {
+            JsonMapVisitor {}
+        }
+    }
+
+    impl<'de> Visitor<'de> for JsonMapVisitor {
+        type Value = Vec<(AnyLuaValue, AnyLuaValue)>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a very special map")
+        }
+
+        fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+        where
+            M: MapAccess<'de>,
+        {
+            let mut deserialized_map = Vec::with_capacity(access.size_hint().unwrap_or(0));
+
+            while let Some((key, value)) = access.next_entry()? {
+                let k: AnyLuaValue = key;
+                let key = match k {
+                    AnyLuaValue::LuaString(s) => {
+                        let n = s.parse::<f64>();
+                        if let Ok(v) = n {
+                            AnyLuaValue::LuaNumber(v)
+                        } else {
+                            let b = s.parse::<bool>();
+                            if let Ok(v) = b {
+                                AnyLuaValue::LuaBoolean(v)
+                            } else {
+                                AnyLuaValue::LuaString(s)
+                            }
+                        }
+                    }
+                    _ => k,
+                };
+                deserialized_map.push((key, value));
+            }
+
+            Ok(deserialized_map)
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<(AnyLuaValue, AnyLuaValue)>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(JsonMapVisitor::new())
+    }
+}
+
 /// Represents any value that can be stored by Lua
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_support", serde(untagged))]
 pub enum AnyLuaValue {
     LuaString(String),
     LuaAnyString(AnyLuaString),
     LuaNumber(f64),
     LuaBoolean(bool),
+    #[cfg_attr(feature = "serde_support", serde(with = "luaarray_serde"))]
     LuaArray(Vec<(AnyLuaValue, AnyLuaValue)>),
     LuaNil,
 
     /// The "Other" element is (hopefully) temporary and will be replaced by "Function" and "Userdata".
     /// A panic! will trigger if you try to push a Other.
+    #[cfg_attr(feature = "serde_support", serde(skip_deserializing))]
     LuaOther,
 }
 

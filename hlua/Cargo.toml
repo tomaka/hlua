@@ -1,13 +1,31 @@
 [package]
-name = "hlua"
-version = "0.4.1"
-authors = [ "pierre.krieger1708@gmail.com" ]
+authors = ["pierre.krieger1708@gmail.com"]
 description = "Zero-cost high-level wrapper for Lua"
-keywords = ["lua"]
-repository = "https://github.com/tomaka/hlua"
 documentation = "http://docs.rs/hlua"
+keywords = ["lua"]
 license = "MIT"
+name = "hlua"
+repository = "https://github.com/tomaka/hlua"
+version = "0.4.1"
 
 [dependencies]
 libc = "0.2"
-lua52-sys = { version = "0.1.1", path = "../lua52-sys" }
+
+[dependencies.lua52-sys]
+path = "../lua52-sys"
+version = "0.1.1"
+
+[dependencies.serde]
+optional = true
+version = "1.0.39"
+
+[dependencies.serde_derive]
+optional = true
+version = "1.0.39"
+
+[features]
+default = []
+serde_support = [
+    "serde",
+    "serde_derive",
+]

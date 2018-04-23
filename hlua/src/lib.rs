@@ -110,6 +110,11 @@
 #[doc(hidden)]
 pub extern crate lua52_sys as ffi;
 extern crate libc;
+#[cfg(feature = "serde_support")]
+extern crate serde;
+#[cfg(feature = "serde_support")]
+#[macro_use]
+extern crate serde_derive;
 
 use std::ffi::{CStr, CString};
 use std::io::Read;
