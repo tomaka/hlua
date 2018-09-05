@@ -1,5 +1,5 @@
 extern crate pkg_config;
-extern crate gcc;
+extern crate cc;
 
 use std::env;
 
@@ -9,7 +9,7 @@ fn main() {
         Err(..) => {}
     };
 
-    let mut build = gcc::Build::new();
+    let mut build = cc::Build::new();
 
     if env::var("CARGO_CFG_TARGET_OS") == Ok("linux".to_string()) {
         // Enable `io.popen` support
