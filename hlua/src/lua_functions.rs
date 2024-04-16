@@ -98,7 +98,7 @@ where
 
             let mut read_data = ReadData {
                 reader: self.0,
-                buffer: mem::uninitialized(),
+                buffer: [0; 128],
                 triggered_error: None,
             };
 

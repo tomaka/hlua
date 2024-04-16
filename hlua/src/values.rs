@@ -35,11 +35,13 @@ macro_rules! integer_impl(
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
-                let mut success = unsafe { mem::uninitialized() };
-                let val = unsafe { ffi::lua_tointegerx(lua.as_lua().0, index, &mut success) };
-                match success {
-                    0 => Err(lua),
-                    _ => Ok(val as $t)
+                unsafe {
+                    let mut success = mem::MaybeUninit::uninit();
+                    let val = ffi::lua_tointegerx(lua.as_lua().0, index, success.as_mut_ptr());
+                    match success.assume_init() {
+                        0 => Err(lua),
+                        _ => Ok(val as $t)
+                    }
                 }
             }
         }
@@ -70,11 +72,13 @@ macro_rules! unsigned_impl(
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
-                let mut success = unsafe { mem::uninitialized() };
-                let val = unsafe { ffi::lua_tounsignedx(lua.as_lua().0, index, &mut success) };
-                match success {
-                    0 => Err(lua),
-                    _ => Ok(val as $t)
+                unsafe {
+                    let mut success = mem::MaybeUninit::uninit();
+                    let val = ffi::lua_tounsignedx(lua.as_lua().0, index, success.as_mut_ptr());
+                    match success.assume_init() {
+                        0 => Err(lua),
+                        _ => Ok(val as $t)
+                    }
                 }
             }
         }
@@ -105,11 +109,13 @@ macro_rules! numeric_impl(
         impl<'lua, L> LuaRead<L> for $t where L: AsLua<'lua> {
             #[inline]
             fn lua_read_at_position(lua: L, index: i32) -> Result<$t, L> {
-                let mut success = unsafe { mem::uninitialized() };
-                let val = unsafe { ffi::lua_tonumberx(lua.as_lua().0, index, &mut success) };
-                match success {
-                    0 => Err(lua),
-                    _ => Ok(val as $t)
+                unsafe {
+                    let mut success = mem::MaybeUninit::uninit();
+                    let val = ffi::lua_tonumberx(lua.as_lua().0, index, success.as_mut_ptr());
+                    match success.assume_init() {
+                        0 => Err(lua),
+                        _ => Ok(val as $t)
+                    }
                 }
             }
         }
@@ -152,17 +158,19 @@ where
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<String, L> {
-        let mut size: libc::size_t = unsafe { mem::uninitialized() };
-        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
-        if c_str_raw.is_null() {
-            return Err(lua);
-        }
+        unsafe {
+            let mut size: mem::MaybeUninit<libc::size_t> = mem::MaybeUninit::uninit();
+            let c_str_raw = ffi::lua_tolstring(lua.as_lua().0, index, size.as_mut_ptr());
+            if c_str_raw.is_null() {
+                return Err(lua);
+            }
 
-        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
-        let maybe_string = String::from_utf8(c_slice.to_vec());
-        match maybe_string {
-            Ok(string) => Ok(string),
-            Err(_) => Err(lua),
+            let c_slice = slice::from_raw_parts(c_str_raw as *const u8, size.assume_init());
+            let maybe_string = String::from_utf8(c_slice.to_vec());
+            match maybe_string {
+                Ok(string) => Ok(string),
+                Err(_) => Err(lua),
+            }
         }
     }
 }
@@ -199,14 +207,16 @@ where
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaString, L> {
-        let mut size: libc::size_t = unsafe { mem::uninitialized() };
-        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
-        if c_str_raw.is_null() {
-            return Err(lua);
-        }
+        unsafe {
+            let mut size: mem::MaybeUninit<libc::size_t> = mem::MaybeUninit::uninit();
+            let c_str_raw = ffi::lua_tolstring(lua.as_lua().0, index, size.as_mut_ptr());
+            if c_str_raw.is_null() {
+                return Err(lua);
+            }
 
-        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
-        Ok(AnyLuaString(c_slice.to_vec()))
+            let c_slice = slice::from_raw_parts(c_str_raw as *const u8, size.assume_init());
+            Ok(AnyLuaString(c_slice.to_vec()))
+        }
     }
 }
 
@@ -266,23 +276,26 @@ where
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<StringInLua<L>, L> {
-        let mut size: libc::size_t = unsafe { mem::uninitialized() };
-        let c_str_raw = unsafe { ffi::lua_tolstring(lua.as_lua().0, index, &mut size) };
-        if c_str_raw.is_null() {
-            return Err(lua);
+        unsafe {
+            let mut size: mem::MaybeUninit<libc::size_t> = mem::MaybeUninit::uninit();
+            let c_str_raw = ffi::lua_tolstring(lua.as_lua().0, index, size.as_mut_ptr());
+            if c_str_raw.is_null() {
+                return Err(lua);
+            }
+
+            let size = size.assume_init();
+            let c_slice = slice::from_raw_parts(c_str_raw as *const u8, size);
+            match str::from_utf8(c_slice) {
+                Ok(_) => (),
+                Err(_) => return Err(lua),
+            };
+
+            Ok(StringInLua {
+                lua: lua,
+                c_str_raw: c_str_raw,
+                size: size,
+            })
         }
-
-        let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
-        match str::from_utf8(c_slice) {
-            Ok(_) => (),
-            Err(_) => return Err(lua),
-        };
-
-        Ok(StringInLua {
-            lua: lua,
-            c_str_raw: c_str_raw,
-            size: size,
-        })
     }
 }
 
