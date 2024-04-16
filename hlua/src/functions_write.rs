@@ -11,8 +11,8 @@ use PushGuard;
 use PushOne;
 use Void;
 
-use std::marker::PhantomData;
 use std::fmt::Display;
+use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
 
@@ -359,45 +359,54 @@ unsafe impl<'a, 'lua> AsMutLua<'lua> for &'a mut InsideCallback {
 }
 
 impl<'a, T, E, P> Push<&'a mut InsideCallback> for Result<T, E>
-    where T: Push<&'a mut InsideCallback, Err = P> + for<'b> Push<&'b mut &'a mut InsideCallback, Err = P>,
-          E: Display
+where
+    T: Push<&'a mut InsideCallback, Err = P>
+        + for<'b> Push<&'b mut &'a mut InsideCallback, Err = P>,
+    E: Display,
 {
     type Err = P;
 
     #[inline]
-    fn push_to_lua(self, lua: &'a mut InsideCallback) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
+    fn push_to_lua(
+        self,
+        lua: &'a mut InsideCallback,
+    ) -> Result<PushGuard<&'a mut InsideCallback>, (P, &'a mut InsideCallback)> {
         match self {
             Ok(val) => val.push_to_lua(lua),
-            Err(val) => {
-                Ok((AnyLuaValue::LuaNil, format!("{}", val)).push_no_err(lua))
-            }
+            Err(val) => Ok((AnyLuaValue::LuaNil, format!("{}", val)).push_no_err(lua)),
         }
     }
 }
 
 impl<'a, T, E, P> PushOne<&'a mut InsideCallback> for Result<T, E>
-    where T: PushOne<&'a mut InsideCallback, Err = P> + for<'b> PushOne<&'b mut &'a mut InsideCallback, Err = P>,
-          E: Display
+where
+    T: PushOne<&'a mut InsideCallback, Err = P>
+        + for<'b> PushOne<&'b mut &'a mut InsideCallback, Err = P>,
+    E: Display,
 {
 }
 
 // this function is called when Lua wants to call one of our functions
 #[inline]
 extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
-    where T: FunctionExt<P, Output = R>,
-          P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
-          R: for<'p> Push<&'p mut InsideCallback>
+where
+    T: FunctionExt<P, Output = R>,
+    P: for<'p> LuaRead<&'p mut InsideCallback> + 'static,
+    R: for<'p> Push<&'p mut InsideCallback>,
 {
     // loading the object that we want to call from the Lua context
     let data_raw = unsafe { ffi::lua_touserdata(lua, ffi::lua_upvalueindex(1)) };
     let data: &mut T = unsafe { mem::transmute(data_raw) };
 
     // creating a temporary Lua context in order to pass it to push & read functions
-    let mut tmp_lua = InsideCallback { lua: LuaContext(lua) };
+    let mut tmp_lua = InsideCallback {
+        lua: LuaContext(lua),
+    };
 
     // trying to read the arguments
     let arguments_count = unsafe { ffi::lua_gettop(lua) } as i32;
-    let args = match LuaRead::lua_read_at_position(&mut tmp_lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
+    let args = match LuaRead::lua_read_at_position(&mut tmp_lua, -arguments_count as libc::c_int) {
+        // TODO: what if the user has the wrong params?
         Err(_) => {
             let err_msg = format!("wrong parameter types for callback function");
             match err_msg.push_to_lua(&mut tmp_lua) {
@@ -417,18 +426,18 @@ extern "C" fn wrapper<T, P, R>(lua: *mut ffi::lua_State) -> libc::c_int
     // pushing back the result of the function on the stack
     let nb = match ret_value.push_to_lua(&mut tmp_lua) {
         Ok(p) => p.forget_internal(),
-        Err(_) => panic!(),      // TODO: wrong
+        Err(_) => panic!(), // TODO: wrong
     };
     nb as libc::c_int
 }
 
 #[cfg(test)]
 mod tests {
-    use Lua;
-    use LuaError;
     use function0;
     use function1;
     use function2;
+    use Lua;
+    use LuaError;
 
     use std::sync::Arc;
 
@@ -496,11 +505,13 @@ mod tests {
         };
         lua.set("always_fails", function0(always_fails));
 
-        match lua.execute::<()>(r#"
+        match lua.execute::<()>(
+            r#"
             local res, err = always_fails();
             assert(res == nil);
             assert(err == "oops, problem");
-        "#) {
+        "#,
+        ) {
             Ok(()) => {}
             Err(e) => panic!("{:?}", e),
         }
@@ -523,7 +534,8 @@ mod tests {
     #[test]
     fn closures_lifetime() {
         fn t<F>(f: F)
-            where F: Fn(i32, i32) -> i32
+        where
+            F: Fn(i32, i32) -> i32,
         {
             let mut lua = Lua::new();
 
@@ -557,7 +569,7 @@ mod tests {
         static mut DID_DESTRUCTOR_RUN: bool = false;
 
         #[derive(Debug)]
-        struct Foo { };
+        struct Foo {};
         impl Drop for Foo {
             fn drop(&mut self) {
                 unsafe {
@@ -566,7 +578,7 @@ mod tests {
             }
         }
         {
-            let foo = Arc::new(Foo { });
+            let foo = Arc::new(Foo {});
 
             {
                 let mut lua = Lua::new();
