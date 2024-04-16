@@ -223,19 +223,20 @@ impl<'lua, L> PushGuard<L>
     /// which returns access when using by-value capture.
     #[inline]
     pub fn into_inner(mut self) -> L {
-        use std::{mem, ptr};
-
-        let mut res;
         unsafe {
-            res = mem::uninitialized();
-            ptr::copy_nonoverlapping(&self.lua, &mut res, 1);
+            use std::{mem, ptr};
+
+            let mut res;
+            res = mem::MaybeUninit::uninit();
+            ptr::copy_nonoverlapping(&self.lua, res.as_mut_ptr(), 1);
             if self.size != 0 {
                 ffi::lua_pop(self.lua.as_mut_lua().0, self.size);
             }
-        };
-        mem::forget(self);
 
-        res
+            mem::forget(self);
+
+            res.assume_init()
+        }
     }
 }
 
