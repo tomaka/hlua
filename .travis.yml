@@ -13,7 +13,6 @@ env:
 script:
   - cargo test --manifest-path lua52-sys/Cargo.toml
   - cargo test --manifest-path hlua/Cargo.toml
-  #- cargo test --manifest-path rust-hl-lua-modules/Cargo.toml
 
 after_success:
   - |

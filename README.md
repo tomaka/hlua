@@ -234,63 +234,6 @@ fn main() {
 }
 ```
 
-### Creating a Lua module
-
-**Note: OBSOLETE ; this is still some pre-Rust-1.0 stuff**
-
-This library also includes a second library named `rust-hl-lua-module` which allows you to create Lua modules in Rust.
-
-To use it, add this to `Cargo.toml`:
-
-```toml
-[dependencies.rust-hl-lua-modules]
-git = "https://github.com/tomaka/hlua"
-```
-
-Then you can use it like this:
-
-```rust
-#![feature(phase)]
-#[!plugin(rust-hl-lua-modules)]
-
-#[export_lua_module]
-pub mod mylib {         // <-- must be the name of the Lua module
-    static PI: f32 = 3.141592;
-
-    fn function1(a: int, b: int) -> int {
-        a + b
-    }
-
-    fn function2(a: int) -> int {
-        a + 5
-    }
-
-    #[lua_module_init]
-    fn init() {
-        println!("module initialized!")
-    }
-}
-```
-
-This module will then be usable by Lua:
-
-```lua
-> mylib = require("mylib")
-module initialized!
-> return mylib.function1(2, 4)
-6
-> return mylib.PI
-3.141592
-```
-
-Two syntax extensions are defined:
- - `#[export_lua_module]`: Must be put in front of a module. The name of the module must be the same as the name of your Lua module.
- - `#[lua_module_init]`: Can be put in front of a function inside the module. This function will be executed when the module is loaded.
-
-**Restrictions**: 
- - `fail!()` will crash the program.
- - If you spawn tasks, they will have to end before the hand is given back to lua.
-
 ### Contributing
 
 Contributions are welcome!
