@@ -559,12 +559,28 @@ impl<'lua> Lua<'lua> {
         unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
 
+    // Helper to import library
+    fn open_helper(&mut self, modname: &str, func: ffi::lua_CFunction2) {
+        unsafe {
+            // No need to handle error since input is hardcoded
+            // See https://doc.rust-lang.org/std/ffi/struct.CString.html#method.new
+            let name = CString::new(modname).unwrap();
+            ffi::luaL_requiref(
+                self.lua.0,
+                name.as_ptr(),
+                func,
+                1
+            );
+            ffi::lua_pop(self.lua.0, 1);
+        }
+    }
+
     /// Opens base library.
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_base
     #[inline]
     pub fn open_base(&mut self) {
-        unsafe { ffi::luaopen_base(self.lua.0) }
+        self.open_helper("_G", ffi::luaopen_base);
     }
 
     /// Opens bit32 library.
@@ -572,7 +588,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_bit32
     #[inline]
     pub fn open_bit32(&mut self) {
-        unsafe { ffi::luaopen_bit32(self.lua.0) }
+        self.open_helper("bit32", ffi::luaopen_bit32);
     }
 
     /// Opens coroutine library.
@@ -580,7 +596,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_coroutine
     #[inline]
     pub fn open_coroutine(&mut self) {
-        unsafe { ffi::luaopen_coroutine(self.lua.0) }
+        self.open_helper("coroutine", ffi::luaopen_coroutine);
     }
 
     /// Opens debug library.
@@ -588,7 +604,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_debug
     #[inline]
     pub fn open_debug(&mut self) {
-        unsafe { ffi::luaopen_debug(self.lua.0) }
+        self.open_helper("debug", ffi::luaopen_debug);
     }
 
     /// Opens io library.
@@ -596,7 +612,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_io
     #[inline]
     pub fn open_io(&mut self) {
-        unsafe { ffi::luaopen_io(self.lua.0) }
+        self.open_helper("io", ffi::luaopen_io);
     }
 
     /// Opens math library.
@@ -604,7 +620,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_math
     #[inline]
     pub fn open_math(&mut self) {
-        unsafe { ffi::luaopen_math(self.lua.0) }
+        self.open_helper("math", ffi::luaopen_math);
     }
 
     /// Opens os library.
@@ -612,7 +628,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_os
     #[inline]
     pub fn open_os(&mut self) {
-        unsafe { ffi::luaopen_os(self.lua.0) }
+        self.open_helper("os", ffi::luaopen_os);
     }
 
     /// Opens package library.
@@ -620,7 +636,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_package
     #[inline]
     pub fn open_package(&mut self) {
-        unsafe { ffi::luaopen_package(self.lua.0) }
+        self.open_helper("package", ffi::luaopen_package);
     }
 
     /// Opens string library.
@@ -628,7 +644,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_string
     #[inline]
     pub fn open_string(&mut self) {
-        unsafe { ffi::luaopen_string(self.lua.0) }
+        self.open_helper("string", ffi::luaopen_string);
     }
 
     /// Opens table library.
@@ -636,7 +652,7 @@ impl<'lua> Lua<'lua> {
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_table
     #[inline]
     pub fn open_table(&mut self) {
-        unsafe { ffi::luaopen_table(self.lua.0) }
+        self.open_helper("table", ffi::luaopen_table);
     }
 
     /// Executes some Lua code in the context.
@@ -978,6 +994,7 @@ impl<L> Drop for PushGuard<L> {
 mod tests {
     use Lua;
     use LuaError;
+    use LuaTable;
 
     #[test]
     fn open_base_opens_base_library() {
@@ -1005,5 +1022,75 @@ mod tests {
         lua.open_package();
         lua.open_string();
         lua.open_table();
+    }
+
+    #[test]
+    fn opening_base() {
+        let mut lua = Lua::new();
+        lua.open_base();
+        let _: LuaTable<_> = lua.get("_G").unwrap();
+    }
+
+    #[test]
+    fn opening_bit32() {
+        let mut lua = Lua::new();
+        lua.open_bit32();
+        let _: LuaTable<_> = lua.get("bit32").unwrap();
+    }
+
+    #[test]
+    fn opening_coroutine() {
+        let mut lua = Lua::new();
+        lua.open_coroutine();
+        let _: LuaTable<_> = lua.get("coroutine").unwrap();
+    }
+
+    #[test]
+    fn opening_debug() {
+        let mut lua = Lua::new();
+        lua.open_debug();
+        let _: LuaTable<_> = lua.get("debug").unwrap();
+    }
+
+    #[test]
+    fn opening_io() {
+        let mut lua = Lua::new();
+        lua.open_io();
+        let _: LuaTable<_> = lua.get("io").unwrap();
+    }
+
+    #[test]
+    fn opening_math() {
+        let mut lua = Lua::new();
+        lua.open_math();
+        let _: LuaTable<_> = lua.get("math").unwrap();
+    }
+
+    #[test]
+    fn opening_os() {
+        let mut lua = Lua::new();
+        lua.open_os();
+        let _: LuaTable<_> = lua.get("os").unwrap();
+    }
+
+    #[test]
+    fn opening_package() {
+        let mut lua = Lua::new();
+        lua.open_package();
+        let _: LuaTable<_> = lua.get("package").unwrap();
+    }
+
+    #[test]
+    fn opening_string() {
+        let mut lua = Lua::new();
+        lua.open_string();
+        let _: LuaTable<_> = lua.get("string").unwrap();
+    }
+
+    #[test]
+    fn opening_table() {
+        let mut lua = Lua::new();
+        lua.open_table();
+        let _: LuaTable<_> = lua.get("table").unwrap();
     }
 }

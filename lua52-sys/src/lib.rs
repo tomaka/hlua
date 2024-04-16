@@ -27,6 +27,7 @@ pub const LUA_ERRERR: c_int = 6;
 pub struct lua_State;
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
+pub type lua_CFunction2 = unsafe extern "C" fn(*mut lua_State);
 
 pub type lua_Reader = extern "C" fn(
     L: *mut lua_State,
@@ -267,6 +268,8 @@ extern "C" {
     pub fn lua_gethook(L: *mut lua_State) -> lua_Hook;
     pub fn lua_gethookmask(L: *mut lua_State) -> c_int;
     pub fn lua_gethookcount(L: *mut lua_State) -> c_int;
+
+    pub fn luaL_requiref(L: *mut lua_State, modname: *const libc::c_char, openf: lua_CFunction2, glb: c_int);
 
     pub fn luaL_openlibs(L: *mut lua_State);
     pub fn luaL_ref(L: *mut lua_State, idx: c_int) -> c_int;
