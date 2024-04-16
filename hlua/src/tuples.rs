@@ -1,10 +1,10 @@
-use AsMutLua;
 use AsLua;
+use AsMutLua;
 
-use Push;
-use PushOne;
-use PushGuard;
 use LuaRead;
+use Push;
+use PushGuard;
+use PushOne;
 use Void;
 
 macro_rules! tuple_impl {

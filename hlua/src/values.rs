@@ -1,13 +1,13 @@
 use std::mem;
+use std::ops::Deref;
 use std::slice;
 use std::str;
-use std::ops::Deref;
 
 use ffi;
 use libc;
 
-use AnyLuaValue;
 use AnyLuaString;
+use AnyLuaValue;
 use AsLua;
 use AsMutLua;
 use LuaRead;
@@ -28,7 +28,7 @@ macro_rules! integer_impl(
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
-        
+
         impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
         }
 
@@ -63,7 +63,7 @@ macro_rules! unsigned_impl(
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
-        
+
         impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
         }
 
@@ -98,7 +98,7 @@ macro_rules! numeric_impl(
                 Ok(PushGuard { lua: lua, size: 1, raw_lua: raw_lua })
             }
         }
-        
+
         impl<'lua, L> PushOne<L> for $t where L: AsMutLua<'lua> {
         }
 
@@ -120,16 +120,19 @@ numeric_impl!(f32);
 numeric_impl!(f64);
 
 impl<'lua, L> Push<L> for String
-    where L: AsMutLua<'lua>
+where
+    L: AsMutLua<'lua>,
 {
-    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+    type Err = Void; // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         unsafe {
-            ffi::lua_pushlstring(lua.as_mut_lua().0,
-                                 self.as_bytes().as_ptr() as *const _,
-                                 self.as_bytes().len() as libc::size_t);
+            ffi::lua_pushlstring(
+                lua.as_mut_lua().0,
+                self.as_bytes().as_ptr() as *const _,
+                self.as_bytes().len() as libc::size_t,
+            );
 
             let raw_lua = lua.as_lua();
             Ok(PushGuard {
@@ -144,7 +147,8 @@ impl<'lua, L> Push<L> for String
 impl<'lua, L> PushOne<L> for String where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for String
-    where L: AsLua<'lua>
+where
+    L: AsLua<'lua>,
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<String, L> {
@@ -164,17 +168,20 @@ impl<'lua, L> LuaRead<L> for String
 }
 
 impl<'lua, L> Push<L> for AnyLuaString
-    where L: AsMutLua<'lua>
+where
+    L: AsMutLua<'lua>,
 {
-    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+    type Err = Void; // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         let AnyLuaString(v) = self;
         unsafe {
-            ffi::lua_pushlstring(lua.as_mut_lua().0,
-                                 v[..].as_ptr() as *const _,
-                                 v[..].len() as libc::size_t);
+            ffi::lua_pushlstring(
+                lua.as_mut_lua().0,
+                v[..].as_ptr() as *const _,
+                v[..].len() as libc::size_t,
+            );
 
             let raw_lua = lua.as_lua();
             Ok(PushGuard {
@@ -187,7 +194,8 @@ impl<'lua, L> Push<L> for AnyLuaString
 }
 
 impl<'lua, L> LuaRead<L> for AnyLuaString
-    where L: AsLua<'lua>
+where
+    L: AsLua<'lua>,
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<AnyLuaString, L> {
@@ -203,16 +211,19 @@ impl<'lua, L> LuaRead<L> for AnyLuaString
 }
 
 impl<'lua, 's, L> Push<L> for &'s str
-    where L: AsMutLua<'lua>
+where
+    L: AsMutLua<'lua>,
 {
-    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+    type Err = Void; // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
         unsafe {
-            ffi::lua_pushlstring(lua.as_mut_lua().0,
-                                 self.as_bytes().as_ptr() as *const _,
-                                 self.as_bytes().len() as libc::size_t);
+            ffi::lua_pushlstring(
+                lua.as_mut_lua().0,
+                self.as_bytes().as_ptr() as *const _,
+                self.as_bytes().len() as libc::size_t,
+            );
 
             let raw_lua = lua.as_lua();
             Ok(PushGuard {
@@ -250,7 +261,8 @@ pub struct StringInLua<L> {
 }
 
 impl<'lua, L> LuaRead<L> for StringInLua<L>
-    where L: AsLua<'lua>
+where
+    L: AsLua<'lua>,
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<StringInLua<L>, L> {
@@ -263,7 +275,7 @@ impl<'lua, L> LuaRead<L> for StringInLua<L>
         let c_slice = unsafe { slice::from_raw_parts(c_str_raw as *const u8, size) };
         match str::from_utf8(c_slice) {
             Ok(_) => (),
-            Err(_) => return Err(lua)
+            Err(_) => return Err(lua),
         };
 
         Ok(StringInLua {
@@ -282,15 +294,16 @@ impl<L> Deref for StringInLua<L> {
         let c_slice = unsafe { slice::from_raw_parts(self.c_str_raw as *const u8, self.size) };
         match str::from_utf8(c_slice) {
             Ok(s) => s,
-            Err(_) => unreachable!()        // Checked earlier
+            Err(_) => unreachable!(), // Checked earlier
         }
     }
 }
 
 impl<'lua, L> Push<L> for bool
-    where L: AsMutLua<'lua>
+where
+    L: AsMutLua<'lua>,
 {
-    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+    type Err = Void; // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
     #[inline]
     fn push_to_lua(self, mut lua: L) -> Result<PushGuard<L>, (Void, L)> {
@@ -307,7 +320,8 @@ impl<'lua, L> Push<L> for bool
 impl<'lua, L> PushOne<L> for bool where L: AsMutLua<'lua> {}
 
 impl<'lua, L> LuaRead<L> for bool
-    where L: AsLua<'lua>
+where
+    L: AsLua<'lua>,
 {
     #[inline]
     fn lua_read_at_position(lua: L, index: i32) -> Result<bool, L> {
@@ -320,9 +334,10 @@ impl<'lua, L> LuaRead<L> for bool
 }
 
 impl<'lua, L> Push<L> for ()
-    where L: AsMutLua<'lua>
+where
+    L: AsMutLua<'lua>,
 {
-    type Err = Void;      // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
+    type Err = Void; // TODO: use `!` instead (https://github.com/rust-lang/rust/issues/35121)
 
     #[inline]
     fn push_to_lua(self, lua: L) -> Result<PushGuard<L>, (Void, L)> {
@@ -337,7 +352,8 @@ impl<'lua, L> Push<L> for ()
 }
 
 impl<'lua, L> LuaRead<L> for ()
-    where L: AsLua<'lua>
+where
+    L: AsLua<'lua>,
 {
     #[inline]
     fn lua_read_at_position(_: L, _: i32) -> Result<(), L> {
@@ -346,8 +362,9 @@ impl<'lua, L> LuaRead<L> for ()
 }
 
 impl<'lua, L, T, E> Push<L> for Option<T>
-where T: Push<L, Err = E>,
-      L: AsMutLua<'lua>
+where
+    T: Push<L, Err = E>,
+    L: AsMutLua<'lua>,
 {
     type Err = E;
 
@@ -361,15 +378,16 @@ where T: Push<L, Err = E>,
 }
 
 impl<'lua, L, T, E> PushOne<L> for Option<T>
-where T: PushOne<L, Err = E>,
-      L: AsMutLua<'lua>
+where
+    T: PushOne<L, Err = E>,
+    L: AsMutLua<'lua>,
 {
 }
 
 #[cfg(test)]
 mod tests {
-    use AnyLuaValue;
     use AnyLuaString;
+    use AnyLuaValue;
     use Lua;
     use StringInLua;
 
@@ -465,9 +483,23 @@ mod tests {
         assert_eq!(lua.execute::<String>("return 'abc'").unwrap(), "abc");
         assert_eq!(lua.execute::<u32>("return #'abc'").unwrap(), 3);
         assert_eq!(lua.execute::<u32>("return #'a\\x00c'").unwrap(), 3);
-        assert_eq!(lua.execute::<AnyLuaString>("return 'a\\x00c'").unwrap().0, vec!(97, 0, 99));
-        assert_eq!(lua.execute::<AnyLuaString>("return 'a\\x00c'").unwrap().0.len(), 3);
-        assert_eq!(lua.execute::<AnyLuaString>("return '\\x01\\xff'").unwrap().0, vec!(1, 255));
+        assert_eq!(
+            lua.execute::<AnyLuaString>("return 'a\\x00c'").unwrap().0,
+            vec!(97, 0, 99)
+        );
+        assert_eq!(
+            lua.execute::<AnyLuaString>("return 'a\\x00c'")
+                .unwrap()
+                .0
+                .len(),
+            3
+        );
+        assert_eq!(
+            lua.execute::<AnyLuaString>("return '\\x01\\xff'")
+                .unwrap()
+                .0,
+            vec!(1, 255)
+        );
         lua.execute::<String>("return 'a\\x00\\xc0'").unwrap_err();
     }
 
@@ -504,7 +536,7 @@ mod tests {
             let x: StringInLua<_> = lua.get("a").unwrap();
             assert_eq!(&*x, "aaa");
         }
-        
+
         lua.set("a", 18);
         {
             let x: StringInLua<_> = lua.get("a").unwrap();
