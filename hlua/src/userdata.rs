@@ -136,7 +136,7 @@ where
         }
 
         let actual_typeid = data_ptr as *const TypeId;
-        if *actual_typeid != TypeId::of::<T>() {
+        if ptr::read_unaligned(actual_typeid) != TypeId::of::<T>() {
             return Err(lua);
         }
 
@@ -167,7 +167,7 @@ where
             }
 
             let actual_typeid = data_ptr as *const TypeId;
-            if *actual_typeid != TypeId::of::<T>() {
+            if ptr::read_unaligned(actual_typeid) != TypeId::of::<T>() {
                 return Err(lua);
             }
 
