@@ -272,16 +272,16 @@ extern "C" {
     pub fn luaL_ref(L: *mut lua_State, idx: c_int) -> c_int;
     pub fn luaL_unref(L: *mut lua_State, idx: c_int, ref_id: c_int);
 
-    pub fn luaopen_base(L: *mut lua_State);
-    pub fn luaopen_bit32(L: *mut lua_State);
-    pub fn luaopen_coroutine(L: *mut lua_State);
-    pub fn luaopen_debug(L: *mut lua_State);
-    pub fn luaopen_io(L: *mut lua_State);
-    pub fn luaopen_math(L: *mut lua_State);
-    pub fn luaopen_os(L: *mut lua_State);
-    pub fn luaopen_package(L: *mut lua_State);
-    pub fn luaopen_string(L: *mut lua_State);
-    pub fn luaopen_table(L: *mut lua_State);
+    pub fn luaopen_base(L: *mut lua_State) -> c_int;
+    pub fn luaopen_bit32(L: *mut lua_State) -> c_int;
+    pub fn luaopen_coroutine(L: *mut lua_State) -> c_int;
+    pub fn luaopen_debug(L: *mut lua_State) -> c_int;
+    pub fn luaopen_io(L: *mut lua_State) -> c_int;
+    pub fn luaopen_math(L: *mut lua_State) -> c_int;
+    pub fn luaopen_os(L: *mut lua_State) -> c_int;
+    pub fn luaopen_package(L: *mut lua_State) -> c_int;
+    pub fn luaopen_string(L: *mut lua_State) -> c_int;
+    pub fn luaopen_table(L: *mut lua_State) -> c_int;
 }
 
 #[inline(always)]
