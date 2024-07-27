@@ -563,7 +563,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_base
     #[inline]
-    pub fn open_base(&mut self) {
+    pub fn open_base(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_base(self.lua.0) }
     }
 
@@ -571,7 +571,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_bit32
     #[inline]
-    pub fn open_bit32(&mut self) {
+    pub fn open_bit32(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_bit32(self.lua.0) }
     }
 
@@ -579,7 +579,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_coroutine
     #[inline]
-    pub fn open_coroutine(&mut self) {
+    pub fn open_coroutine(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_coroutine(self.lua.0) }
     }
 
@@ -587,7 +587,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_debug
     #[inline]
-    pub fn open_debug(&mut self) {
+    pub fn open_debug(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_debug(self.lua.0) }
     }
 
@@ -595,7 +595,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_io
     #[inline]
-    pub fn open_io(&mut self) {
+    pub fn open_io(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_io(self.lua.0) }
     }
 
@@ -603,7 +603,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_math
     #[inline]
-    pub fn open_math(&mut self) {
+    pub fn open_math(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_math(self.lua.0) }
     }
 
@@ -611,7 +611,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_os
     #[inline]
-    pub fn open_os(&mut self) {
+    pub fn open_os(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_os(self.lua.0) }
     }
 
@@ -619,7 +619,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_package
     #[inline]
-    pub fn open_package(&mut self) {
+    pub fn open_package(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_package(self.lua.0) }
     }
 
@@ -627,7 +627,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_string
     #[inline]
-    pub fn open_string(&mut self) {
+    pub fn open_string(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_string(self.lua.0) }
     }
 
@@ -635,7 +635,7 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_table
     #[inline]
-    pub fn open_table(&mut self) {
+    pub fn open_table(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_table(self.lua.0) }
     }
 
