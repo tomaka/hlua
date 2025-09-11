@@ -555,6 +555,9 @@ impl<'lua> Lua<'lua> {
     /// lua.openlibs();
     /// ```
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn openlibs(&mut self) {
         unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
@@ -563,6 +566,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_base
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_base(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_base(self.lua.0) }
     }
@@ -571,6 +577,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_bit32
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_bit32(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_bit32(self.lua.0) }
     }
@@ -579,6 +588,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_coroutine
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_coroutine(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_coroutine(self.lua.0) }
     }
@@ -587,6 +599,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_debug
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_debug(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_debug(self.lua.0) }
     }
@@ -595,6 +610,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_io
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_io(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_io(self.lua.0) }
     }
@@ -603,6 +621,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_math
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_math(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_math(self.lua.0) }
     }
@@ -611,6 +632,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_os
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_os(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_os(self.lua.0) }
     }
@@ -619,6 +643,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_package
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_package(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_package(self.lua.0) }
     }
@@ -627,6 +654,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_string
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_string(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_string(self.lua.0) }
     }
@@ -635,6 +665,9 @@ impl<'lua> Lua<'lua> {
     ///
     /// https://www.lua.org/manual/5.2/manual.html#pdf-luaopen_table
     #[inline]
+    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
+    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
+    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn open_table(&mut self) -> libc::c_int {
         unsafe { ffi::luaopen_table(self.lua.0) }
     }
