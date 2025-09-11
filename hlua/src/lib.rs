@@ -555,9 +555,6 @@ impl<'lua> Lua<'lua> {
     /// lua.openlibs();
     /// ```
     #[inline]
-    #[deprecated = "This function is a wart in hlua's API and doesn't actually do anything. \
-    Unfortunately, the equivalent function in the Lua library is undocumented. If you know \
-    how to use it, feel free to open a pull request against hlua to expose it properly."]
     pub fn openlibs(&mut self) {
         unsafe { ffi::luaL_openlibs(self.lua.0) }
     }
