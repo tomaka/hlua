@@ -1,3 +1,6 @@
+
+use std::convert::From;
+
 use ffi;
 
 use AsLua;
@@ -276,6 +279,36 @@ where
             };
 
             Ok(AnyHashableLuaValue::LuaOther)
+        }
+    }
+}
+
+impl From<AnyHashableLuaValue> for AnyLuaValue {
+    fn from(value: AnyHashableLuaValue) -> AnyLuaValue {
+        match value {
+            AnyHashableLuaValue::LuaString(string) => {
+                AnyLuaValue::LuaString(string)
+            },
+            AnyHashableLuaValue::LuaAnyString(any_string) => {
+                AnyLuaValue::LuaAnyString(any_string)
+            },
+            AnyHashableLuaValue::LuaNumber(integral) => {
+                AnyLuaValue::LuaNumber(integral as f64)
+            },
+            AnyHashableLuaValue::LuaBoolean(boolean) => {
+                AnyLuaValue::LuaBoolean(boolean)
+            },
+            AnyHashableLuaValue::LuaArray(array) => {
+                AnyLuaValue::LuaArray(array.into_iter().map(|(key, value)|
+                    (From::from(key), From::from(value))
+                ).collect())
+            },
+            AnyHashableLuaValue::LuaNil => {
+                AnyLuaValue::LuaNil
+            },
+            AnyHashableLuaValue::LuaOther => {
+                AnyLuaValue::LuaOther
+            }
         }
     }
 }
