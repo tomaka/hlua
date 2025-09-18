@@ -1,0 +1,19 @@
+name: continuous-integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions: read-all
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1
+    steps:
+    - uses: actions/checkout@v4
+    - uses: Swatinem/rust-cache@v2
+    - run: cargo test --workspace
