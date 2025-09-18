@@ -10,7 +10,7 @@ license = "MIT"
 repository = "https://github.com/tomaka/rust-hl-lua"
 
 [build-dependencies]
-pkg-config = "0.3"
+pkg-config = "0.3.3"
 cc = "1.0"
 
 [dependencies]
