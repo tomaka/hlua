@@ -125,7 +125,7 @@ pub struct lua_Debug {
     pub isvararg: libc::c_char,
     pub istailcall: libc::c_char,
     pub short_src: [libc::c_char; 60],
-    //i_ci: *CallInfo
+    pub i_ci: *mut libc::c_void,
 }
 
 extern "C" {
@@ -216,7 +216,7 @@ extern "C" {
         ctx: c_int,
         k: Option<lua_CFunction>,
     );
-    pub fn lua_getctx(L: *mut lua_State, ctx: c_int) -> c_int;
+    pub fn lua_getctx(L: *mut lua_State, ctx: *mut c_int) -> c_int;
     pub fn lua_pcallk(
         L: *mut lua_State,
         nargs: c_int,
@@ -393,6 +393,7 @@ impl default::Default for lua_Debug {
             isvararg: 0,
             istailcall: 0,
             short_src: [0; 60],
+            i_ci: ptr::null_mut(),
         }
     }
 }
